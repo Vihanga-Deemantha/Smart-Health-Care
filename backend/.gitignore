@@ -2,3 +2,5 @@ node_modules
 .env
 dist
 postman.json
+gateway.err.log
+gateway.out.log

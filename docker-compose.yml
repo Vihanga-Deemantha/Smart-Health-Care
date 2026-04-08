@@ -2,14 +2,13 @@ services:
   auth-service:
     build:
       context: ./backend/auth-service
-    container_name: auth-service
     restart: unless-stopped
     ports:
-      - "5024:5024"
+      - "${AUTH_PORT:-5024}:5024"
     environment:
       PORT: 5024
       NODE_ENV: production
-      CLIENT_URL: http://localhost:8080
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
       COOKIE_SECURE: "false"
       MONGODB_URI: ${AUTH_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/auth_db?retryWrites=true&w=majority}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
@@ -31,16 +30,15 @@ services:
   admin-service:
     build:
       context: ./backend/admin-service
-    container_name: admin-service
     restart: unless-stopped
     depends_on:
       - auth-service
     ports:
-      - "5025:5025"
+      - "${ADMIN_PORT:-5025}:5025"
     environment:
       PORT: 5025
       NODE_ENV: production
-      CLIENT_URL: http://localhost:8080
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
       MONGODB_URI: ${ADMIN_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/admin_db?retryWrites=true&w=majority}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       AUTH_SERVICE_URL: http://auth-service:5024
@@ -49,17 +47,16 @@ services:
   api-gateway:
     build:
       context: ./backend/api-gateway
-    container_name: api-gateway
     restart: unless-stopped
     depends_on:
       - auth-service
       - admin-service
     ports:
-      - "5026:5026"
+      - "${GATEWAY_PORT:-5026}:5026"
     environment:
       PORT: 5026
       NODE_ENV: production
-      CLIENT_URL: http://localhost:8080
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       AUTH_SERVICE_URL: http://auth-service:5024
       ADMIN_SERVICE_URL: http://admin-service:5025
@@ -69,9 +66,8 @@ services:
       context: ./frontend
       args:
         VITE_API_BASE_URL: /api
-    container_name: frontend
     restart: unless-stopped
     depends_on:
       - api-gateway
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8080}:80"

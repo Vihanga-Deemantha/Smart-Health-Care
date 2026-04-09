@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: ds-project-auth-service:latest
+          image: smart-health-care-auth-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5024

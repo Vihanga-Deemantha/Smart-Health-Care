@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: ds-project-api-gateway:latest
+          image: smart-health-care-api-gateway:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5026

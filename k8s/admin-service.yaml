@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: admin-service
-          image: ds-project-admin-service:latest
+          image: smart-health-care-admin-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5025

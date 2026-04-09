@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ds-project-frontend:latest
+          image: smart-health-care-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

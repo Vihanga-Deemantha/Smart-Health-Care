@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, LogOut, ShieldCheck } from "lucide-react";
+import { ArrowRight, LogOut, ShieldCheck, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import Logo from "./Logo.jsx";
 import PageContainer from "./PageContainer.jsx";
 import SectionHeading from "./SectionHeading.jsx";
 import StatusBadge from "./StatusBadge.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
+import heroImage from "../../assets/hero.png";
 
 const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }) => {
   const navigate = useNavigate();
@@ -102,14 +103,23 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-cyan-400/15 bg-cyan-400/10 p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-200">
-                Protected by gateway
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-100">
-                Your session is running through the API gateway with JWT access control, refresh-token
-                rotation, and service-level protection behind the scenes.
-              </p>
+            <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-900/75 backdrop-blur-xl">
+              <img
+                src={heroImage}
+                alt="Healthcare operations dashboard visual"
+                className="h-40 w-full object-cover"
+              />
+              <div className="p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
+                  <Activity size={22} />
+                </div>
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-200">
+                  Live platform access
+                </p>
+                <p className="mt-3 text-sm leading-7 text-slate-100">
+                  Your session is active and protected through the platform gateway and service-level access controls.
+                </p>
+              </div>
             </div>
           </motion.aside>
         </section>

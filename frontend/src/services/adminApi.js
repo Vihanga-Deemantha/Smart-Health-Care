@@ -7,3 +7,4 @@ export const rejectDoctor = (id, payload) => api.patch(`/admin/doctors/${id}/rej
 export const getUsers = (params) => api.get("/admin/users", { params });
 export const updateUserStatus = (id, payload) => api.patch(`/admin/users/${id}/status`, payload);
 export const getAdminActions = (params) => api.get("/admin/actions", { params });
+export const getSecurityActivity = (params) => api.get("/admin/security/activity", { params });

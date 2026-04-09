@@ -77,7 +77,7 @@ const PendingDoctorsPage = () => {
       <SectionHeading
         eyebrow="Approvals"
         title="Pending doctor verification queue"
-        description="Review submitted professional profiles, approve trusted clinicians, or reject with a clear audit trail."
+        description="Review submitted doctor profiles and complete approval decisions."
       />
 
       {errorMessage ? (

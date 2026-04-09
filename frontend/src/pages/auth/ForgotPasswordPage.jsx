@@ -26,8 +26,8 @@ const ForgotPasswordPage = () => {
 
   return (
     <AuthLayout
-      title="Reset access safely"
-      description="We will send a password reset OTP so you can safely create a new password and regain access."
+      title="Reset your password"
+      description="We will send a one-time code so you can create a new password."
       footer={
         <p className="text-sm text-slate-600">
           Remembered your password?{" "}

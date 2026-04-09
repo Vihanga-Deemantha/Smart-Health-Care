@@ -64,6 +64,14 @@ export const fetchUsersFromAuth = async (params) => {
   return data.data;
 };
 
+export const fetchAuthLogsFromAuth = async (params) => {
+  const data = await requestWithRetry(
+    async () => (await authClient.get("/auth-logs", { params })).data,
+    2
+  );
+  return data.data;
+};
+
 export const fetchPendingDoctorsFromAuth = async () => {
   const data = await requestWithRetry(
     async () => (await authClient.get("/doctors/pending")).data,

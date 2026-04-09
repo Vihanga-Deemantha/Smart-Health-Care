@@ -78,7 +78,7 @@ const UsersManagementPage = () => {
       <SectionHeading
         eyebrow="User management"
         title="Search, filter, and control platform access"
-        description="Inspect user state quickly, suspend risky accounts, and restore access with audit visibility."
+        description="Search accounts, review status, and manage access across the platform."
       />
 
       <UserFilters filters={filters} onChange={handleFilterChange} />

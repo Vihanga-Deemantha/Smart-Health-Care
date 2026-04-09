@@ -83,7 +83,7 @@ const RegisterPage = () => {
   return (
     <AuthLayout
       title="Create your account"
-      description="Register as a patient or a doctor, then complete email verification before moving into the platform."
+      description="Register as a patient or doctor, then complete email verification before moving into the platform."
       footer={
         <p className="text-sm text-slate-600">
           Already have an account?{" "}

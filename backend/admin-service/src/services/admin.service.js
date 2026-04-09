@@ -1,5 +1,6 @@
 import AdminAction from "../models/AdminAction.js";
 import {
+  fetchAuthLogsFromAuth,
   fetchUsersFromAuth,
   fetchPendingDoctorsFromAuth,
   approveDoctorInAuth,
@@ -79,6 +80,63 @@ export const getAdminActions = async ({
       page: Number(page),
       limit: Number(limit),
       pages: Math.ceil(total / Number(limit))
+    }
+  };
+};
+
+export const getSecurityActivity = async ({ page = 1, limit = 10 }) => {
+  const normalizedPage = Number(page);
+  const normalizedLimit = Number(limit);
+  const mergedFetchLimit = normalizedPage * normalizedLimit;
+  const skip = (normalizedPage - 1) * normalizedLimit;
+
+  const [authLogsData, adminActions, adminTotal] = await Promise.all([
+    fetchAuthLogsFromAuth({ page: 1, limit: mergedFetchLimit }),
+    AdminAction.find().sort({ createdAt: -1 }).limit(mergedFetchLimit),
+    AdminAction.countDocuments()
+  ]);
+
+  const authEvents = (authLogsData.logs || []).map((log) => ({
+    id: `auth-${log._id}`,
+    type: "AUTH_LOG",
+    action: log.action,
+    createdAt: log.createdAt,
+    actorUserId: log.userId || null,
+    actorEmail: log.email || null,
+    targetUserId: null,
+    reason: null,
+    ipAddress: log.ipAddress || null,
+    userAgent: log.userAgent || null,
+    metadata: log.metadata || {}
+  }));
+
+  const adminEvents = adminActions.map((action) => ({
+    id: `admin-${action._id}`,
+    type: "ADMIN_ACTION",
+    action: action.action,
+    createdAt: action.createdAt,
+    actorUserId: action.adminUserId,
+    actorEmail: null,
+    targetUserId: action.targetUserId,
+    reason: action.reason || null,
+    ipAddress: null,
+    userAgent: null,
+    metadata: {}
+  }));
+
+  const events = [...authEvents, ...adminEvents]
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+    .slice(skip, skip + normalizedLimit);
+
+  const total = Number(authLogsData.pagination?.total || 0) + adminTotal;
+
+  return {
+    events,
+    pagination: {
+      total,
+      page: normalizedPage,
+      limit: normalizedLimit,
+      pages: Math.ceil(total / normalizedLimit)
     }
   };
 };

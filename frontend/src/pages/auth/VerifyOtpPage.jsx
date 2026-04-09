@@ -42,7 +42,7 @@ const VerifyOtpPage = () => {
   return (
     <AuthLayout
       title="Verify your email"
-      description="Enter the six-digit OTP sent to your inbox. Resend remains protected by cooldown and rate limiting."
+      description="Enter the six-digit code sent to your email address."
       footer={
         <p className="text-sm text-slate-600">
           Need to start over?{" "}

@@ -1,21 +1,22 @@
 import { ShieldCheck, Stethoscope, UserRoundCheck } from "lucide-react";
 import Logo from "../common/Logo.jsx";
+import heroImage from "../../assets/hero.png";
 
 const highlights = [
   {
     icon: ShieldCheck,
     title: "Security-led access",
-    text: "Short-lived access tokens, protected refresh sessions, OTP verification, and admin governance built into every step."
+    text: "Protected sessions, OTP verification, and operational controls support a safer sign-in experience."
   },
   {
     icon: Stethoscope,
     title: "Built for clinical teams",
-    text: "Patient onboarding and doctor verification follow healthcare-specific trust and approval flows from day one."
+    text: "Patient onboarding and doctor review flows are shaped for real healthcare operations."
   },
   {
     icon: UserRoundCheck,
     title: "Operational clarity",
-    text: "One connected workspace for registration, approvals, and user oversight across the platform."
+    text: "Registration, approvals, and security activity stay connected inside one interface."
   }
 ];
 
@@ -26,14 +27,22 @@ const AuthSidePanel = () => {
       <div className="relative">
         <Logo />
         <p className="mt-12 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">
-          Trusted digital healthcare access
+          Trusted healthcare access
         </p>
         <h1 className="mt-6 max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Premium identity and admin control for modern care delivery.
+          Secure digital access for every care journey.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-          SecureCare Hub brings patients, doctors, and administrators into one polished experience that feels clinical, confident, and enterprise-ready.
+          Smart Care Health gives patients, doctors, and administrators a cleaner way to access care workflows and platform operations.
         </p>
+
+        <div className="mt-8 overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/70">
+          <img
+            src={heroImage}
+            alt="Care team reviewing digital health information"
+            className="h-48 w-full object-cover"
+          />
+        </div>
 
         <div className="mt-10 space-y-4">
           {highlights.map(({ icon: Icon, title, text }) => (

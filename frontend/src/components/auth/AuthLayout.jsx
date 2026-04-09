@@ -15,7 +15,7 @@ const AuthLayout = ({ title, description, children, footer }) => {
         >
           <div className="w-full max-w-xl rounded-[32px] border border-slate-200/80 bg-white/92 p-8 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:p-10">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-              Secure access
+              Smart Care Health
             </p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">{title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">{description}</p>

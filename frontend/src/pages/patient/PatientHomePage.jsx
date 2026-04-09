@@ -4,18 +4,18 @@ import PortalLayout from "../../components/common/PortalLayout.jsx";
 const patientHighlights = [
   {
     icon: HeartPulse,
-    title: "Account ready",
-    text: "Your patient identity is active and ready for the next healthcare features we plug into this platform."
+    title: "Account active",
+    text: "Your patient account is verified and ready for secure access to care services."
   },
   {
     icon: ShieldCheck,
     title: "Secure session",
-    text: "You are signed in through the gateway with protected routing, refresh-token handling, and role-based access."
+    text: "Your session is protected through the gateway and platform access controls."
   },
   {
     icon: CalendarDays,
-    title: "Prepared for appointments",
-    text: "This area is a clean base for upcoming patient modules like appointments, consultations, and records."
+    title: "Ready for care",
+    text: "This workspace is prepared for appointments, records, and patient-facing services."
   }
 ];
 
@@ -24,7 +24,7 @@ const PatientHomePage = () => {
     <PortalLayout
       eyebrow="Patient Portal"
       title="Welcome to your patient workspace"
-      description="This is your secure patient landing page after authentication. It gives you a safe entry point before appointments, records, and other care workflows are added."
+      description="Access your patient account through a secure, streamlined care workspace."
       accent="cyan"
     >
       <div className="grid gap-5 lg:grid-cols-3">

@@ -60,7 +60,7 @@ const AdminDashboardPage = () => {
       <SectionHeading
         eyebrow="Overview"
         title="Operational control at a glance"
-        description="Track the live shape of the platform, review approval pressure, and stay close to recent admin activity."
+        description="Monitor users, approvals, and recent platform activity from one dashboard."
       />
 
       <motion.div
@@ -86,12 +86,12 @@ const AdminDashboardPage = () => {
         <SectionHeading
           eyebrow="Recent actions"
           title="Latest admin activity"
-          description="A fast-moving view of the most recent administrative events."
+          description="Review the most recent administrative actions."
         />
         {stats.recentActions?.length ? (
           <div className="grid gap-4 lg:grid-cols-2">
             {stats.recentActions.map((action) => (
-              <SecurityActivityCard key={action._id} action={action} />
+              <SecurityActivityCard key={action._id} activity={action} />
             ))}
           </div>
         ) : (

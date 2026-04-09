@@ -6,7 +6,8 @@ import {
   approveDoctor,
   rejectDoctor,
   updateUserStatus,
-  getAdminActions
+  getAdminActions,
+  getSecurityActivity
 } from "../services/admin.service.js";
 
 export const handleGetUsers = asyncHandler(async (req, res) => {
@@ -37,4 +38,9 @@ export const handleUpdateUserStatus = asyncHandler(async (req, res) => {
 export const handleGetAdminActions = asyncHandler(async (req, res) => {
   const data = await getAdminActions(req.query);
   sendResponse(res, 200, "Admin actions fetched successfully", data);
+});
+
+export const handleGetSecurityActivity = asyncHandler(async (req, res) => {
+  const data = await getSecurityActivity(req.query);
+  sendResponse(res, 200, "Security activity fetched successfully", data);
 });

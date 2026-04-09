@@ -1,6 +1,38 @@
 import mongoose from "mongoose";
+import AuthLog from "../models/AuthLog.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
+
+export const getAuthLogsInternal = async ({
+  page = 1,
+  limit = 10,
+  action,
+  email,
+  userId
+}) => {
+  const query = {};
+
+  if (action) query.action = action;
+  if (email) query.email = email.trim().toLowerCase();
+  if (userId) query.userId = userId;
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [logs, total] = await Promise.all([
+    AuthLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    AuthLog.countDocuments(query)
+  ]);
+
+  return {
+    logs,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      pages: Math.ceil(total / Number(limit))
+    }
+  };
+};
 
 export const getUsersInternal = async ({
   page = 1,

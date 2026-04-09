@@ -4,18 +4,18 @@ import PortalLayout from "../../components/common/PortalLayout.jsx";
 const doctorHighlights = [
   {
     icon: BadgeCheck,
-    title: "Doctor access approved",
-    text: "Your account passed email verification and admin review, so you can safely enter the professional side of the system."
+    title: "Verified clinician access",
+    text: "Your account has passed verification and is ready for secure clinical access."
   },
   {
     icon: Stethoscope,
-    title: "Clinical identity ready",
-    text: "This page is your doctor landing space and a stable starting point for schedules, appointments, and patient-facing tools."
+    title: "Clinical workspace",
+    text: "Use this area as your secure starting point for schedules, appointments, and care workflows."
   },
   {
     icon: ClipboardList,
-    title: "Operationally prepared",
-    text: "The platform already protects doctor access with role-aware routing, approval checks, and backend verification rules."
+    title: "Protected operations",
+    text: "Doctor access is protected through approval checks and backend access controls."
   }
 ];
 
@@ -24,7 +24,7 @@ const DoctorHomePage = () => {
     <PortalLayout
       eyebrow="Doctor Portal"
       title="Welcome to your doctor workspace"
-      description="You are now inside the doctor side of the platform. This page gives approved clinicians a proper home instead of dropping them back onto the public landing flow."
+      description="Manage your clinician access through a secure workspace built for modern care delivery."
       accent="blue"
     >
       <div className="grid gap-5 lg:grid-cols-3">

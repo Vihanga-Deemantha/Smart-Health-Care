@@ -8,10 +8,12 @@ import {
   handleApproveDoctor,
   handleRejectDoctor,
   handleUpdateUserStatus,
-  handleGetAdminActions
+  handleGetAdminActions,
+  handleGetSecurityActivity
 } from "../controllers/admin.controller.js";
 import {
   rejectDoctorValidation,
+  listSecurityActivityValidation,
   updateUserStatusValidation,
   listAdminActionsValidation
 } from "../validations/admin.validation.js";
@@ -25,6 +27,7 @@ router.get("/doctors/pending", handleGetPendingDoctors);
 router.patch("/doctors/:id/approve", handleApproveDoctor);
 router.patch("/doctors/:id/reject", rejectDoctorValidation, validateRequest, handleRejectDoctor);
 router.patch("/users/:id/status", updateUserStatusValidation, validateRequest, handleUpdateUserStatus);
+router.get("/security/activity", listSecurityActivityValidation, validateRequest, handleGetSecurityActivity);
 router.get("/actions", listAdminActionsValidation, validateRequest, handleGetAdminActions);
 
 export default router;

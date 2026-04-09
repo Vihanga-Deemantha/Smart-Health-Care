@@ -33,7 +33,7 @@ const ResetPasswordPage = () => {
   return (
     <AuthLayout
       title="Create a fresh password"
-      description="Use your reset OTP and choose a stronger password. Existing refresh sessions will be revoked automatically."
+      description="Enter your reset code and choose a new password for your account."
       footer={
         <p className="text-sm text-slate-600">
           Need a new OTP?{" "}

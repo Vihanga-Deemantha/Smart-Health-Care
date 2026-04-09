@@ -1,6 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import sendResponse from "../utils/apiResponse.js";
 import {
+  getAuthLogsInternal,
   getUsersInternal,
   getPendingDoctorsInternal,
   approveDoctorInternal,
@@ -12,6 +13,11 @@ import {
 export const handleGetUsersInternal = asyncHandler(async (req, res) => {
   const data = await getUsersInternal(req.query);
   sendResponse(res, 200, "Users fetched successfully", data);
+});
+
+export const handleGetAuthLogsInternal = asyncHandler(async (req, res) => {
+  const data = await getAuthLogsInternal(req.query);
+  sendResponse(res, 200, "Auth logs fetched successfully", data);
 });
 
 export const handleGetPendingDoctorsInternal = asyncHandler(async (req, res) => {

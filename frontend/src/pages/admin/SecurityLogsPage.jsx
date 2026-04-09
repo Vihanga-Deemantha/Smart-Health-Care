@@ -5,7 +5,7 @@ import EmptyState from "../../components/common/EmptyState.jsx";
 import ErrorState from "../../components/common/ErrorState.jsx";
 import SecurityActivityCard from "../../components/admin/SecurityActivityCard.jsx";
 import Pagination from "../../components/common/Pagination.jsx";
-import { getAdminActions } from "../../services/adminApi.js";
+import { getSecurityActivity } from "../../services/adminApi.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 
 const SecurityLogsPage = () => {
@@ -19,10 +19,10 @@ const SecurityLogsPage = () => {
     setErrorMessage("");
 
     try {
-      const response = await getAdminActions({ page, limit: 10 });
+      const response = await getSecurityActivity({ page, limit: 10 });
       setData(response.data?.data);
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, "Unable to load admin activity."));
+      setErrorMessage(getApiErrorMessage(error, "Unable to load security activity."));
     } finally {
       setLoading(false);
     }
@@ -36,7 +36,7 @@ const SecurityLogsPage = () => {
     return <LoadingSpinner label="Loading security activity" />;
   }
 
-  if (errorMessage && !data?.actions?.length) {
+  if (errorMessage && !data?.events?.length) {
     return (
       <ErrorState
         title="Security activity is unavailable"
@@ -50,8 +50,8 @@ const SecurityLogsPage = () => {
     <div className="space-y-8">
       <SectionHeading
         eyebrow="Security activity"
-        title="Admin action timeline"
-        description="Review the latest approval, rejection, suspension, and activation decisions in one place."
+        title="System-wide security timeline"
+        description="Review authentication events and admin decisions together in a single operational feed."
       />
 
       {errorMessage ? (
@@ -60,11 +60,11 @@ const SecurityLogsPage = () => {
         </div>
       ) : null}
 
-      {data?.actions?.length ? (
+      {data?.events?.length ? (
         <>
           <div className="grid gap-4 lg:grid-cols-2">
-            {data.actions.map((action) => (
-              <SecurityActivityCard key={action._id} action={action} />
+            {data.events.map((activity) => (
+              <SecurityActivityCard key={activity.id} activity={activity} />
             ))}
           </div>
           <Pagination
@@ -75,8 +75,8 @@ const SecurityLogsPage = () => {
         </>
       ) : (
         <EmptyState
-          title="No admin actions yet"
-          description="Admin actions will appear here once approvals or user status changes start happening."
+          title="No security activity yet"
+          description="Authentication events and admin actions will appear here once users start using the platform."
         />
       )}
     </div>

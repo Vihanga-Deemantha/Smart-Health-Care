@@ -47,7 +47,7 @@ const LoginPage = () => {
   return (
     <AuthLayout
       title="Welcome back"
-      description="Sign in securely and continue with your healthcare account, protected sessions, and role-aware access."
+      description="Sign in to continue with your Smart Care Health account."
       footer={
         <div className="flex items-center justify-between gap-4 text-sm text-slate-600">
           <Link to="/forgot-password" className="font-semibold text-cyan-700">

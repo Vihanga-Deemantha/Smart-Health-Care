@@ -1,8 +1,12 @@
 import Otp from "../models/Otp.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
-import { sendOtpEmail } from "./email.service.js";
-import { createAuthLog } from "./audit.service.js";
+import {
+  sendOtpEmail,
+  sendPatientWelcomeEmail,
+  sendEmailSafely
+} from "./email.service.js";
+import { createAuthLogSafely } from "./audit.service.js";
 import { hashPassword, comparePassword } from "../utils/hash.js";
 import { revokeAllUserRefreshTokens } from "./token.service.js";
 
@@ -161,11 +165,11 @@ export const createAndSendOtp = async (email, purpose) => {
     );
   }
 
-  await createAuthLog({
+  await createAuthLogSafely({
     email: normalizedEmail,
     action: "OTP_SENT",
     metadata: { purpose }
-  });
+  }, `otp sent log for ${normalizedEmail}`);
 };
 
 export const verifyEmailOtp = async ({ email, otpCode }, req) => {
@@ -196,14 +200,25 @@ export const verifyEmailOtp = async ({ email, otpCode }, req) => {
 
   await user.save();
 
-  await createAuthLog({
+  await createAuthLogSafely({
     userId: user._id,
     email: user.email,
     action: "OTP_VERIFIED",
     ipAddress: req.ip,
     userAgent: req.get("user-agent"),
     metadata: { purpose: "EMAIL_VERIFY" }
-  });
+  }, `otp verified log for ${user.email}`);
+
+  if (user.role === "PATIENT") {
+    await sendEmailSafely(
+      () =>
+        sendPatientWelcomeEmail({
+          email: user.email,
+          fullName: user.fullName
+        }),
+      `patient welcome email for ${user.email}`
+    );
+  }
 
   return user;
 };
@@ -224,15 +239,13 @@ export const forgotPassword = async ({ email }) => {
   const user = await User.findOne({ email: normalizedEmail });
   if (!user) throw new AppError("User not found", 404);
 
-  // Send OTP
   await createAndSendOtp(normalizedEmail, "PASSWORD_RESET");
 
-  // ADD LOG HERE (after OTP is sent)
-  await createAuthLog({
+  await createAuthLogSafely({
     userId: user._id,
     email: normalizedEmail,
     action: "PASSWORD_RESET_REQUESTED"
-  });
+  }, `password reset requested log for ${normalizedEmail}`);
 };
 export const resetPassword = async ({ email, otpCode, newPassword }, req) => {
   const normalizedEmail = email.toLowerCase().trim();
@@ -257,13 +270,13 @@ export const resetPassword = async ({ email, otpCode, newPassword }, req) => {
 
   await revokeAllUserRefreshTokens(user._id);
 
-  await createAuthLog({
+  await createAuthLogSafely({
     userId: user._id,
     email: user.email,
     action: "PASSWORD_RESET_SUCCESS",
     ipAddress: req.ip,
     userAgent: req.get("user-agent")
-  });
+  }, `password reset success log for ${user.email}`);
 
   return true;
 };

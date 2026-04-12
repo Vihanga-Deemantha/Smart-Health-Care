@@ -3,7 +3,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
+  const rootDir = globalThis.process?.cwd?.() ?? ".";
+  const env = loadEnv(mode, rootDir, "");
   const proxyTarget = env.VITE_GATEWAY_PROXY_TARGET || "http://localhost:5026";
 
   return {

@@ -20,9 +20,15 @@ const LoginPage = () => {
       const response = await loginUser(values);
       const user = response.data?.data?.user;
       const accessToken = response.data?.data?.accessToken;
+      const loginMessage = response.data?.data?.loginMessage;
 
       setAuth(user, accessToken);
       toast.success("Signed in successfully");
+      if (loginMessage) {
+        toast(loginMessage, {
+          icon: "i"
+        });
+      }
 
       const roleHomePath =
         user?.role === "ADMIN"

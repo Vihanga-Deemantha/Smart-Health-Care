@@ -5,5 +5,14 @@ export const rejectDoctorSchema = z.object({
 });
 
 export const updateUserStatusSchema = z.object({
-  status: z.enum(["ACTIVE", "SUSPENDED"])
+  status: z.enum(["ACTIVE", "SUSPENDED"]),
+  reason: z.string().optional()
+}).superRefine((values, context) => {
+  if (values.status === "SUSPENDED" && !values.reason?.trim()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["reason"],
+      message: "Suspension reason is required"
+    });
+  }
 });

@@ -1237,12 +1237,16 @@ const LandingPage = () => {
                   [Mail,    "info@smartcarehub.lk"],
                   [MapPin,  "Colombo 3, Sri Lanka"],
                   [Clock,   "Emergency: 24/7"],
-                ].map(([Icon, text]) => (
-                  <div key={text} className="flex items-center gap-2">
-                    <Icon size={14} style={{ color: "#2F80ED" }} />
-                    <span>{text}</span>
-                  </div>
-                ))}
+                ].map(([icon, text]) => {
+                  const IconComponent = icon;
+
+                  return (
+                    <div key={text} className="flex items-center gap-2">
+                      <IconComponent size={14} style={{ color: "#2F80ED" }} />
+                      <span>{text}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

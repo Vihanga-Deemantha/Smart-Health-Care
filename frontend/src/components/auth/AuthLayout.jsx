@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import AuthSidePanel from "./AuthSidePanel.jsx";
 import { HeartPulse, Shield } from "lucide-react";
 
@@ -42,16 +42,16 @@ const AuthLayout = ({ title, description, children, footer }) => {
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
 
             {/* Left: Side Panel */}
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, x: -32 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
             >
               <AuthSidePanel />
-            </motion.div>
+            </Motion.div>
 
             {/* Right: Form card */}
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: 32, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
@@ -118,7 +118,7 @@ const AuthLayout = ({ title, description, children, footer }) => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </Motion.div>
 
           </div>
         </div>

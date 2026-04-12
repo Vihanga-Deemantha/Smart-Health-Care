@@ -86,24 +86,28 @@ const PatientDashboardPage = () => {
       <PatientPortalNav />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {stats.map(({ label, value, icon: Icon, color }) => (
-          <div
-            key={label}
-            className="rounded-2xl p-4"
-            style={{
-              background: "rgba(15, 23, 42, 0.35)",
-              border: "1px solid rgba(148, 163, 184, 0.2)"
-            }}
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-300">
-                {label}
-              </span>
-              <Icon size={16} style={{ color }} />
+        {stats.map(({ label, value, icon, color }) => {
+          const IconComponent = icon;
+
+          return (
+            <div
+              key={label}
+              className="rounded-2xl p-4"
+              style={{
+                background: "rgba(15, 23, 42, 0.35)",
+                border: "1px solid rgba(148, 163, 184, 0.2)"
+              }}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-300">
+                  {label}
+                </span>
+                <IconComponent size={16} style={{ color }} />
+              </div>
+              <p className="text-2xl font-black text-white">{value}</p>
             </div>
-            <p className="text-2xl font-black text-white">{value}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">

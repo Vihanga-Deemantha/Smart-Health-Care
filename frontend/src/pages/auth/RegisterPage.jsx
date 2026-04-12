@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthLayout from "../../components/auth/AuthLayout.jsx";
 import RegisterPatientForm from "../../components/auth/RegisterPatientForm.jsx";
@@ -20,7 +20,11 @@ const RegisterPage = () => {
         fullName: values.fullName,
         email: values.email,
         phone: values.phone,
-        password: values.password
+        password: values.password,
+        identityType: values.identityType,
+        nic: values.nic,
+        passportNumber: values.passportNumber,
+        nationality: values.nationality
       });
       toast.success(
         response.data?.message || "Patient registered. Check your email for the OTP."
@@ -56,7 +60,8 @@ const RegisterPage = () => {
         medicalLicenseNumber: values.medicalLicenseNumber,
         specialization: values.specialization,
         yearsOfExperience: values.yearsOfExperience,
-        qualificationDocuments: values.qualificationDocuments
+        verificationLinks: values.verificationLinks,
+        verificationFiles: values.verificationFiles
       });
       toast.success(
         response.data?.message || "Doctor profile submitted. Verify your email next."

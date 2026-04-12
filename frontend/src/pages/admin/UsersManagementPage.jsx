@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import SectionHeading from "../../components/common/SectionHeading.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
@@ -35,7 +35,7 @@ const UsersManagementPage = () => {
     [filters.page, filters.role, filters.accountStatus, debouncedSearch]
   );
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     setErrorMessage("");
     try {
@@ -46,11 +46,11 @@ const UsersManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params]);
 
   useEffect(() => {
     loadUsers();
-  }, [debouncedSearch, filters.role, filters.accountStatus, filters.page]);
+  }, [loadUsers]);
 
   const handleFilterChange = (field, value) => {
     setFilters((current) => ({
@@ -60,10 +60,10 @@ const UsersManagementPage = () => {
     }));
   };
 
-  const handleToggleStatus = async (id, status) => {
+  const handleToggleStatus = async (id, status, reason) => {
     setUpdatingUserId(id);
     try {
-      await updateUserStatus(id, { status });
+      await updateUserStatus(id, { status, reason });
       toast.success(`User ${status === "SUSPENDED" ? "suspended" : "activated"} successfully`);
       await loadUsers();
     } catch (error) {

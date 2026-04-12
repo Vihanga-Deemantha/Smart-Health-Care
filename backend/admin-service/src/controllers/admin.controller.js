@@ -31,7 +31,12 @@ export const handleRejectDoctor = asyncHandler(async (req, res) => {
 });
 
 export const handleUpdateUserStatus = asyncHandler(async (req, res) => {
-  const user = await updateUserStatus(req.params.id, req.body.status, req.user.userId);
+  const user = await updateUserStatus(
+    req.params.id,
+    req.body.status,
+    req.user.userId,
+    req.body.reason
+  );
   sendResponse(res, 200, "User status updated successfully", { user });
 });
 

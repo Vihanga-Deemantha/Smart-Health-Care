@@ -36,11 +36,16 @@ export const handleRejectDoctorInternal = asyncHandler(async (req, res) => {
     req.body.adminUserId,
     req.body.reason
   );
-  sendResponse(res, 200, "Doctor rejected successfully", { user });
+  sendResponse(res, 200, "Doctor changes requested successfully", { user });
 });
 
 export const handleUpdateUserStatusInternal = asyncHandler(async (req, res) => {
-  const user = await updateUserStatusInternal(req.params.id, req.body.status);
+  const user = await updateUserStatusInternal(
+    req.params.id,
+    req.body.status,
+    req.body.adminUserId,
+    req.body.reason
+  );
   sendResponse(res, 200, "User status updated successfully", { user });
 });
 

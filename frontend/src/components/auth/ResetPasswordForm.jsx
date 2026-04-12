@@ -35,26 +35,29 @@ const ResetPasswordForm = ({ defaultEmail = "", onSubmit, loading }) => {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-      {fields.map(({ name, label, icon: Icon, type, ph }) => (
-        <div key={name}>
-          <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest" style={{ color: "#334155" }}>
-            <Icon size={11} style={{ color: "#2F80ED" }} />
-            {label}
-          </label>
-          <input
-            {...register(name)}
-            type={type}
-            className="w-full rounded-xl px-4 py-3.5 text-sm outline-none"
-            style={fieldStyle(name)}
-            placeholder={ph}
-            onFocus={() => setFocused(name)}
-            onBlur={() => setFocused(null)}
-          />
-          {errors[name] && <p className="mt-1.5 text-xs font-semibold" style={{ color: "#EB5757" }}>{errors[name].message}</p>}
-          {/* Only show strength hint after password field */}
-          {name === "newPassword" && <div className="mt-3"><PasswordStrengthHint value={password} /></div>}
-        </div>
-      ))}
+      {fields.map(({ name, label, icon, type, ph }) => {
+        const IconComponent = icon;
+
+        return (
+          <div key={name}>
+            <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest" style={{ color: "#334155" }}>
+              <IconComponent size={11} style={{ color: "#2F80ED" }} />
+              {label}
+            </label>
+            <input
+              {...register(name)}
+              type={type}
+              className="w-full rounded-xl px-4 py-3.5 text-sm outline-none"
+              style={fieldStyle(name)}
+              placeholder={ph}
+              onFocus={() => setFocused(name)}
+              onBlur={() => setFocused(null)}
+            />
+            {errors[name] && <p className="mt-1.5 text-xs font-semibold" style={{ color: "#EB5757" }}>{errors[name].message}</p>}
+            {name === "newPassword" && <div className="mt-3"><PasswordStrengthHint value={password} /></div>}
+          </div>
+        );
+      })}
 
       {/* Confirm password */}
       <div>

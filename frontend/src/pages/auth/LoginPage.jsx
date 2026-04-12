@@ -30,7 +30,7 @@ const LoginPage = () => {
           : user?.role === "DOCTOR"
             ? "/doctor"
             : user?.role === "PATIENT"
-              ? "/patient"
+              ? "/dashboard"
               : "/";
 
       const nextPath =

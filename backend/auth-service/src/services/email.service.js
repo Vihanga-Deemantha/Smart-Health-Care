@@ -13,12 +13,12 @@ const transporter = nodemailer.createTransport({
 const getOtpEmailTemplate = ({ otp, purpose }) => {
   const isVerification = purpose === "EMAIL_VERIFY";
   const previewText = isVerification
-    ? "Use this one-time password to verify your Smart Health Care account."
-    : "Use this one-time password to reset your Smart Health Care password.";
+    ? "Use this one-time password to verify your Healio smart health care account."
+    : "Use this one-time password to reset your Healio smart health care password.";
   const title = isVerification ? "Confirm Your Email Address" : "Reset Your Password";
   const intro = isVerification
-    ? "Welcome to Smart Health Care. Use the one-time password below to verify your email address and finish setting up your account."
-    : "We received a request to reset your Smart Health Care password. Use the one-time password below to continue securely.";
+    ? "Welcome to Healio smart health care. Use the one-time password below to verify your email address and finish setting up your account."
+    : "We received a request to reset your Healio smart health care password. Use the one-time password below to continue securely.";
   const supportCopy = isVerification
     ? "If you did not create this account, you can safely ignore this email."
     : "If you did not request a password reset, you can safely ignore this email and your password will remain unchanged.";
@@ -47,7 +47,7 @@ const getOtpEmailTemplate = ({ otp, purpose }) => {
                 <tr>
                   <td style="background:linear-gradient(135deg,#0f5c78 0%,#128b8a 100%);padding:32px 40px 28px;color:#ffffff;">
                     <div style="font-size:12px;letter-spacing:1.8px;text-transform:uppercase;opacity:0.82;font-weight:700;">
-                      Smart Health Care
+                      Healio smart health care
                     </div>
                     <div style="margin-top:14px;font-size:30px;line-height:1.25;font-weight:700;">
                       ${title}
@@ -89,7 +89,7 @@ const getOtpEmailTemplate = ({ otp, purpose }) => {
                 <tr>
                   <td style="border-top:1px solid #e2edf1;padding:22px 40px 30px;background-color:#fbfdfe;">
                     <div style="font-size:13px;line-height:1.7;color:#79909c;">
-                      This is an automated security email from Smart Health Care. Please do not reply directly to this message.
+                      This is an automated security email from Healio smart health care. Please do not reply directly to this message.
                     </div>
                   </td>
                 </tr>

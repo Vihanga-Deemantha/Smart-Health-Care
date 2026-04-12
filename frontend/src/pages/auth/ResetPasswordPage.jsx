@@ -32,14 +32,14 @@ const ResetPasswordPage = () => {
 
   return (
     <AuthLayout
-      title="Create a fresh password"
-      description="Enter your reset code and choose a new password for your account."
+      title="Create a New Password"
+      description="Enter your OTP code and choose a new secure password for your Healio account."
       footer={
-        <p className="text-sm text-slate-600">
+        <p className="text-xs" style={{ color: "#64748b" }}>
           Need a new OTP?{" "}
-          <Link to="/forgot-password" className="font-semibold text-cyan-700">
-            Send another one
-          </Link>
+          <a href="/forgot-password" className="font-bold" style={{ color: "#2F80ED" }}>
+            Send another
+          </a>
         </p>
       }
     >

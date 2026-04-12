@@ -46,18 +46,18 @@ const LoginPage = () => {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      description="Sign in to continue with your Smart Care Health account."
+      title="Welcome Back"
+      description="Sign in to your Healio account to access your clinical workspace."
       footer={
-        <div className="flex items-center justify-between gap-4 text-sm text-slate-600">
-          <Link to="/forgot-password" className="font-semibold text-cyan-700">
+        <div className="flex items-center justify-between gap-4 text-sm">
+          <a href="/forgot-password" className="text-xs font-bold transition-opacity hover:opacity-70" style={{ color: "#2F80ED" }}>
             Forgot password?
-          </Link>
-          <p>
-            Need an account?{" "}
-            <Link to="/register" className="font-semibold text-cyan-700">
+          </a>
+          <p className="text-xs" style={{ color: "#64748b" }}>
+            No account?{" "}
+            <a href="/register" className="font-bold" style={{ color: "#2F80ED" }}>
               Register now
-            </Link>
+            </a>
           </p>
         </div>
       }

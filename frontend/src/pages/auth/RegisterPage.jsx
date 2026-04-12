@@ -82,29 +82,36 @@ const RegisterPage = () => {
 
   return (
     <AuthLayout
-      title="Create your account"
-      description="Register as a patient or doctor, then complete email verification before moving into the platform."
+      title="Create Your Account"
+      description="Join Healio as a patient or doctor to access your secure clinical workspace."
       footer={
-        <p className="text-sm text-slate-600">
+        <p className="text-xs" style={{ color: "#64748b" }}>
           Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-cyan-700">
+          <a href="/login" className="font-bold" style={{ color: "#2F80ED" }}>
             Sign in
-          </Link>
+          </a>
         </p>
       }
     >
-      <div className="mb-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+      {/* Role Tab Switcher */}
+      <div
+        className="mb-6 grid grid-cols-2 rounded-xl p-1"
+        style={{ background: "rgba(47,128,237,0.06)", border: "1px solid rgba(47,128,237,0.12)" }}
+      >
         {[
-          ["PATIENT", "Patient Registration"],
-          ["DOCTOR", "Doctor Registration"]
+          ["PATIENT", "Patient"],
+          ["DOCTOR", "Doctor"],
         ].map(([value, label]) => (
           <button
             key={value}
             type="button"
             onClick={() => setTab(value)}
-            className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-              tab === value ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
-            }`}
+            className="rounded-lg px-4 py-2.5 text-sm font-bold transition-all duration-200"
+            style={{
+              background: tab === value ? "linear-gradient(135deg, #2F80ED, #56CCF2)" : "transparent",
+              color: tab === value ? "white" : "#64748b",
+              boxShadow: tab === value ? "0 4px 14px rgba(47,128,237,0.3)" : "none",
+            }}
           >
             {label}
           </button>

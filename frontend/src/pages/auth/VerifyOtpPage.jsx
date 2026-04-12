@@ -41,14 +41,14 @@ const VerifyOtpPage = () => {
 
   return (
     <AuthLayout
-      title="Verify your email"
-      description="Enter the six-digit code sent to your email address."
+      title="Verify Your Email"
+      description="Enter the 6-digit code we sent to your email address to activate your Healio account."
       footer={
-        <p className="text-sm text-slate-600">
+        <p className="text-xs" style={{ color: "#64748b" }}>
           Need to start over?{" "}
-          <Link to="/register" className="font-semibold text-cyan-700">
+          <a href="/register" className="font-bold" style={{ color: "#2F80ED" }}>
             Back to registration
-          </Link>
+          </a>
         </p>
       }
     >

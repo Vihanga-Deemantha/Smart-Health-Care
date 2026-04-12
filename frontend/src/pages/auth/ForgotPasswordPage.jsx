@@ -26,14 +26,14 @@ const ForgotPasswordPage = () => {
 
   return (
     <AuthLayout
-      title="Reset your password"
-      description="We will send a one-time code so you can create a new password."
+      title="Reset Your Password"
+      description="Enter your registered email and we'll send you a one-time code to reset your Healio password."
       footer={
-        <p className="text-sm text-slate-600">
-          Remembered your password?{" "}
-          <Link to="/login" className="font-semibold text-cyan-700">
+        <p className="text-xs" style={{ color: "#64748b" }}>
+          Remembered it?{" "}
+          <a href="/login" className="font-bold" style={{ color: "#2F80ED" }}>
             Back to sign in
-          </Link>
+          </a>
         </p>
       }
     >

@@ -1,63 +1,167 @@
-import { ShieldCheck, Stethoscope, UserRoundCheck } from "lucide-react";
-import Logo from "../common/Logo.jsx";
-import heroImage from "../../assets/hero.png";
+import { motion } from "framer-motion";
+import { ShieldCheck, Stethoscope, UserRoundCheck, HeartPulse } from "lucide-react";
 
 const highlights = [
   {
     icon: ShieldCheck,
-    title: "Security-led access",
-    text: "Protected sessions, OTP verification, and operational controls support a safer sign-in experience."
+    accent: "#56CCF2",
+    title: "Security-First Access",
+    text: "Protected sessions, OTP verification, and role-based gateways keep your data safe.",
   },
   {
     icon: Stethoscope,
-    title: "Built for clinical teams",
-    text: "Patient onboarding and doctor review flows are shaped for real healthcare operations."
+    accent: "#2F80ED",
+    title: "Built for Clinical Teams",
+    text: "Patient onboarding and doctor workflows designed for real healthcare operations.",
   },
   {
     icon: UserRoundCheck,
-    title: "Operational clarity",
-    text: "Registration, approvals, and security activity stay connected inside one interface."
-  }
+    accent: "#27AE60",
+    title: "One Platform, Every Role",
+    text: "Patients, doctors, and administrators — all in a single, secure workspace.",
+  },
+];
+
+const stats = [
+  { value: "25K+", label: "Patients" },
+  { value: "99.9%", label: "Uptime" },
+  { value: "HIPAA", label: "Compliant" },
 ];
 
 const AuthSidePanel = () => {
   return (
-    <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/80 p-8 shadow-[0_40px_100px_-45px_rgba(6,182,212,0.55)] lg:p-10">
-      <div className="absolute inset-x-0 top-0 h-40 bg-linear-to-r from-cyan-400/20 via-blue-500/15 to-emerald-400/15 blur-3xl" />
-      <div className="relative">
-        <Logo />
-        <p className="mt-12 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">
-          Trusted healthcare access
-        </p>
-        <h1 className="mt-6 max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Secure digital access for every care journey.
-        </h1>
-        <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-          Smart Care Health gives patients, doctors, and administrators a cleaner way to access care workflows and platform operations.
-        </p>
+    <div
+      className="relative overflow-hidden rounded-3xl p-8 lg:p-10"
+      style={{
+        background: "linear-gradient(145deg, #0B1F3A 0%, #071324 60%, #0d1e35 100%)",
+        border: "1px solid rgba(47,128,237,0.2)",
+        boxShadow: "0 50px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(86,204,242,0.06)",
+      }}
+    >
+      {/* Animated glow blobs */}
+      <motion.div
+        animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.18, 0.1] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -top-24 -left-24 w-80 h-80 rounded-full blur-3xl pointer-events-none"
+        style={{ background: "#2F80ED" }}
+      />
+      <motion.div
+        animate={{ scale: [1.1, 1, 1.1], opacity: [0.05, 0.12, 0.05] }}
+        transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        className="absolute -bottom-20 right-4 w-64 h-64 rounded-full blur-3xl pointer-events-none"
+        style={{ background: "#56CCF2" }}
+      />
 
-        <div className="mt-8 overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/70">
-          <img
-            src={heroImage}
-            alt="Care team reviewing digital health information"
-            className="h-48 w-full object-cover"
-          />
-        </div>
+      <div className="relative z-10">
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-center gap-3"
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-2xl"
+            style={{
+              background: "linear-gradient(135deg, #2F80ED, #56CCF2)",
+              boxShadow: "0 0 28px rgba(47,128,237,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
+            }}
+          >
+            <HeartPulse size={24} className="text-white" strokeWidth={2.5} />
+          </div>
+          <div>
+            <span className="text-xl font-black text-white tracking-tight block leading-none">Healio</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.35em] block mt-0.5" style={{ color: "#56CCF2" }}>Medical Platform</span>
+          </div>
+        </motion.div>
 
-        <div className="mt-10 space-y-4">
-          {highlights.map(({ icon: Icon, title, text }) => (
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+          className="mt-8"
+        >
+          <span
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest"
+            style={{ background: "rgba(86,204,242,0.12)", color: "#56CCF2", border: "1px solid rgba(86,204,242,0.25)" }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[#56CCF2] inline-block animate-pulse" />
+            Trusted Clinical Access
+          </span>
+        </motion.div>
+
+        {/* Headline */}
+        <motion.h1
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+          className="mt-5 text-3xl font-black text-white leading-[1.15] tracking-tight sm:text-4xl"
+        >
+          Secure digital access<br />
+          <span style={{ color: "#56CCF2" }}>for every care journey.</span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+          className="mt-4 text-[15px] leading-relaxed"
+          style={{ color: "rgba(255,255,255,0.55)" }}
+        >
+          Healio gives patients, doctors, and administrators a secure, streamlined gateway to their healthcare workflows.
+        </motion.p>
+
+        {/* Stats pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
+          className="mt-6 flex gap-3"
+        >
+          {stats.map(({ value, label }) => (
             <div
-              key={title}
-              className="rounded-[24px] border border-white/10 bg-white/5 p-5 backdrop-blur-md"
+              key={label}
+              className="flex-1 rounded-2xl px-3 py-3 text-center"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-800 text-cyan-300">
-                  <Icon size={20} />
-                </div>
-                <h3 className="text-lg font-semibold text-white">{title}</h3>
-              </div>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{text}</p>
+              <p className="text-lg font-black text-white leading-none">{value}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</p>
             </div>
+          ))}
+        </motion.div>
+
+        {/* Divider */}
+        <div className="mt-8 mb-6 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+
+        {/* Highlight Cards */}
+        <div className="space-y-3">
+          {highlights.map(({ icon: Icon, accent, title, text }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.3 + i * 0.08 }}
+              className="flex items-start gap-4 rounded-2xl p-4 transition-all duration-300"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              <div
+                className="h-10 w-10 flex items-center justify-center rounded-xl flex-shrink-0 mt-0.5"
+                style={{ background: `${accent}15`, border: `1px solid ${accent}25` }}
+              >
+                <Icon size={17} style={{ color: accent }} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white leading-tight">{title}</h3>
+                <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{text}</p>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>

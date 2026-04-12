@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-chatbot-service
+  namespace: smart-health
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-chatbot-service
+  template:
+    metadata:
+      labels:
+        app: ai-chatbot-service
+    spec:
+      containers:
+        - name: ai-chatbot-service
+          image: smart-health-care-ai-chatbot-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5031
+          env:
+            - name: PORT
+              value: "5031"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: NODE_ENV
+            - name: CLIENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLIENT_URL
+            - name: GEMINI_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: GEMINI_MODEL
+            - name: JWT_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: JWT_ACCESS_SECRET
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: GEMINI_API_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5031
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5031
+            initialDelaySeconds: 20
+            periodSeconds: 20

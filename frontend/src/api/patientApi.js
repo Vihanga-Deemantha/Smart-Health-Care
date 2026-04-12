@@ -7,12 +7,13 @@ export const uploadPatientReport = (file) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  return api.post("/patients/reports", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data"
-    }
-  });
+  return api.post("/patients/reports", formData);
 };
+
+export const deletePatientReport = ({ publicId, url }) =>
+  api.delete("/patients/reports", {
+    data: { publicId, url }
+  });
 
 export const fetchPatientReports = () => api.get("/patients/reports");
 export const fetchPatientHistory = (params) => api.get("/patients/history", { params });

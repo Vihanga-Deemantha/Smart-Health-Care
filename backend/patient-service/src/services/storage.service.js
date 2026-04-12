@@ -61,3 +61,64 @@ export const uploadReportBuffer = async ({ buffer, filename }) => {
     Readable.from(buffer).pipe(stream);
   });
 };
+
+const destroyCloudinaryAsset = async ({ publicId, resourceType }) => {
+  return await new Promise((resolve, reject) => {
+    cloudinary.uploader.destroy(
+      publicId,
+      {
+        resource_type: resourceType,
+        invalidate: true
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(result);
+      }
+    );
+  });
+};
+
+export const deleteReportByPublicId = async ({ publicId, resourceType = null }) => {
+  ensureCloudinaryConfig();
+
+  const resourceTypes = resourceType ? [resourceType] : ["image", "raw", "video"];
+  let notFoundCount = 0;
+  let lastFailure = null;
+
+  for (const currentType of resourceTypes) {
+    try {
+      const result = await destroyCloudinaryAsset({
+        publicId,
+        resourceType: currentType
+      });
+
+      if (result?.result === "ok") {
+        return result;
+      }
+
+      if (result?.result === "not found") {
+        notFoundCount += 1;
+        continue;
+      }
+
+      lastFailure = result;
+    } catch (error) {
+      lastFailure = error;
+    }
+  }
+
+  if (notFoundCount === resourceTypes.length) {
+    return { result: "not found" };
+  }
+
+  throw new AppError(
+    "Failed to delete report from storage",
+    502,
+    "REPORT_DELETE_FAILED",
+    lastFailure
+  );
+};

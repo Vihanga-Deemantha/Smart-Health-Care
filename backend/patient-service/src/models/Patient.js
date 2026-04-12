@@ -5,6 +5,7 @@ const reportSchema = new mongoose.Schema(
     filename: { type: String, required: true, trim: true },
     url: { type: String, required: true, trim: true },
     publicId: { type: String, default: null },
+    resourceType: { type: String, default: null },
     mimeType: { type: String, default: null },
     size: { type: Number, default: null },
     uploadDate: { type: Date, default: Date.now }

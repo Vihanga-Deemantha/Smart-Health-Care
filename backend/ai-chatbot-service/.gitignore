@@ -8,7 +8,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-postman.json
-gateway.err.log
-gateway.out.log
 .DS_Store

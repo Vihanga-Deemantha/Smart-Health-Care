@@ -10,23 +10,15 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const getOtpEmailTemplate = ({ otp, purpose }) => {
-  const isVerification = purpose === "EMAIL_VERIFY";
-  const previewText = isVerification
-    ? "Use this one-time password to verify your Healio smart health care account."
-    : "Use this one-time password to reset your Healio smart health care password.";
-  const title = isVerification ? "Confirm Your Email Address" : "Reset Your Password";
-  const intro = isVerification
-    ? "Welcome to Healio smart health care. Use the one-time password below to verify your email address and finish setting up your account."
-    : "We received a request to reset your Healio smart health care password. Use the one-time password below to continue securely.";
-  const supportCopy = isVerification
-    ? "If you did not create this account, you can safely ignore this email."
-    : "If you did not request a password reset, you can safely ignore this email and your password will remain unchanged.";
-
-  const text = isVerification
-    ? `Your verification OTP is ${otp}. It expires in 5 minutes.`
-    : `Your password reset OTP is ${otp}. It expires in 5 minutes.`;
-
+const buildEmailTemplate = ({
+  previewText,
+  title,
+  intro,
+  sectionLabel,
+  sectionTitle,
+  sectionBody,
+  footerNote
+}) => {
   const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -63,13 +55,13 @@ const getOtpEmailTemplate = ({ otp, purpose }) => {
                       <tr>
                         <td align="center" style="padding:28px 24px;">
                           <div style="font-size:13px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#537181;">
-                            One-Time Password
+                            ${sectionLabel}
                           </div>
-                          <div style="margin-top:16px;font-size:36px;line-height:1;letter-spacing:10px;font-weight:800;color:#0f5c78;">
-                            ${otp}
+                          <div style="margin-top:16px;font-size:28px;line-height:1.25;font-weight:800;color:#0f5c78;">
+                            ${sectionTitle}
                           </div>
-                          <div style="margin-top:16px;font-size:14px;line-height:1.6;color:#5b7684;">
-                            This code expires in <strong>5 minutes</strong> and can be used only once.
+                          <div style="margin-top:16px;font-size:14px;line-height:1.8;color:#5b7684;">
+                            ${sectionBody}
                           </div>
                         </td>
                       </tr>
@@ -78,18 +70,15 @@ const getOtpEmailTemplate = ({ otp, purpose }) => {
                 </tr>
                 <tr>
                   <td style="padding:0 40px 32px;">
-                    <div style="font-size:15px;line-height:1.75;color:#46606d;">
-                      Enter this code in the app to continue. For your security, please do not share this OTP with anyone.
-                    </div>
-                    <div style="margin-top:18px;padding:16px 18px;border-radius:14px;background-color:#f4f8fb;font-size:14px;line-height:1.7;color:#607784;">
-                      ${supportCopy}
+                    <div style="padding:16px 18px;border-radius:14px;background-color:#f4f8fb;font-size:14px;line-height:1.7;color:#607784;">
+                      ${footerNote}
                     </div>
                   </td>
                 </tr>
                 <tr>
                   <td style="border-top:1px solid #e2edf1;padding:22px 40px 30px;background-color:#fbfdfe;">
                     <div style="font-size:13px;line-height:1.7;color:#79909c;">
-                      This is an automated security email from Healio smart health care. Please do not reply directly to this message.
+                      This is an automated service email from Healio smart health care. Please do not reply directly to this message.
                     </div>
                   </td>
                 </tr>
@@ -101,7 +90,41 @@ const getOtpEmailTemplate = ({ otp, purpose }) => {
     </html>
   `;
 
-  return { text, html };
+  return {
+    html,
+    text: `${title}\n\n${intro}\n\n${sectionTitle}\n${sectionBody.replace(/<[^>]*>/g, "")}\n\n${footerNote.replace(/<[^>]*>/g, "")}`
+  };
+};
+
+const sendEmail = async ({ to, subject, text, html }) => {
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to,
+    subject,
+    text,
+    html
+  });
+};
+
+const getOtpEmailTemplate = ({ otp, purpose }) => {
+  const isVerification = purpose === "EMAIL_VERIFY";
+
+  return buildEmailTemplate({
+    previewText: isVerification
+      ? "Use this one-time password to verify your Healio smart health care account."
+      : "Use this one-time password to reset your Healio smart health care password.",
+    title: isVerification ? "Confirm Your Email Address" : "Reset Your Password",
+    intro: isVerification
+      ? "Welcome to Healio smart health care. Use the one-time password below to verify your email address and finish setting up your account."
+      : "We received a request to reset your Healio smart health care password. Use the one-time password below to continue securely.",
+    sectionLabel: "One-Time Password",
+    sectionTitle: otp,
+    sectionBody:
+      "This code expires in <strong>5 minutes</strong> and can be used only once. Enter it in the app to continue securely.",
+    footerNote: isVerification
+      ? "If you did not create this account, you can safely ignore this email."
+      : "If you did not request a password reset, you can safely ignore this email and your password will remain unchanged."
+  });
 };
 
 export const sendOtpEmail = async (email, otp, purpose) => {
@@ -112,11 +135,115 @@ export const sendOtpEmail = async (email, otp, purpose) => {
 
   const { text, html } = getOtpEmailTemplate({ otp, purpose });
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+  await sendEmail({
     to: email,
     subject,
     text,
     html
   });
+};
+
+export const sendPatientWelcomeEmail = async ({ email, fullName }) => {
+  const { text, html } = buildEmailTemplate({
+    previewText: "Your Healio patient account is now active.",
+    title: "Welcome to Healio",
+    intro: `Hi ${fullName || "there"}, your patient account is now verified and ready to use.`,
+    sectionLabel: "Account Ready",
+    sectionTitle: "Welcome aboard",
+    sectionBody:
+      "You can now sign in to Healio, manage your health journey, and continue using the platform with a verified patient account.",
+    footerNote:
+      "If you notice any issue with your account setup, please contact the platform support team."
+  });
+
+  await sendEmail({
+    to: email,
+    subject: "Welcome to Healio",
+    text,
+    html
+  });
+};
+
+export const sendDoctorApprovedEmail = async ({ email, fullName }) => {
+  const { text, html } = buildEmailTemplate({
+    previewText: "Your doctor account has been approved.",
+    title: "Doctor Account Approved",
+    intro: `Hi ${fullName || "there"}, your verification review has been completed successfully.`,
+    sectionLabel: "Review Outcome",
+    sectionTitle: "Approval confirmed",
+    sectionBody:
+      "Your doctor account is now approved. You can sign in to Healio and begin accessing the doctor features available on the platform.",
+    footerNote:
+      "Thank you for completing the verification process. We are glad to have you on the platform."
+  });
+
+  await sendEmail({
+    to: email,
+    subject: "Your doctor account has been approved",
+    text,
+    html
+  });
+};
+
+export const sendDoctorRejectedEmail = async ({ email, fullName, reason }) => {
+  const reviewReason = reason?.trim() || "Your submitted documents could not be validated.";
+  const { text, html } = buildEmailTemplate({
+    previewText: "Your doctor verification submission needs attention.",
+    title: "Doctor Verification Update",
+    intro: `Hi ${fullName || "there"}, we reviewed your doctor registration submission.`,
+    sectionLabel: "Review Outcome",
+    sectionTitle: "Additional action needed",
+    sectionBody: `We could not approve the submission at this stage.<br /><br /><strong>Review note:</strong> ${reviewReason}<br /><br />Please prepare updated or valid supporting documents before trying again.`,
+    footerNote:
+      "If you believe this was a mistake, contact the administrative team and include the documents you submitted."
+  });
+
+  await sendEmail({
+    to: email,
+    subject: "Your doctor verification was not approved",
+    text,
+    html
+  });
+};
+
+export const sendAccountStatusEmail = async ({
+  email,
+  fullName,
+  status,
+  reason
+}) => {
+  const isSuspended = status === "SUSPENDED";
+  const normalizedReason = reason?.trim();
+  const { text, html } = buildEmailTemplate({
+    previewText: isSuspended
+      ? "Your Healio account has been suspended."
+      : "Your Healio account has been reactivated.",
+    title: isSuspended ? "Account Suspended" : "Account Reactivated",
+    intro: `Hi ${fullName || "there"}, there has been an update to your Healio account status.`,
+    sectionLabel: "Status Update",
+    sectionTitle: isSuspended ? "Access temporarily restricted" : "Access restored",
+    sectionBody: isSuspended
+      ? `Your account has been suspended by an administrator. You will not be able to use the platform until the restriction is lifted.${normalizedReason ? `<br /><br /><strong>Administrative note:</strong> ${normalizedReason}` : ""}`
+      : "Your account has been reactivated. You can now sign in and continue using the platform.",
+    footerNote: isSuspended
+      ? "If you need help understanding this action, please contact the administrative team."
+      : "If you still cannot sign in after this message, please contact support."
+  });
+
+  await sendEmail({
+    to: email,
+    subject: isSuspended
+      ? "Your Healio account has been suspended"
+      : "Your Healio account has been reactivated",
+    text,
+    html
+  });
+};
+
+export const sendEmailSafely = async (task, contextLabel) => {
+  try {
+    await task();
+  } catch (error) {
+    console.error(`Email delivery failed for ${contextLabel}:`, error.message);
+  }
 };

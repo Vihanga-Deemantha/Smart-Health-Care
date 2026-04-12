@@ -26,6 +26,10 @@ services:
       EMAIL_USER: ${EMAIL_USER:-change-me@example.com}
       EMAIL_PASS: ${EMAIL_PASS:-change-me}
       EMAIL_FROM: ${EMAIL_FROM:-change-me@example.com}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
+      CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-verification}
 
   admin-service:
     build:

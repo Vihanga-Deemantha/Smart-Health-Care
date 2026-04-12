@@ -1,6 +1,6 @@
 import { CalendarDays, HeartPulse, ShieldCheck, FileText, CreditCard, Bell, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import PortalLayout from "../../components/common/PortalLayout.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
 
@@ -14,6 +14,7 @@ const cardPop = {
 
 const PatientHomePage = () => {
   const { user } = useAuth();
+  const MotionDiv = Motion.div;
   const firstName = user?.fullName?.split(" ")[0] || "there";
 
   const highlights = [
@@ -55,31 +56,35 @@ const PatientHomePage = () => {
       <div className="mb-8">
         <p className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>Quick Actions</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {quickActions.map(({ icon: Icon, label, desc, to, accent }, i) => (
-            <motion.div key={label} variants={cardPop} initial="hidden" animate="visible" custom={i * 0.08}>
-              <Link
-                to={to}
-                className="group flex flex-col items-center text-center gap-2 rounded-xl p-4 transition-all duration-300 hover:-translate-y-0.5"
-                style={{
-                  background: `${accent}10`,
-                  border: `1px solid ${accent}22`,
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 10px 25px ${accent}22`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}
-              >
-                <div
-                  className="h-11 w-11 flex items-center justify-center rounded-xl"
-                  style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}
+          {quickActions.map(({ icon, label, desc, to, accent }, i) => {
+            const IconComponent = icon;
+
+            return (
+              <MotionDiv key={label} variants={cardPop} initial="hidden" animate="visible" custom={i * 0.08}>
+                <Link
+                  to={to}
+                  className="group flex flex-col items-center text-center gap-2 rounded-xl p-4 transition-all duration-300 hover:-translate-y-0.5"
+                  style={{
+                    background: `${accent}10`,
+                    border: `1px solid ${accent}22`,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 10px 25px ${accent}22`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}
                 >
-                  <Icon size={20} style={{ color: accent }} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white">{label}</p>
-                  <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{desc}</p>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+                  <div
+                    className="h-11 w-11 flex items-center justify-center rounded-xl"
+                    style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}
+                  >
+                    <IconComponent size={20} style={{ color: accent }} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">{label}</p>
+                    <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{desc}</p>
+                  </div>
+                </Link>
+              </MotionDiv>
+            );
+          })}
         </div>
       </div>
 
@@ -87,8 +92,11 @@ const PatientHomePage = () => {
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>Platform Benefits</p>
         <div className="grid gap-4 lg:grid-cols-3">
-          {highlights.map(({ icon: Icon, accent, title, text }, i) => (
-            <motion.div
+          {highlights.map(({ icon, accent, title, text }, i) => {
+            const IconComponent = icon;
+
+            return (
+            <MotionDiv
               key={title}
               variants={cardPop}
               initial="hidden"
@@ -106,12 +114,13 @@ const PatientHomePage = () => {
                 className="h-11 w-11 flex items-center justify-center rounded-xl mb-4"
                 style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}
               >
-                <Icon size={20} style={{ color: accent }} />
+                <IconComponent size={20} style={{ color: accent }} />
               </div>
               <h3 className="text-sm font-bold text-white mb-2">{title}</h3>
               <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{text}</p>
-            </motion.div>
-          ))}
+            </MotionDiv>
+            );
+          })}
         </div>
       </div>
     </PortalLayout>

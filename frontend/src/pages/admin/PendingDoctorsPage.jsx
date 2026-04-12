@@ -49,10 +49,10 @@ const PendingDoctorsPage = () => {
     setUpdatingId(id);
     try {
       await rejectDoctor(id, { reason });
-      toast.success("Doctor rejected successfully");
+      toast.success("Doctor changes requested successfully");
       await loadDoctors();
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to reject doctor."));
+      toast.error(getApiErrorMessage(error, "Unable to request changes."));
     } finally {
       setUpdatingId(null);
     }

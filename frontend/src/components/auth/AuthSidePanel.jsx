@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import { ShieldCheck, Stethoscope, UserRoundCheck, HeartPulse } from "lucide-react";
 
 const highlights = [
@@ -39,13 +39,13 @@ const AuthSidePanel = () => {
       }}
     >
       {/* Animated glow blobs */}
-      <motion.div
+      <Motion.div
         animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.18, 0.1] }}
         transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         className="absolute -top-24 -left-24 w-80 h-80 rounded-full blur-3xl pointer-events-none"
         style={{ background: "#2F80ED" }}
       />
-      <motion.div
+      <Motion.div
         animate={{ scale: [1.1, 1, 1.1], opacity: [0.05, 0.12, 0.05] }}
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
         className="absolute -bottom-20 right-4 w-64 h-64 rounded-full blur-3xl pointer-events-none"
@@ -54,7 +54,7 @@ const AuthSidePanel = () => {
 
       <div className="relative z-10">
         {/* Logo */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -73,10 +73,10 @@ const AuthSidePanel = () => {
             <span className="text-xl font-black text-white tracking-tight block leading-none">Healio</span>
             <span className="text-[10px] font-extrabold uppercase tracking-[0.35em] block mt-0.5" style={{ color: "#56CCF2" }}>Medical Platform</span>
           </div>
-        </motion.div>
+        </Motion.div>
 
         {/* Badge */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
@@ -89,10 +89,10 @@ const AuthSidePanel = () => {
             <span className="h-1.5 w-1.5 rounded-full bg-[#56CCF2] inline-block animate-pulse" />
             Trusted Clinical Access
           </span>
-        </motion.div>
+        </Motion.div>
 
         {/* Headline */}
-        <motion.h1
+        <Motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
@@ -100,9 +100,9 @@ const AuthSidePanel = () => {
         >
           Secure digital access<br />
           <span style={{ color: "#56CCF2" }}>for every care journey.</span>
-        </motion.h1>
+        </Motion.h1>
 
-        <motion.p
+        <Motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
@@ -110,10 +110,10 @@ const AuthSidePanel = () => {
           style={{ color: "rgba(255,255,255,0.55)" }}
         >
           Healio gives patients, doctors, and administrators a secure, streamlined gateway to their healthcare workflows.
-        </motion.p>
+        </Motion.p>
 
         {/* Stats pills */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
@@ -132,15 +132,18 @@ const AuthSidePanel = () => {
               <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</p>
             </div>
           ))}
-        </motion.div>
+        </Motion.div>
 
         {/* Divider */}
         <div className="mt-8 mb-6 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
 
         {/* Highlight Cards */}
         <div className="space-y-3">
-          {highlights.map(({ icon: Icon, accent, title, text }, i) => (
-            <motion.div
+          {highlights.map(({ icon, accent, title, text }, i) => {
+            const IconComponent = icon;
+
+            return (
+            <Motion.div
               key={title}
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
@@ -155,14 +158,15 @@ const AuthSidePanel = () => {
                 className="h-10 w-10 flex items-center justify-center rounded-xl flex-shrink-0 mt-0.5"
                 style={{ background: `${accent}15`, border: `1px solid ${accent}25` }}
               >
-                <Icon size={17} style={{ color: accent }} />
+                <IconComponent size={17} style={{ color: accent }} />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white leading-tight">{title}</h3>
                 <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{text}</p>
               </div>
-            </motion.div>
-          ))}
+            </Motion.div>
+            );
+          })}
         </div>
       </div>
     </div>

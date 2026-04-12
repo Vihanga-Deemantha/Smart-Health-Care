@@ -103,9 +103,13 @@ export const rejectDoctorInAuth = async (doctorUserId, adminUserId, reason) => {
   }
 };
 
-export const updateUserStatusInAuth = async (userId, status) => {
+export const updateUserStatusInAuth = async (userId, status, adminUserId, reason) => {
   try {
-    const { data } = await authClient.patch(`/users/${userId}/status`, { status });
+    const { data } = await authClient.patch(`/users/${userId}/status`, {
+      status,
+      adminUserId,
+      reason
+    });
     return data.data.user;
   } catch (error) {
     toUpstreamError(error);

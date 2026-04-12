@@ -1,7 +1,34 @@
+import { useState } from "react";
 import { formatDate } from "../../utils/formatDate.js";
 import StatusBadge from "../common/StatusBadge.jsx";
 
 const UserTable = ({ users, updatingUserId, onToggleStatus }) => {
+  const [statusDraft, setStatusDraft] = useState(null);
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
+
+  const openSuspendDialog = (user) => {
+    setStatusDraft(user);
+    setReason("");
+    setReasonError("");
+  };
+
+  const closeSuspendDialog = () => {
+    setStatusDraft(null);
+    setReason("");
+    setReasonError("");
+  };
+
+  const confirmSuspension = () => {
+    if (!reason.trim()) {
+      setReasonError("Suspension reason is required.");
+      return;
+    }
+
+    onToggleStatus(statusDraft._id, "SUSPENDED", reason.trim());
+    closeSuspendDialog();
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:hidden">
@@ -31,12 +58,18 @@ const UserTable = ({ users, updatingUserId, onToggleStatus }) => {
                   <dd className="mt-1">
                     <StatusBadge value={user.accountStatus} />
                   </dd>
+                  {user.accountStatusReason ? (
+                    <p className="mt-1 text-xs text-slate-500">{user.accountStatusReason}</p>
+                  ) : null}
                 </div>
                 <div>
                   <dt className="text-slate-500">Doctor review</dt>
                   <dd className="mt-1">
                     <StatusBadge value={user.doctorVerificationStatus} />
                   </dd>
+                  {user.doctorRejectionReason ? (
+                    <p className="mt-1 text-xs text-slate-500">{user.doctorRejectionReason}</p>
+                  ) : null}
                 </div>
                 <div>
                   <dt className="text-slate-500">Created</dt>
@@ -47,7 +80,11 @@ const UserTable = ({ users, updatingUserId, onToggleStatus }) => {
               <button
                 type="button"
                 disabled={updatingUserId === user._id}
-                onClick={() => onToggleStatus(user._id, nextStatus)}
+                onClick={() =>
+                  nextStatus === "SUSPENDED"
+                    ? openSuspendDialog(user)
+                    : onToggleStatus(user._id, nextStatus)
+                }
                 className="mt-4 w-full rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {nextStatus === "SUSPENDED" ? "Suspend user" : "Activate user"}
@@ -91,16 +128,30 @@ const UserTable = ({ users, updatingUserId, onToggleStatus }) => {
                     </td>
                     <td className="px-5 py-4">
                       <StatusBadge value={user.accountStatus} />
+                      {user.accountStatusReason ? (
+                        <div className="mt-1 max-w-48 text-xs text-slate-500">
+                          {user.accountStatusReason}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-5 py-4">
                       <StatusBadge value={user.doctorVerificationStatus} />
+                      {user.doctorRejectionReason ? (
+                        <div className="mt-1 max-w-48 text-xs text-slate-500">
+                          {user.doctorRejectionReason}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-5 py-4">{formatDate(user.createdAt)}</td>
                     <td className="px-5 py-4">
                       <button
                         type="button"
                         disabled={updatingUserId === user._id}
-                        onClick={() => onToggleStatus(user._id, nextStatus)}
+                        onClick={() =>
+                          nextStatus === "SUSPENDED"
+                            ? openSuspendDialog(user)
+                            : onToggleStatus(user._id, nextStatus)
+                        }
                         className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
                       >
                         {nextStatus === "SUSPENDED" ? "Suspend" : "Activate"}
@@ -113,6 +164,53 @@ const UserTable = ({ users, updatingUserId, onToggleStatus }) => {
           </table>
         </div>
       </div>
+
+      {statusDraft ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 px-4">
+          <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-slate-900 p-6 shadow-[0_30px_90px_-40px_rgba(6,182,212,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-300">
+              Suspend Account
+            </p>
+            <h3 className="mt-3 text-xl font-semibold text-white">
+              Suspend {statusDraft.fullName}?
+            </h3>
+            <p className="mt-2 text-sm text-slate-400">
+              Add a clear administrative reason. This will be stored with the account status update
+              and included in the notification email.
+            </p>
+
+            <textarea
+              value={reason}
+              onChange={(event) => {
+                setReason(event.target.value);
+                setReasonError("");
+              }}
+              rows={5}
+              placeholder="Explain why this account is being suspended"
+              className="mt-5 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500"
+            />
+            {reasonError ? <p className="mt-2 text-sm text-rose-300">{reasonError}</p> : null}
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={updatingUserId === statusDraft._id}
+                onClick={confirmSuspension}
+                className="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Confirm suspension
+              </button>
+              <button
+                type="button"
+                onClick={closeSuspendDialog}
+                className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-semibold text-white"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

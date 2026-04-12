@@ -1,5 +1,37 @@
 import mongoose from "mongoose";
 
+const verificationDocumentSchema = new mongoose.Schema(
+  {
+    filename: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    url: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    publicId: {
+      type: String,
+      default: null
+    },
+    mimeType: {
+      type: String,
+      default: null
+    },
+    size: {
+      type: Number,
+      default: null
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     fullName: {
@@ -37,9 +69,33 @@ const userSchema = new mongoose.Schema(
       enum: ["PENDING", "ACTIVE", "SUSPENDED", "LOCKED"],
       default: "PENDING"
     },
+    identityType: {
+      type: String,
+      enum: ["NIC", "PASSPORT", null],
+      default: null
+    },
+    nic: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      default: undefined
+    },
+    passportNumber: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      default: undefined
+    },
+    nationality: {
+      type: String,
+      trim: true,
+      default: null
+    },
     doctorVerificationStatus: {
       type: String,
-      enum: ["NOT_REQUIRED", "PENDING", "APPROVED", "REJECTED"],
+      enum: ["NOT_REQUIRED", "PENDING", "APPROVED", "CHANGES_REQUESTED", "REJECTED"],
       default: "NOT_REQUIRED"
     },
     medicalLicenseNumber: {
@@ -60,6 +116,14 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
+    verificationDocuments: {
+      type: [verificationDocumentSchema],
+      default: []
+    },
+    verificationLinks: {
+      type: [{ type: String, trim: true }],
+      default: []
+    },
     doctorReviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       default: null
@@ -69,6 +133,18 @@ const userSchema = new mongoose.Schema(
       default: null
     },
     doctorRejectionReason: {
+      type: String,
+      default: null
+    },
+    accountStatusChangedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
+    accountStatusChangedAt: {
+      type: Date,
+      default: null
+    },
+    accountStatusReason: {
       type: String,
       default: null
     },

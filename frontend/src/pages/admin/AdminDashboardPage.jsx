@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import SectionHeading from "../../components/common/SectionHeading.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 import EmptyState from "../../components/common/EmptyState.jsx";
@@ -63,7 +63,7 @@ const AdminDashboardPage = () => {
         description="Monitor users, approvals, and recent platform activity from one dashboard."
       />
 
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -74,7 +74,7 @@ const AdminDashboardPage = () => {
         <StatsCard label="Pending doctors" value={stats.pendingDoctors} accent="from-amber-400 to-orange-400" />
         <StatsCard label="Active users" value={stats.activeUsers} accent="from-emerald-400 to-lime-400" />
         <StatsCard label="Suspended users" value={stats.suspendedUsers} accent="from-rose-400 to-orange-400" />
-      </motion.div>
+      </Motion.div>
 
       {errorMessage ? (
         <div className="rounded-[24px] border border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">

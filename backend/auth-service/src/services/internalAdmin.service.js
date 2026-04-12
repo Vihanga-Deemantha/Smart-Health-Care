@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 import AuthLog from "../models/AuthLog.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
+import { createAuthLogSafely } from "./audit.service.js";
+import {
+  sendAccountStatusEmail,
+  sendDoctorApprovedEmail,
+  sendDoctorRejectedEmail,
+  sendEmailSafely
+} from "./email.service.js";
 
 export const getAuthLogsInternal = async ({
   page = 1,
@@ -103,6 +110,8 @@ export const approveDoctorInternal = async (doctorUserId, adminUserId) => {
   if (!user) throw new AppError("Doctor user not found", 404);
   if (user.role !== "DOCTOR") throw new AppError("User is not a doctor", 400);
 
+  const previousDoctorVerificationStatus = user.doctorVerificationStatus;
+  const previousAccountStatus = user.accountStatus;
   user.doctorVerificationStatus = "APPROVED";
   user.accountStatus = user.isEmailVerified ? "ACTIVE" : "PENDING";
   user.doctorReviewedBy = adminUserId;
@@ -110,6 +119,27 @@ export const approveDoctorInternal = async (doctorUserId, adminUserId) => {
   user.doctorRejectionReason = null;
 
   await user.save();
+
+  await createAuthLogSafely({
+    userId: user._id,
+    email: user.email,
+    action: "DOCTOR_APPROVED",
+    metadata: {
+      adminUserId,
+      previousDoctorVerificationStatus,
+      previousAccountStatus,
+      nextAccountStatus: user.accountStatus
+    }
+  }, `doctor approved log for ${user.email}`);
+
+  await sendEmailSafely(
+    () =>
+      sendDoctorApprovedEmail({
+        email: user.email,
+        fullName: user.fullName
+      }),
+    `doctor approval email for ${user.email}`
+  );
 
   return user;
 };
@@ -122,25 +152,78 @@ export const rejectDoctorInternal = async (doctorUserId, adminUserId, reason) =>
   if (!user) throw new AppError("Doctor user not found", 404);
   if (user.role !== "DOCTOR") throw new AppError("User is not a doctor", 400);
 
-  user.doctorVerificationStatus = "REJECTED";
+  const previousDoctorVerificationStatus = user.doctorVerificationStatus;
+  user.doctorVerificationStatus = "CHANGES_REQUESTED";
   user.accountStatus = "PENDING";
   user.doctorReviewedBy = adminUserId;
   user.doctorReviewedAt = new Date();
-  user.doctorRejectionReason = reason || "Rejected by admin";
+  user.doctorRejectionReason = reason || "Changes requested by admin";
 
   await user.save();
+
+  await createAuthLogSafely({
+    userId: user._id,
+    email: user.email,
+    action: "DOCTOR_CHANGES_REQUESTED",
+    metadata: {
+      adminUserId,
+      previousDoctorVerificationStatus,
+      reason: user.doctorRejectionReason
+    }
+  }, `doctor changes requested log for ${user.email}`);
+
+  await sendEmailSafely(
+    () =>
+      sendDoctorRejectedEmail({
+        email: user.email,
+        fullName: user.fullName,
+        reason: user.doctorRejectionReason
+      }),
+    `doctor rejection email for ${user.email}`
+  );
 
   return user;
 };
 
-export const updateUserStatusInternal = async (userId, status) => {
+export const updateUserStatusInternal = async (userId, status, adminUserId, reason) => {
   ensureValidObjectId(userId, "Invalid user id");
+  ensureValidObjectId(adminUserId, "Invalid admin user id");
 
   const user = await User.findById(userId);
   if (!user) throw new AppError("User not found", 404);
 
+  const previousAccountStatus = user.accountStatus;
   user.accountStatus = status;
+  user.accountStatusChangedBy = adminUserId;
+  user.accountStatusChangedAt = new Date();
+  user.accountStatusReason =
+    status === "SUSPENDED" ? reason?.trim() || "Suspended by admin" : reason?.trim() || null;
   await user.save();
+
+  await createAuthLogSafely({
+    userId: user._id,
+    email: user.email,
+    action: status === "SUSPENDED" ? "ACCOUNT_SUSPENDED" : "ACCOUNT_ACTIVATED",
+    metadata: {
+      adminUserId,
+      previousAccountStatus,
+      nextAccountStatus: status,
+      reason: user.accountStatusReason
+    }
+  }, `account status change log for ${user.email}`);
+
+  if (status === "ACTIVE" || status === "SUSPENDED") {
+    await sendEmailSafely(
+      () =>
+        sendAccountStatusEmail({
+          email: user.email,
+          fullName: user.fullName,
+          status,
+          reason: user.accountStatusReason
+        }),
+      `account status email for ${user.email}`
+    );
+  }
 
   return user;
 };

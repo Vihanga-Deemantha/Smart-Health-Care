@@ -15,6 +15,7 @@ const adminActionSchema = new mongoose.Schema(
       enum: [
         "DOCTOR_APPROVED",
         "DOCTOR_REJECTED",
+        "DOCTOR_CHANGES_REQUESTED",
         "USER_SUSPENDED",
         "USER_ACTIVATED"
       ],

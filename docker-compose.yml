@@ -82,6 +82,8 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-change-me}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-1.5-flash}
+      GEMINI_MAX_RETRIES: ${GEMINI_MAX_RETRIES:-2}
 
   api-gateway:
     build:

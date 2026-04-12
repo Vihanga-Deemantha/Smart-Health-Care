@@ -1,0 +1,142 @@
+openapi: 3.0.3
+info:
+  title: Appointment Service API
+  version: 1.0.0
+  description: Smart Healthcare appointment and telemedicine APIs
+servers:
+  - url: http://localhost:5027
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service healthy
+  /api/doctors:
+    get:
+      summary: Search doctors
+      parameters:
+        - in: query
+          name: specialization
+          schema:
+            type: string
+        - in: query
+          name: hospital
+          schema:
+            type: string
+        - in: query
+          name: language
+          schema:
+            type: string
+        - in: query
+          name: mode
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Doctors list
+  /api/doctors/{id}/availability:
+    get:
+      summary: Get doctor availability
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: mode
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Available slots
+  /api/appointments/hold:
+    post:
+      summary: Hold a slot
+      responses:
+        '201':
+          description: Hold created
+  /api/appointments:
+    post:
+      summary: Book appointment
+      responses:
+        '201':
+          description: Appointment booked
+    get:
+      summary: List appointments
+      responses:
+        '200':
+          description: Appointment list
+  /api/appointments/{id}/cancel:
+    patch:
+      summary: Cancel appointment
+      responses:
+        '200':
+          description: Cancelled
+  /api/appointments/{id}/reschedule:
+    patch:
+      summary: Reschedule appointment
+      responses:
+        '200':
+          description: Rescheduled
+  /api/appointments/{id}/confirm-attendance:
+    patch:
+      summary: Confirm attendance
+      responses:
+        '200':
+          description: Attendance updated
+  /api/feedback:
+    post:
+      summary: Submit feedback
+      responses:
+        '201':
+          description: Feedback accepted
+  /api/feedback/doctors/{id}/reviews:
+    get:
+      summary: Public doctor reviews
+      responses:
+        '200':
+          description: Reviews fetched
+  /api/waitlist:
+    post:
+      summary: Join waitlist
+      responses:
+        '201':
+          description: Waitlist joined
+  /api/emergency-alerts:
+    post:
+      summary: Create emergency alert
+      responses:
+        '201':
+          description: Alert created
+  /api/emergency-resources:
+    get:
+      summary: List emergency resources
+      responses:
+        '200':
+          description: Resources fetched
+  /api/notifications/preferences:
+    get:
+      summary: Get notification preferences
+      responses:
+        '200':
+          description: Preferences fetched
+    patch:
+      summary: Update notification preferences
+      responses:
+        '200':
+          description: Preferences updated
+  /api/admin/analytics:
+    get:
+      summary: Admin analytics
+      responses:
+        '200':
+          description: Analytics fetched

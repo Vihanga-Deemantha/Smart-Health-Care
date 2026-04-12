@@ -35,6 +35,15 @@ app.use(
   protect,
   createServiceProxy(process.env.ADMIN_SERVICE_URL)
 );
+app.use("/api/doctors", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/feedback/doctors", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/emergency-resources", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/appointments", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/feedback", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/waitlist", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/emergency-alerts", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/notifications", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/payments", protect, createServiceProxy(process.env.PAYMENT_SERVICE_URL));
 
 app.use(errorMiddleware);
 

@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import { Download, UploadCloud } from "lucide-react";
+import { Download, Trash2, UploadCloud } from "lucide-react";
 import toast from "react-hot-toast";
 import PortalLayout from "../../components/common/PortalLayout.jsx";
 import PatientPortalNav from "../../components/patient/PatientPortalNav.jsx";
-import { fetchPatientReports, uploadPatientReport } from "../../api/patientApi.js";
+import {
+  deletePatientReport,
+  fetchPatientReports,
+  uploadPatientReport
+} from "../../api/patientApi.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 
 const formatDate = (value) => {
@@ -22,6 +26,7 @@ const PatientReportsPage = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deletingIdentifier, setDeletingIdentifier] = useState(null);
 
   const loadReports = async () => {
     setLoading(true);
@@ -59,6 +64,44 @@ const PatientReportsPage = () => {
       toast.error(getApiErrorMessage(error, "Report upload failed."));
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (report) => {
+    const publicId = typeof report?.publicId === "string" ? report.publicId : "";
+    const url = typeof report?.url === "string" ? report.url : "";
+    const reportIdentifier = publicId || url;
+
+    if (!reportIdentifier) {
+      toast.error("This report cannot be deleted because it has no identifier.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete \"${report.filename}\"? This action cannot be undone.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingIdentifier(reportIdentifier);
+
+    try {
+      await deletePatientReport({ publicId, url });
+      toast.success("Report deleted successfully");
+      setReports((current) =>
+        current.filter((item) => {
+          if (publicId) {
+            return item.publicId !== publicId;
+          }
+
+          return item.url !== url;
+        })
+      );
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to delete report."));
+    } finally {
+      setDeletingIdentifier(null);
     }
   };
 
@@ -116,14 +159,28 @@ const PatientReportsPage = () => {
                   <p className="text-sm font-semibold text-white">{report.filename}</p>
                   <p className="mt-1 text-xs text-slate-300">Uploaded: {formatDate(report.uploadDate)}</p>
                 </div>
-                <a
-                  href={report.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-slate-700"
-                >
-                  <Download size={13} /> Download
-                </a>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={report.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-slate-700"
+                  >
+                    <Download size={13} /> Download
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(report)}
+                    disabled={
+                      (!report.publicId && !report.url) ||
+                      deletingIdentifier === (report.publicId || report.url)
+                    }
+                    className="inline-flex items-center gap-1 rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Trash2 size={13} />
+                    {deletingIdentifier === (report.publicId || report.url) ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

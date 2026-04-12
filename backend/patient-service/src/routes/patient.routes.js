@@ -5,6 +5,7 @@ import allowRoles from "../middlewares/role.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
 import AppError from "../utils/AppError.js";
 import {
+  handleDeleteReport,
   handleGetHistory,
   handleGetPrescriptions,
   handleGetProfile,
@@ -50,6 +51,7 @@ router.get("/profile", handleGetProfile);
 router.put("/profile", updateProfileValidation, validateRequest, handleUpdateProfile);
 router.post("/reports", upload.single("file"), handleUploadReport);
 router.get("/reports", handleGetReports);
+router.delete("/reports", handleDeleteReport);
 router.get("/history", historyValidation, validateRequest, handleGetHistory);
 router.get("/prescriptions", prescriptionsValidation, validateRequest, handleGetPrescriptions);
 

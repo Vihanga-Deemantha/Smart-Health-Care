@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import sendResponse from "../utils/apiResponse.js";
 import {
   addPatientReport,
+  deletePatientReport,
   getPatientForInternalService,
   getPatientHistory,
   getPatientPrescriptions,
@@ -28,6 +29,14 @@ export const handleUploadReport = asyncHandler(async (req, res) => {
 export const handleGetReports = asyncHandler(async (req, res) => {
   const reports = await getPatientReports(req.user);
   return sendResponse(res, 200, "Patient reports fetched", reports);
+});
+
+export const handleDeleteReport = asyncHandler(async (req, res) => {
+  const report = await deletePatientReport(req.user, {
+    publicId: req.body?.publicId,
+    url: req.body?.url
+  });
+  return sendResponse(res, 200, "Report deleted successfully", report);
 });
 
 export const handleGetHistory = asyncHandler(async (req, res) => {

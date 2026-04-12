@@ -1,6 +1,6 @@
 import Patient from "../models/Patient.js";
 import AppError from "../utils/AppError.js";
-import { uploadReportBuffer } from "./storage.service.js";
+import { deleteReportByPublicId, uploadReportBuffer } from "./storage.service.js";
 import {
   fetchHistoryFromAppointmentService,
   fetchPrescriptionsFromUpstream
@@ -90,6 +90,7 @@ export const addPatientReport = async (user, file) => {
     filename: file.originalname,
     url: uploaded.secure_url,
     publicId: uploaded.public_id,
+    resourceType: uploaded.resource_type || null,
     mimeType: file.mimetype,
     size: file.size,
     uploadDate: new Date()
@@ -107,6 +108,41 @@ export const getPatientReports = async (user) => {
   return patient.reports
     .slice()
     .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+};
+
+export const deletePatientReport = async (user, identifier = {}) => {
+  const normalizedPublicId =
+    typeof identifier?.publicId === "string" ? identifier.publicId.trim() : "";
+  const normalizedUrl = typeof identifier?.url === "string" ? identifier.url.trim() : "";
+
+  if (!normalizedPublicId && !normalizedUrl) {
+    throw new AppError("Report identifier is required", 400, "REPORT_ID_REQUIRED");
+  }
+
+  const patient = await getOrCreatePatientByUser(user);
+
+  const reportIndex = patient.reports.findIndex(
+    (report) =>
+      (normalizedPublicId && report.publicId === normalizedPublicId) ||
+      (normalizedUrl && report.url === normalizedUrl)
+  );
+  if (reportIndex === -1) {
+    throw new AppError("Report not found", 404, "REPORT_NOT_FOUND");
+  }
+
+  const report = patient.reports[reportIndex];
+
+  if (report.publicId) {
+    await deleteReportByPublicId({
+      publicId: report.publicId,
+      resourceType: report.resourceType || null
+    });
+  }
+
+  patient.reports.splice(reportIndex, 1);
+  await patient.save();
+
+  return report;
 };
 
 export const getPatientHistory = async ({ user, authorization, query }) => {

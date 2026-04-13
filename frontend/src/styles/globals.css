@@ -8,6 +8,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -29,15 +31,40 @@ a {
   text-decoration: none;
 }
 
-button,
+/* ── Mobile: prevent iOS input zoom (font-size must be ≥ 16px on inputs) ── */
 input,
-textarea,
-select {
+select,
+textarea {
   font: inherit;
+  font-size: max(16px, 1em); /* prevents iOS auto-zoom on focus */
 }
 
+button,
+a {
+  /* Remove iOS tap blue flash */
+  -webkit-tap-highlight-color: transparent;
+  /* Enforce minimum touch target per Apple HIG */
+  min-height: 44px;
+}
+
+/* Exceptions: small decorative elements that are not interactive targets */
+span[role="img"] {
+  min-height: unset;
+}
+
+/* ── Remove outline flash on touch (style handled by :focus-visible) ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe-area insets for iPhone notch / Dynamic Island */
 #root {
   min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height (iOS 15+) */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 .grid-glow {

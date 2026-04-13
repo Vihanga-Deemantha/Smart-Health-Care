@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, LogOut, ShieldCheck, Activity } from "lucide-react";
+import { ArrowRight, LogOut, Menu } from "lucide-react";
 import { motion } from "framer-motion";
 import Logo from "../common/Logo.jsx";
 import PageContainer from "../common/PageContainer.jsx";
@@ -7,11 +8,11 @@ import SectionHeading from "../common/SectionHeading.jsx";
 import StatusBadge from "../common/StatusBadge.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
-import heroImage from "../../assets/hero.png";
 
 const PatientLayout = ({ eyebrow, title, description, accent = "cyan", children }) => {
   const navigate = useNavigate();
   const { user, clearAuth } = useAuth();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const accentStyles = {
     cyan: "from-cyan-400/20 via-blue-500/10 to-transparent",
@@ -29,8 +30,19 @@ const PatientLayout = ({ eyebrow, title, description, accent = "cyan", children 
         className={`pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-linear-to-b ${accentStyles[accent] || accentStyles.cyan}`}
       />
       <PageContainer className="relative py-6 sm:py-8">
+        {/* ── Header ── */}
         <header className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-slate-900/75 p-5 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              aria-label="Open navigation"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/6 text-cyan-300 transition hover:bg-white/12 lg:hidden"
+            >
+              <Menu size={20} />
+            </button>
+
             <Logo />
             <div className="hidden h-10 w-px bg-white/10 sm:block" />
             <div className="space-y-2">
@@ -60,13 +72,20 @@ const PatientLayout = ({ eyebrow, title, description, accent = "cyan", children 
           </div>
         </header>
 
+        {/* ── Body ── */}
         <section className="grid gap-8 py-10 lg:grid-cols-[0.4fr_1fr]">
+          {/* Sidebar: desktop shows in grid, mobile shows as drawer */}
           <motion.aside
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.04 }}
+            className="lg:block"
           >
-            <PatientSidebar onLogout={handleLogout} />
+            <PatientSidebar
+              onLogout={handleLogout}
+              mobileOpen={mobileSidebarOpen}
+              onMobileClose={() => setMobileSidebarOpen(false)}
+            />
           </motion.aside>
 
           <motion.div

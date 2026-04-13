@@ -349,8 +349,9 @@ const LandingPage = () => {
       {/* ══════════════════════════ HERO ════════════════════════ */}
       <section
         id="platform"
-        className="relative min-h-screen flex items-end overflow-hidden"
+        className="relative flex items-end overflow-hidden"
         style={{
+          minHeight: "100svh",
           background: "#071324",
           backgroundImage: `
             radial-gradient(at 0% 0%, rgba(47, 128, 237, 0.15) 0px, transparent 50%),
@@ -390,7 +391,7 @@ const LandingPage = () => {
           style={{ background: "#56CCF2" }}
         />
 
-        {/* Doctor image — right-aligned, bleeds to bottom */}
+        {/* Doctor image — right-aligned, bleeds to bottom (md+) */}
         <div className="absolute bottom-0 right-0 w-[46%] h-full pointer-events-none hidden md:block">
           <div className="absolute inset-0" style={{ background: "linear-gradient(to right, #0B1F3A 0%, transparent 30%)" }} />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0B1F3A 0%, transparent 25%)" }} />
@@ -401,6 +402,14 @@ const LandingPage = () => {
             style={{ opacity: 0.82 }}
           />
         </div>
+
+        {/* Mobile hero visual: gradient glow blob (replaces hidden doctor image) */}
+        <div
+          className="absolute bottom-0 right-0 w-full h-[340px] pointer-events-none md:hidden"
+          style={{
+            background: "radial-gradient(ellipse at 80% 100%, rgba(47,128,237,0.18) 0%, rgba(86,204,242,0.10) 30%, transparent 70%)",
+          }}
+        />
 
         {/* Content */}
         <PageContainer className="relative z-10 pb-28 pt-40">
@@ -452,11 +461,11 @@ const LandingPage = () => {
               initial="hidden"
               animate="visible"
               custom={0.3}
-              className="mt-10 flex flex-wrap gap-4"
+              className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap"
             >
               <Link
                 to="/register"
-                className="group animate-shimmer inline-flex items-center gap-2 rounded-xl px-8 py-4 text-base font-bold text-white transition-all duration-300 hover:scale-105 hover:brightness-110"
+                className="group animate-shimmer inline-flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 text-base font-bold text-white transition-all duration-300 hover:scale-105 hover:brightness-110 sm:w-auto"
                 style={{ background: "linear-gradient(135deg, #2F80ED, #56CCF2)", boxShadow: "0 10px 40px rgba(47,128,237,0.5)" }}
               >
                 Get Started Free
@@ -464,7 +473,7 @@ const LandingPage = () => {
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition-all duration-200"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 text-base font-semibold transition-all duration-200 sm:w-auto"
                 style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.92)" }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.borderColor = "rgba(86,204,242,0.4)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; }}
@@ -614,7 +623,7 @@ const LandingPage = () => {
                 whileInView="visible"
                 viewport={{ once: true, margin: "-40px" }}
                 custom={i * 0.1}
-                className="group relative flex gap-0 rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-[0_20px_50px_rgba(47,128,237,0.25)] hover:-translate-y-1.5"
+                className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_20px_50px_rgba(47,128,237,0.25)]"
                 style={{
                   background: "#FFFFFF",
                   border: "1px solid rgba(47,128,237,0.12)",
@@ -623,55 +632,93 @@ const LandingPage = () => {
               >
                 {/* Border Glow pseudo-effect */}
                 <div className="absolute inset-0 border-2 border-transparent group-hover:border-[#2F80ED] opacity-0 group-hover:opacity-10 transition-all duration-500 rounded-2xl" />
-                {/* Left accent bar with number */}
+
+                {/* Mobile layout: top accent band with icon + tag */}
                 <div
-                  className="flex-shrink-0 w-[80px] flex flex-col items-center justify-center gap-3 py-8"
-                  style={{ background: `linear-gradient(180deg, ${p.accent}12 0%, ${p.accent}05 100%)`, borderRight: `3px solid ${p.accent}` }}
+                  className="flex items-center gap-3 px-5 py-4 md:hidden"
+                  style={{ background: `${p.accent}08`, borderBottom: `2px solid ${p.accent}` }}
                 >
-                  <span
-                    className="text-2xl font-black"
-                    style={{ color: p.accent, opacity: 0.4 }}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
                   <div
-                    className="h-12 w-12 rounded-xl flex items-center justify-center shadow-sm"
+                    className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: "#FFFFFF", border: `1px solid ${p.accent}30` }}
                   >
-                    <p.icon size={22} style={{ color: p.accent }} />
+                    <p.icon size={20} style={{ color: p.accent }} />
                   </div>
-                </div>
-
-                {/* Content area */}
-                <div className="flex flex-1 flex-col md:flex-row">
-                  {/* Left: tag + title + desc */}
-                  <div className="flex-1 p-7 pr-5">
+                  <div>
                     <span
-                      className="inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest mb-3"
+                      className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
                       style={{ background: `${p.accent}12`, color: p.accent }}
                     >
                       {p.tag}
                     </span>
-                    <h3 className="text-xl font-extrabold leading-snug" style={{ color: "#0B1F3A" }}>{p.title}</h3>
-                    <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "#475569" }}>{p.desc}</p>
+                    <p className="text-base font-extrabold leading-snug mt-0.5" style={{ color: "#0B1F3A" }}>{p.title}</p>
                   </div>
+                </div>
 
-                  {/* Right: bullet points */}
-                  <div
-                    className="flex-shrink-0 md:w-72 p-7 pl-5 flex flex-col justify-center gap-3 bg-[#f8fbff]"
-                    style={{ borderLeft: "1px solid rgba(47,128,237,0.08)" }}
-                  >
+                {/* Mobile: desc + bullet points */}
+                <div className="p-5 md:hidden">
+                  <p className="text-sm leading-relaxed mb-4" style={{ color: "#475569" }}>{p.desc}</p>
+                  <div className="space-y-2.5">
                     {p.points.map((pt) => (
-                      <div key={pt} className="flex items-start gap-2.5">
-                        <div
-                          className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                          style={{ background: "#E8F5E9" }}
-                        >
+                      <div key={pt} className="flex items-start gap-2">
+                        <div className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "#E8F5E9" }}>
                           <CheckCircle2 size={13} style={{ color: "#27AE60" }} />
                         </div>
                         <span className="text-sm font-medium" style={{ color: "#475569" }}>{pt}</span>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* Desktop layout: horizontal (md+) */}
+                <div className="hidden md:flex gap-0">
+                  {/* Left accent bar with number */}
+                  <div
+                    className="flex-shrink-0 w-[80px] flex flex-col items-center justify-center gap-3 py-8"
+                    style={{ background: `linear-gradient(180deg, ${p.accent}12 0%, ${p.accent}05 100%)`, borderRight: `3px solid ${p.accent}` }}
+                  >
+                    <span className="text-2xl font-black" style={{ color: p.accent, opacity: 0.4 }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div
+                      className="h-12 w-12 rounded-xl flex items-center justify-center shadow-sm"
+                      style={{ background: "#FFFFFF", border: `1px solid ${p.accent}30` }}
+                    >
+                      <p.icon size={22} style={{ color: p.accent }} />
+                    </div>
+                  </div>
+
+                  {/* Content area */}
+                  <div className="flex flex-1 flex-col md:flex-row">
+                    {/* Left: tag + title + desc */}
+                    <div className="flex-1 p-7 pr-5">
+                      <span
+                        className="inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest mb-3"
+                        style={{ background: `${p.accent}12`, color: p.accent }}
+                      >
+                        {p.tag}
+                      </span>
+                      <h3 className="text-xl font-extrabold leading-snug" style={{ color: "#0B1F3A" }}>{p.title}</h3>
+                      <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "#475569" }}>{p.desc}</p>
+                    </div>
+
+                    {/* Right: bullet points */}
+                    <div
+                      className="flex-shrink-0 md:w-72 p-7 pl-5 flex flex-col justify-center gap-3 bg-[#f8fbff]"
+                      style={{ borderLeft: "1px solid rgba(47,128,237,0.08)" }}
+                    >
+                      {p.points.map((pt) => (
+                        <div key={pt} className="flex items-start gap-2.5">
+                          <div
+                            className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                            style={{ background: "#E8F5E9" }}
+                          >
+                            <CheckCircle2 size={13} style={{ color: "#27AE60" }} />
+                          </div>
+                          <span className="text-sm font-medium" style={{ color: "#475569" }}>{pt}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

@@ -10,7 +10,19 @@ import PendingDoctorsPage from "../pages/admin/PendingDoctorsPage.jsx";
 import UsersManagementPage from "../pages/admin/UsersManagementPage.jsx";
 import SecurityLogsPage from "../pages/admin/SecurityLogsPage.jsx";
 import PatientHomePage from "../pages/patient/PatientHomePage.jsx";
+<<<<<<< Updated upstream
 import DoctorHomePage from "../pages/doctor/DoctorHomePage.jsx";
+=======
+import PatientAppointmentsPage from "../pages/patient/PatientAppointmentsPage.jsx";
+import PatientFindDoctorPage from "../pages/patient/PatientFindDoctorPage.jsx";
+import PatientBookingsPage from "../pages/patient/PatientBookingsPage.jsx";
+import PatientServiceToolsPage from "../pages/patient/PatientServiceToolsPage.jsx";
+import DoctorHomePage from "../pages/doctor/DoctorHomePage.jsx";
+import DoctorSearch from "../pages/DoctorSearch.jsx";
+import BookAppointment from "../pages/BookAppointment.jsx";
+import Checkout from "../pages/Checkout.jsx";
+import BookingConfirmation from "../pages/BookingConfirmation.jsx";
+>>>>>>> Stashed changes
 import UnauthorizedPage from "../pages/shared/UnauthorizedPage.jsx";
 import NotFoundPage from "../pages/shared/NotFoundPage.jsx";
 import ProtectedRoute from "../components/common/ProtectedRoute.jsx";
@@ -24,6 +36,70 @@ export const router = createBrowserRouter([
   { path: "/verify-otp", element: <VerifyOtpPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
+<<<<<<< Updated upstream
+=======
+  { path: "/doctor-search", element: <DoctorSearch /> },
+  {
+    path: "/book-appointment",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <BookAppointment />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/patient/book-appointment",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <BookAppointment />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/checkout",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <Checkout />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/patient/checkout",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <Checkout />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/booking-confirmation",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <BookingConfirmation />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/patient/booking-confirmation",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <BookingConfirmation />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+>>>>>>> Stashed changes
   { path: "/unauthorized", element: <UnauthorizedPage /> },
   {
     path: "/patient",
@@ -36,6 +112,49 @@ export const router = createBrowserRouter([
     )
   },
   {
+<<<<<<< Updated upstream
+=======
+    path: "/patient/appointments",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <PatientAppointmentsPage />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/patient/find-doctor",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <PatientFindDoctorPage />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/patient/bookings",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <PatientBookingsPage />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/patient/tools",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <PatientServiceToolsPage />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
+>>>>>>> Stashed changes
     path: "/doctor",
     element: (
       <ProtectedRoute>

@@ -32,6 +32,25 @@ const verificationDocumentSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const profilePhotoSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    publicId: {
+      type: String,
+      default: null
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     fullName: {
@@ -51,13 +70,22 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    jobTitle: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    profilePhoto: {
+      type: profilePhotoSchema,
+      default: null
+    },
     passwordHash: {
       type: String,
       required: true
     },
     role: {
       type: String,
-      enum: ["PATIENT", "DOCTOR", "ADMIN"],
+      enum: ["PATIENT", "DOCTOR", "ADMIN", "SUPER_ADMIN"],
       required: true
     },
     isEmailVerified: {

@@ -28,7 +28,13 @@ router.use(protect);
 
 router.get(
   "/",
-  allowRoles(USER_ROLES.PATIENT, USER_ROLES.DOCTOR, USER_ROLES.ADMIN, USER_ROLES.STAFF),
+  allowRoles(
+    USER_ROLES.PATIENT,
+    USER_ROLES.DOCTOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.STAFF
+  ),
   listAppointmentsValidation,
   validateRequest,
   handleListAppointments
@@ -37,14 +43,20 @@ router.post("/hold", allowRoles(USER_ROLES.PATIENT), holdSlotValidation, validat
 router.post("/", allowRoles(USER_ROLES.PATIENT), bookAppointmentValidation, validateRequest, handleCreateAppointment);
 router.patch(
   "/:id/cancel",
-  allowRoles(USER_ROLES.PATIENT, USER_ROLES.DOCTOR, USER_ROLES.ADMIN, USER_ROLES.STAFF),
+  allowRoles(
+    USER_ROLES.PATIENT,
+    USER_ROLES.DOCTOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.STAFF
+  ),
   cancelAppointmentValidation,
   validateRequest,
   handleCancelAppointment
 );
 router.patch(
   "/:id/reschedule",
-  allowRoles(USER_ROLES.PATIENT, USER_ROLES.ADMIN, USER_ROLES.STAFF),
+  allowRoles(USER_ROLES.PATIENT, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF),
   rescheduleAppointmentValidation,
   validateRequest,
   handleRescheduleAppointment
@@ -58,7 +70,7 @@ router.patch(
 );
 router.patch(
   "/:id/no-show",
-  allowRoles(USER_ROLES.DOCTOR, USER_ROLES.ADMIN, USER_ROLES.STAFF),
+  allowRoles(USER_ROLES.DOCTOR, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF),
   markNoShowValidation,
   validateRequest,
   handleNoShow

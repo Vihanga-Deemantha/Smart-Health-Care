@@ -1,6 +1,14 @@
 import AdminAction from "../models/AdminAction.js";
 import {
   fetchAuthLogsFromAuth,
+  fetchAdminsFromAuth,
+  fetchCurrentAdminProfileFromAuth,
+  createAdminInAuth,
+  deleteAdminInAuth,
+  updateCurrentAdminProfileInAuth,
+  uploadCurrentAdminProfilePhotoInAuth,
+  removeCurrentAdminProfilePhotoInAuth,
+  changeCurrentAdminPasswordInAuth,
   fetchUsersFromAuth,
   fetchPendingDoctorsFromAuth,
   approveDoctorInAuth,
@@ -11,6 +19,54 @@ import { buildSecurityActivityFeed } from "../utils/securityActivity.js";
 
 export const getUsers = async (query) => {
   return fetchUsersFromAuth(query);
+};
+
+export const getCurrentAdminProfile = async (adminUserId) => {
+  return fetchCurrentAdminProfileFromAuth(adminUserId);
+};
+
+export const getAdmins = async (query, adminUserId) => {
+  return fetchAdminsFromAuth(query, adminUserId);
+};
+
+export const updateCurrentAdminProfile = async (payload, adminUserId) => {
+  return updateCurrentAdminProfileInAuth(payload, adminUserId);
+};
+
+export const uploadCurrentAdminProfilePhoto = async (req, adminUserId) => {
+  return uploadCurrentAdminProfilePhotoInAuth(req, adminUserId);
+};
+
+export const removeCurrentAdminProfilePhoto = async (adminUserId) => {
+  return removeCurrentAdminProfilePhotoInAuth(adminUserId);
+};
+
+export const changeCurrentAdminPassword = async (payload, adminUserId) => {
+  return changeCurrentAdminPasswordInAuth(payload, adminUserId);
+};
+
+export const createAdmin = async (payload, adminUserId) => {
+  const admin = await createAdminInAuth(payload, adminUserId);
+
+  await AdminAction.create({
+    adminUserId,
+    targetUserId: admin._id,
+    action: "ADMIN_CREATED"
+  });
+
+  return admin;
+};
+
+export const deleteAdmin = async (targetAdminId, adminUserId) => {
+  const admin = await deleteAdminInAuth(targetAdminId, adminUserId);
+
+  await AdminAction.create({
+    adminUserId,
+    targetUserId: targetAdminId,
+    action: "ADMIN_DELETED"
+  });
+
+  return admin;
 };
 
 export const getPendingDoctors = async () => {

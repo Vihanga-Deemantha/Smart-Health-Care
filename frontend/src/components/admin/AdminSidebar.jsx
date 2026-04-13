@@ -1,18 +1,21 @@
-import { LayoutDashboard, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings, ShieldCheck, UserCog, UserPlus, Users } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth.js";
 import Logo from "../common/Logo.jsx";
 
-const links = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/doctors/pending", label: "Pending Doctors", icon: ShieldCheck },
-  { to: "/admin/users", label: "Users", icon: Users },
-  { to: "/admin/security", label: "Security", icon: UserCog }
-];
-
 const AdminSidebar = () => {
   const navigate = useNavigate();
-  const { clearAuth } = useAuth();
+  const { user, clearAuth } = useAuth();
+  const links = [
+    { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+    { to: "/admin/doctors/pending", label: "Pending Doctors", icon: ShieldCheck },
+    { to: "/admin/users", label: "Users", icon: Users },
+    ...(user?.role === "SUPER_ADMIN"
+      ? [{ to: "/admin/admins", label: "Admins", icon: UserPlus }]
+      : []),
+    { to: "/admin/profile", label: "Profile", icon: Settings },
+    { to: "/admin/security", label: "Security", icon: UserCog }
+  ];
 
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-white/6 bg-[#0B1F3A] px-5 py-6 text-[#EAF2FF] lg:flex lg:flex-col">

@@ -31,7 +31,7 @@ const LoginPage = () => {
       }
 
       const roleHomePath =
-        user?.role === "ADMIN"
+        user?.role === "ADMIN" || user?.role === "SUPER_ADMIN"
           ? "/admin"
           : user?.role === "DOCTOR"
             ? "/doctor"

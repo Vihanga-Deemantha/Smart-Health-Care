@@ -8,7 +8,8 @@ const styles = {
   REJECTED: "bg-[#FDEEEE] text-[#C0392B] ring-1 ring-[#F5C6C1]",
   PATIENT: "bg-[#EEF7FF] text-[#2F80ED] ring-1 ring-[#CFE2FF]",
   DOCTOR: "bg-[#EAFBFF] text-[#1F8FB3] ring-1 ring-[#CDEFF8]",
-  ADMIN: "bg-[#F4EEFF] text-[#7B61C8] ring-1 ring-[#DED0FF]"
+  ADMIN: "bg-[#F4EEFF] text-[#7B61C8] ring-1 ring-[#DED0FF]",
+  SUPER_ADMIN: "bg-[#EEF4FF] text-[#1D4ED8] ring-1 ring-[#C7D7FE]"
 };
 
 const StatusBadge = ({ value }) => {

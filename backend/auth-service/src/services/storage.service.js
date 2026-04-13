@@ -72,6 +72,49 @@ export const uploadDoctorVerificationBuffer = async ({ buffer, filename }) => {
   });
 };
 
+export const uploadAdminProfilePhotoBuffer = async ({ buffer, filename }) => {
+  ensureCloudinaryConfig();
+
+  const publicId = `${Date.now()}-${sanitizeName(filename || "admin-profile-photo")}`;
+
+  return await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder:
+          process.env.CLOUDINARY_ADMIN_PROFILE_PHOTOS_FOLDER ||
+          "smart-health/admin-profile-photos",
+        resource_type: "image",
+        public_id: publicId,
+        transformation: [
+          {
+            width: 512,
+            height: 512,
+            crop: "fill",
+            gravity: "face"
+          }
+        ]
+      },
+      (error, result) => {
+        if (error) {
+          reject(
+            new AppError(
+              "Failed to upload admin profile photo",
+              502,
+              "ADMIN_PROFILE_PHOTO_UPLOAD_FAILED",
+              error
+            )
+          );
+          return;
+        }
+
+        resolve(result);
+      }
+    );
+
+    Readable.from(buffer).pipe(stream);
+  });
+};
+
 const destroyDoctorVerificationResource = async (publicId, resourceType) => {
   return await cloudinary.uploader.destroy(publicId, {
     resource_type: resourceType,
@@ -110,4 +153,18 @@ export const deleteDoctorVerificationDocuments = async (verificationDocuments = 
   }
 
   await deleteDoctorVerificationResourcesByPublicIds(publicIds);
+};
+
+export const deleteAdminProfilePhotoByPublicId = async (publicId) => {
+  if (!publicId) {
+    return;
+  }
+
+  ensureCloudinaryConfig();
+
+  const result = await destroyDoctorVerificationResource(publicId, "image");
+
+  if (result.result !== "ok" && result.result !== "not found") {
+    console.warn(`[storage] admin profile photo cleanup skipped for ${publicId}`);
+  }
 };

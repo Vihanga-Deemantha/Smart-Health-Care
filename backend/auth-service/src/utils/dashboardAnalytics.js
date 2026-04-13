@@ -58,7 +58,7 @@ export const buildUserGrowthDataset = (users = [], days = 14, now = new Date()) 
       bucket.patients += 1;
     } else if (user.role === "DOCTOR") {
       bucket.doctors += 1;
-    } else if (user.role === "ADMIN") {
+    } else if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
       bucket.admins += 1;
     }
   }

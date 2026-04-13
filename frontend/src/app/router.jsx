@@ -6,6 +6,8 @@ import VerifyOtpPage from "../pages/auth/VerifyOtpPage.jsx";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage.jsx";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.jsx";
+import AdminManagementPage from "../pages/admin/AdminManagementPage.jsx";
+import AdminProfileSettingsPage from "../pages/admin/AdminProfileSettingsPage.jsx";
 import PendingDoctorsPage from "../pages/admin/PendingDoctorsPage.jsx";
 import UsersManagementPage from "../pages/admin/UsersManagementPage.jsx";
 import SecurityLogsPage from "../pages/admin/SecurityLogsPage.jsx";
@@ -103,7 +105,7 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: (
       <ProtectedRoute>
-        <RoleProtectedRoute allowedRoles={["ADMIN"]}>
+        <RoleProtectedRoute allowedRoles={["ADMIN", "SUPER_ADMIN"]}>
           <AdminLayout />
         </RoleProtectedRoute>
       </ProtectedRoute>
@@ -112,6 +114,15 @@ export const router = createBrowserRouter([
       { index: true, element: <AdminDashboardPage /> },
       { path: "doctors/pending", element: <PendingDoctorsPage /> },
       { path: "users", element: <UsersManagementPage /> },
+      { path: "profile", element: <AdminProfileSettingsPage /> },
+      {
+        path: "admins",
+        element: (
+          <RoleProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <AdminManagementPage />
+          </RoleProtectedRoute>
+        )
+      },
       { path: "security", element: <SecurityLogsPage /> }
     ]
   },

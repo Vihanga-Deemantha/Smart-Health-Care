@@ -1,6 +1,14 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import sendResponse from "../utils/apiResponse.js";
 import {
+  getCurrentAdminProfile,
+  updateCurrentAdminProfile,
+  uploadCurrentAdminProfilePhoto,
+  removeCurrentAdminProfilePhoto,
+  changeCurrentAdminPassword,
+  getAdmins,
+  createAdmin,
+  deleteAdmin,
   getUsers,
   getPendingDoctors,
   approveDoctor,
@@ -13,6 +21,46 @@ import {
 export const handleGetUsers = asyncHandler(async (req, res) => {
   const data = await getUsers(req.query);
   sendResponse(res, 200, "Users fetched successfully", data);
+});
+
+export const handleGetCurrentAdminProfile = asyncHandler(async (req, res) => {
+  const admin = await getCurrentAdminProfile(req.user.userId);
+  sendResponse(res, 200, "Admin profile fetched successfully", { admin });
+});
+
+export const handleUpdateCurrentAdminProfile = asyncHandler(async (req, res) => {
+  const admin = await updateCurrentAdminProfile(req.body, req.user.userId);
+  sendResponse(res, 200, "Admin profile updated successfully", { admin });
+});
+
+export const handleUploadCurrentAdminProfilePhoto = asyncHandler(async (req, res) => {
+  const admin = await uploadCurrentAdminProfilePhoto(req, req.user.userId);
+  sendResponse(res, 200, "Admin profile photo updated successfully", { admin });
+});
+
+export const handleChangeCurrentAdminPassword = asyncHandler(async (req, res) => {
+  await changeCurrentAdminPassword(req.body, req.user.userId);
+  sendResponse(res, 200, "Admin password updated successfully");
+});
+
+export const handleRemoveCurrentAdminProfilePhoto = asyncHandler(async (req, res) => {
+  const admin = await removeCurrentAdminProfilePhoto(req.user.userId);
+  sendResponse(res, 200, "Admin profile photo removed successfully", { admin });
+});
+
+export const handleGetAdmins = asyncHandler(async (req, res) => {
+  const data = await getAdmins(req.query, req.user.userId);
+  sendResponse(res, 200, "Admins fetched successfully", data);
+});
+
+export const handleCreateAdmin = asyncHandler(async (req, res) => {
+  const admin = await createAdmin(req.body, req.user.userId);
+  sendResponse(res, 201, "Admin created successfully", { admin });
+});
+
+export const handleDeleteAdmin = asyncHandler(async (req, res) => {
+  const admin = await deleteAdmin(req.params.id, req.user.userId);
+  sendResponse(res, 200, "Admin deleted successfully", { admin });
 });
 
 export const handleGetPendingDoctors = asyncHandler(async (req, res) => {

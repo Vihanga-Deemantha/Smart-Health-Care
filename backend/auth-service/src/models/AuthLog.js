@@ -26,6 +26,12 @@ const authLogSchema = new mongoose.Schema(
         "DOCTOR_VERIFICATION_RESUBMITTED",
         "DOCTOR_APPROVED",
         "DOCTOR_CHANGES_REQUESTED",
+        "ADMIN_CREATED",
+        "ADMIN_DELETED",
+        "ADMIN_PROFILE_UPDATED",
+        "ADMIN_PROFILE_PHOTO_UPDATED",
+        "ADMIN_PROFILE_PHOTO_REMOVED",
+        "ADMIN_PASSWORD_CHANGED",
         "ACCOUNT_SUSPENDED",
         "ACCOUNT_ACTIVATED"
       ],

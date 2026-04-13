@@ -4,6 +4,12 @@ import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import { createAuthLogSafely } from "./audit.service.js";
 import {
+  buildAccountStatusBreakdown,
+  buildDoctorVerificationPipeline,
+  buildRoleDistribution,
+  buildUserGrowthDataset
+} from "../utils/dashboardAnalytics.js";
+import {
   sendAccountStatusEmail,
   sendDoctorApprovedEmail,
   sendDoctorRejectedEmail,
@@ -236,7 +242,13 @@ export const getDashboardCountsInternal = async () => {
     totalAdmins,
     pendingDoctors,
     activeUsers,
-    suspendedUsers
+    suspendedUsers,
+    pendingUsers,
+    lockedUsers,
+    approvedDoctors,
+    changesRequestedDoctors,
+    rejectedDoctors,
+    recentUsers
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ role: "PATIENT" }),
@@ -244,7 +256,25 @@ export const getDashboardCountsInternal = async () => {
     User.countDocuments({ role: "ADMIN" }),
     User.countDocuments({ role: "DOCTOR", doctorVerificationStatus: "PENDING" }),
     User.countDocuments({ accountStatus: "ACTIVE" }),
-    User.countDocuments({ accountStatus: "SUSPENDED" })
+    User.countDocuments({ accountStatus: "SUSPENDED" }),
+    User.countDocuments({ accountStatus: "PENDING" }),
+    User.countDocuments({ accountStatus: "LOCKED" }),
+    User.countDocuments({ role: "DOCTOR", doctorVerificationStatus: "APPROVED" }),
+    User.countDocuments({
+      role: "DOCTOR",
+      doctorVerificationStatus: "CHANGES_REQUESTED"
+    }),
+    User.countDocuments({ role: "DOCTOR", doctorVerificationStatus: "REJECTED" }),
+    User.find({
+      createdAt: {
+        $gte: (() => {
+          const startDate = new Date();
+          startDate.setHours(0, 0, 0, 0);
+          startDate.setDate(startDate.getDate() - 13);
+          return startDate;
+        })()
+      }
+    }).select("role createdAt")
   ]);
 
   return {
@@ -254,7 +284,25 @@ export const getDashboardCountsInternal = async () => {
     totalAdmins,
     pendingDoctors,
     activeUsers,
-    suspendedUsers
+    suspendedUsers,
+    userGrowth: buildUserGrowthDataset(recentUsers, 14),
+    roleDistribution: buildRoleDistribution({
+      totalPatients,
+      totalDoctors,
+      totalAdmins
+    }),
+    doctorVerificationPipeline: buildDoctorVerificationPipeline({
+      pending: pendingDoctors,
+      approved: approvedDoctors,
+      changesRequested: changesRequestedDoctors,
+      rejected: rejectedDoctors
+    }),
+    accountStatusBreakdown: buildAccountStatusBreakdown({
+      active: activeUsers,
+      pending: pendingUsers,
+      suspended: suspendedUsers,
+      locked: lockedUsers
+    })
   };
 };
 

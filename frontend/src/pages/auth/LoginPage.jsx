@@ -7,6 +7,51 @@ import { loginUser } from "../../services/authApi.js";
 import { useAuth } from "../../hooks/useAuth.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 
+const getRoleHomePath = (role) => {
+  if (role === "ADMIN" || role === "SUPER_ADMIN") {
+    return "/admin";
+  }
+
+  if (role === "DOCTOR") {
+    return "/doctor";
+  }
+
+  if (role === "PATIENT") {
+    return "/dashboard";
+  }
+
+  return "/";
+};
+
+const isPathAllowedForRole = (role, path) => {
+  if (!path) {
+    return false;
+  }
+
+  const allowedPrefixesByRole = {
+    PATIENT: [
+      "/patient",
+      "/dashboard",
+      "/profile",
+      "/reports",
+      "/history",
+      "/ai-chat",
+      "/book-appointment",
+      "/checkout",
+      "/booking-confirmation"
+    ],
+    DOCTOR: ["/doctor"],
+    ADMIN: ["/admin"],
+    SUPER_ADMIN: ["/admin"]
+  };
+
+  const allowedPrefixes = allowedPrefixesByRole[role] || [];
+
+  return allowedPrefixes.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
+  );
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,17 +75,11 @@ const LoginPage = () => {
         });
       }
 
-      const roleHomePath =
-        user?.role === "ADMIN" || user?.role === "SUPER_ADMIN"
-          ? "/admin"
-          : user?.role === "DOCTOR"
-            ? "/doctor"
-            : user?.role === "PATIENT"
-              ? "/dashboard"
-              : "/";
+      const roleHomePath = getRoleHomePath(user?.role);
+      const requestedPath = location.state?.from?.pathname;
 
       const nextPath =
-        location.state?.from?.pathname || roleHomePath;
+        isPathAllowedForRole(user?.role, requestedPath) ? requestedPath : roleHomePath;
 
       navigate(nextPath, { replace: true });
     } catch (error) {

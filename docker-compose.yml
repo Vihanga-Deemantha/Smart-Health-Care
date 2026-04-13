@@ -96,8 +96,11 @@ services:
     depends_on:
       - auth-service
       - admin-service
+      - appointment-service
+      - payment-service
       - patient-service
       - ai-chatbot-service
+
     ports:
       - "${GATEWAY_PORT:-5026}:5026"
     environment:
@@ -107,6 +110,80 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       AUTH_SERVICE_URL: http://auth-service:5024
       ADMIN_SERVICE_URL: http://admin-service:5025
+      APPOINTMENT_SERVICE_URL: http://appointment-service:5027
+      PAYMENT_SERVICE_URL: http://payment-service:5034
+
+  appointment-service:
+    build:
+      context: ./backend/services/appointment-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - rabbitmq
+      - redis
+    ports:
+      - "${APPOINTMENT_PORT:-5027}:5027"
+    environment:
+      PORT: 5027
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGODB_URI: ${APPOINTMENT_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/appointment_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      AUTH_SERVICE_URL: http://auth-service:5024
+      PATIENT_SERVICE_URL: ${PATIENT_SERVICE_URL:-http://patient-service:5028}
+      DOCTOR_SERVICE_URL: ${DOCTOR_SERVICE_URL:-http://doctor-service:5029}
+      TELEMEDICINE_SERVICE_URL: ${TELEMEDICINE_SERVICE_URL:-http://telemedicine-service:5033}
+      PAYMENT_SERVICE_URL: http://payment-service:5034
+      ROOM_SERVICE_URL: ${ROOM_SERVICE_URL:-http://room-service:5030}
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service:5032}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_EXCHANGE: smart_health.events
+      REDIS_URL: redis://redis:6379
+      SLOT_HOLD_TTL_MINUTES: ${SLOT_HOLD_TTL_MINUTES:-10}
+      MAX_ACTIVE_HOLDS_PER_PATIENT: ${MAX_ACTIVE_HOLDS_PER_PATIENT:-3}
+      CANCELLATION_CUTOFF_HOURS: ${CANCELLATION_CUTOFF_HOURS:-12}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      GOOGLE_CALENDAR_ID: ${GOOGLE_CALENDAR_ID:-primary}
+      GOOGLE_REFRESH_TOKEN: ${GOOGLE_REFRESH_TOKEN:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_SMS_FROM: ${TWILIO_SMS_FROM:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
+
+  payment-service:
+    build:
+      context: ./backend/services/payment-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - rabbitmq
+    ports:
+      - "${PAYMENT_PORT:-5034}:5034"
+    environment:
+      PORT: 5034
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGODB_URI: ${PAYMENT_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/payment_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_EXCHANGE: smart_health.events
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
       PATIENT_SERVICE_URL: http://patient-service:5028
       AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
       APPOINTMENT_SERVICE_URL: ${APPOINTMENT_SERVICE_URL:-http://appointment-service:5027}

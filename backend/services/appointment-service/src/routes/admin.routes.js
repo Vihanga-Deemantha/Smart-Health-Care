@@ -11,7 +11,7 @@ const router = Router();
 router.get(
   "/analytics",
   protect,
-  allowRoles(USER_ROLES.ADMIN, USER_ROLES.STAFF),
+  allowRoles(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF),
   adminAnalyticsValidation,
   validateRequest,
   handleAdminAnalytics

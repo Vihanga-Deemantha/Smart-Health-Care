@@ -6,6 +6,8 @@ This project includes Kubernetes manifests for the Smart Care Health platform.
 
 - `auth-service`
 - `admin-service`
+- `patient-service`
+- `ai-chatbot-service`
 - `api-gateway`
 - `frontend`
 
@@ -24,6 +26,8 @@ Build the application images with these tags:
 ```powershell
 docker build -t smart-health-care-auth-service:latest .\backend\auth-service
 docker build -t smart-health-care-admin-service:latest .\backend\admin-service
+docker build -t smart-health-care-patient-service:latest .\backend\patient-service
+docker build -t smart-health-care-ai-chatbot-service:latest .\backend\ai-chatbot-service
 docker build -t smart-health-care-api-gateway:latest .\backend\api-gateway
 docker build -t smart-health-care-frontend:latest .\frontend
 ```
@@ -33,6 +37,8 @@ If you are using `kind`, load the images into the cluster:
 ```powershell
 kind load docker-image smart-health-care-auth-service:latest
 kind load docker-image smart-health-care-admin-service:latest
+kind load docker-image smart-health-care-patient-service:latest
+kind load docker-image smart-health-care-ai-chatbot-service:latest
 kind load docker-image smart-health-care-api-gateway:latest
 kind load docker-image smart-health-care-frontend:latest
 ```
@@ -53,6 +59,10 @@ Update the placeholder values in `secret.yaml` before deployment:
 - `EMAIL_USER`
 - `EMAIL_PASS`
 - `EMAIL_FROM`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `GEMINI_API_KEY`
 
 Update the database and client URLs in `configmap.yaml` as needed.
 

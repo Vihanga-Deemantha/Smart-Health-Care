@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SectionHeading from "../../components/common/SectionHeading.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 import EmptyState from "../../components/common/EmptyState.jsx";
@@ -32,6 +32,28 @@ const SecurityLogsPage = () => {
     loadActions();
   }, [loadActions]);
 
+  const timelineMetrics = useMemo(() => {
+    const events = data?.events || [];
+
+    return [
+      {
+        label: "Events in view",
+        value: events.length,
+        detail: "Security timeline items currently loaded into this page"
+      },
+      {
+        label: "Auth events",
+        value: events.filter((item) => item.type === "AUTH_LOG").length,
+        detail: "Authentication and access events captured in this slice"
+      },
+      {
+        label: "Admin actions",
+        value: events.filter((item) => item.type === "ADMIN_ACTION" || item.action).length,
+        detail: "Administrative decisions included in the current activity feed"
+      }
+    ];
+  }, [data]);
+
   if (loading) {
     return <LoadingSpinner label="Loading security activity" />;
   }
@@ -52,7 +74,25 @@ const SecurityLogsPage = () => {
         eyebrow="Security activity"
         title="System-wide security timeline"
         description="Review authentication events and admin decisions together in a single operational feed."
+        tone="dark"
       />
+
+      {data?.events?.length ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          {timelineMetrics.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[24px] border border-[#E0E7EF] bg-white px-5 py-4 shadow-[0_10px_30px_rgba(47,128,237,0.08)]"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#5C708A]">
+                {item.label}
+              </p>
+              <p className="mt-2 text-3xl font-black text-[#0B1F3A]">{item.value}</p>
+              <p className="mt-2 text-sm leading-6 text-[#5C708A]">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {errorMessage ? (
         <div className="rounded-[24px] border border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">

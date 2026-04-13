@@ -7,6 +7,10 @@ resources:
   - secret.yaml
   - auth-service.yaml
   - admin-service.yaml
+  - patient-service-deployment.yaml
+  - patient-service-service.yaml
+  - ai-chatbot-service-deployment.yaml
+  - ai-chatbot-service-service.yaml
   - api-gateway.yaml
 <<<<<<< Updated upstream
 =======

@@ -11,6 +11,9 @@ import { createServiceProxy } from "./src/services/proxy.service.js";
 
 const app = express();
 
+// In docker/k8s, requests arrive through proxies (nginx/load balancer).
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(
   cors({
@@ -34,6 +37,16 @@ app.use(
   "/api/admin",
   protect,
   createServiceProxy(process.env.ADMIN_SERVICE_URL)
+);
+app.use(
+  "/api/patients",
+  protect,
+  createServiceProxy(process.env.PATIENT_SERVICE_URL)
+);
+app.use(
+  "/api/ai",
+  protect,
+  createServiceProxy(process.env.AI_CHATBOT_SERVICE_URL)
 );
 app.use("/api/doctors", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
 app.use("/api/feedback/doctors", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));

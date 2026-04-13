@@ -1,15 +1,16 @@
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 
-const StatsCard = ({ label, value, accent = "from-cyan-400 to-blue-500" }) => {
+const StatsCard = ({ label, value, detail, accent = "linear-gradient(135deg, #2F80ED, #56CCF2)" }) => {
   return (
-    <motion.div
-      whileHover={{ y: -4, scale: 1.01 }}
-      className="rounded-[28px] border border-white/10 bg-slate-900/80 p-6 shadow-[0_30px_80px_-40px_rgba(6,182,212,0.45)]"
+    <Motion.div
+      whileHover={{ y: -3 }}
+      className="rounded-[24px] border border-[#E0E7EF] bg-white p-5 shadow-[0_10px_30px_rgba(47,128,237,0.08)]"
     >
-      <div className={`h-1.5 w-20 rounded-full bg-linear-to-r ${accent}`} />
-      <p className="mt-5 text-sm text-slate-300">{label}</p>
-      <p className="mt-3 text-4xl font-semibold tracking-tight text-white">{value}</p>
-    </motion.div>
+      <div className="h-1.5 w-16 rounded-full" style={{ background: accent }} />
+      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#5C708A]">{label}</p>
+      <p className="mt-3 text-4xl font-black tracking-tight text-[#0B1F3A]">{value}</p>
+      {detail ? <p className="mt-2 text-sm leading-6 text-[#5C708A]">{detail}</p> : null}
+    </Motion.div>
   );
 };
 

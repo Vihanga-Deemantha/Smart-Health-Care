@@ -29,26 +29,38 @@ const copyForwardHeaders = (req) => {
   return headers;
 };
 
-const buildRequestBody = (req) => {
+const buildRequestOptions = (req) => {
   if (req.method === "GET" || req.method === "HEAD") {
-    return undefined;
+    return {};
+  }
+
+  const contentType = req.headers["content-type"] || "";
+
+  if (contentType.startsWith("multipart/form-data")) {
+    return {
+      body: req,
+      duplex: "half"
+    };
   }
 
   if (req.body && Object.keys(req.body).length > 0) {
-    return JSON.stringify(req.body);
+    return {
+      body: JSON.stringify(req.body)
+    };
   }
 
-  return undefined;
+  return {};
 };
 
 export const createServiceProxy = (target) => {
   return async (req, res, next) => {
     try {
       const upstreamPath = `${req.baseUrl}${req.url}`;
+      const requestOptions = buildRequestOptions(req);
       const response = await fetch(`${target}${upstreamPath}`, {
         method: req.method,
         headers: copyForwardHeaders(req),
-        body: buildRequestBody(req)
+        ...requestOptions
       });
 
       const setCookies = response.headers.getSetCookie?.() || [];

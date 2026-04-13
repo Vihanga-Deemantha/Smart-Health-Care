@@ -1,5 +1,7 @@
 const errorMiddleware = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
+  const isMulterError = err?.name === "MulterError";
+  const multerLimitError = isMulterError && err?.code === "LIMIT_FILE_SIZE";
+  const statusCode = err.statusCode || (multerLimitError ? 413 : isMulterError ? 400 : 500);
   const message = err.message || "Internal server error";
   const code =
     err.code ||
@@ -13,6 +15,8 @@ const errorMiddleware = (err, req, res, next) => {
             ? "NOT_FOUND"
             : statusCode === 409
               ? "CONFLICT"
+              : statusCode === 413
+                ? "PAYLOAD_TOO_LARGE"
               : statusCode === 429
                 ? "RATE_LIMITED"
                 : "INTERNAL_SERVER_ERROR");

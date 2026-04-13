@@ -2,6 +2,7 @@ import { CalendarDays, HeartPulse, ShieldCheck, FileText, CreditCard, Bell, Arro
 import { Link } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import PortalLayout from "../../components/common/PortalLayout.jsx";
+import PatientLayout from "../../components/patient/PatientLayout.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
 
 const cardPop = {
@@ -15,6 +16,7 @@ const cardPop = {
 const PatientHomePage = () => {
   const { user } = useAuth();
   const MotionDiv = Motion.div;
+  const Layout = PatientLayout || PortalLayout;
   const firstName = user?.fullName?.split(" ")[0] || "there";
 
   const highlights = [
@@ -46,7 +48,7 @@ const PatientHomePage = () => {
   ];
 
   return (
-    <PortalLayout
+  <Layout
       eyebrow="Patient Portal"
       title={`Hello, ${firstName} 👋`}
       description="Your health is in good hands. Access your appointments, medical records, and connect with your care team."
@@ -123,7 +125,7 @@ const PatientHomePage = () => {
           })}
         </div>
       </div>
-    </PortalLayout>
+  </Layout>
   );
 };
 

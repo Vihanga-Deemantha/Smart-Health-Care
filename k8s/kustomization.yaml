@@ -8,5 +8,10 @@ resources:
   - auth-service.yaml
   - admin-service.yaml
   - api-gateway.yaml
+<<<<<<< Updated upstream
+=======
+  - appointment-deployment.yaml
+  - payment-deployment.yaml
+>>>>>>> Stashed changes
   - frontend.yaml
   - ingress.yaml

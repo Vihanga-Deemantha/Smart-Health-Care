@@ -42,6 +42,19 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: ADMIN_SERVICE_URL
+<<<<<<< Updated upstream
+=======
+            - name: APPOINTMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: APPOINTMENT_SERVICE_URL
+            - name: PAYMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: PAYMENT_SERVICE_URL
+>>>>>>> Stashed changes
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:

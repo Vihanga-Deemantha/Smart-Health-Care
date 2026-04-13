@@ -13,7 +13,7 @@ router.get("/doctors/:id/reviews", doctorReviewValidation, validateRequest, hand
 router.patch(
   "/:id/moderate",
   protect,
-  allowRoles(USER_ROLES.ADMIN, USER_ROLES.STAFF),
+  allowRoles(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF),
   moderateFeedbackValidation,
   validateRequest,
   handleModerateFeedback

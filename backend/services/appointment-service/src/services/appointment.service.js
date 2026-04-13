@@ -267,7 +267,9 @@ export const cancelAppointment = async ({ appointmentId, actor, reason, override
   }
 
   const hoursLeft = differenceInHours(appointment.startTime, new Date());
-  const isAdmin = [USER_ROLES.ADMIN, USER_ROLES.STAFF].includes(actor.role);
+  const isAdmin = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF].includes(
+    actor.role
+  );
 
   if (!overridePolicy && !isAdmin && hoursLeft < cancellationCutoffHours) {
     throw new AppError("Cancellation cutoff exceeded", 409, "CANCELLATION_CUTOFF_EXCEEDED");

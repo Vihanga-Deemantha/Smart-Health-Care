@@ -16,6 +16,8 @@ const adminActionSchema = new mongoose.Schema(
         "DOCTOR_APPROVED",
         "DOCTOR_REJECTED",
         "DOCTOR_CHANGES_REQUESTED",
+        "ADMIN_CREATED",
+        "ADMIN_DELETED",
         "USER_SUSPENDED",
         "USER_ACTIVATED"
       ],

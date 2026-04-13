@@ -194,7 +194,7 @@ export const verifyEmailOtp = async ({ email, otpCode }, req) => {
     user.accountStatus = "ACTIVE";
   } else if (user.role === "DOCTOR") {
     user.accountStatus = "PENDING";
-  } else if (user.role === "ADMIN") {
+  } else if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
     user.accountStatus = "ACTIVE";
   }
 

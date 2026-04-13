@@ -1,5 +1,9 @@
 import { CalendarDays, HeartPulse, ShieldCheck } from "lucide-react";
+<<<<<<< Updated upstream
 import PortalLayout from "../../components/common/PortalLayout.jsx";
+=======
+import PatientLayout from "../../components/patient/PatientLayout.jsx";
+>>>>>>> Stashed changes
 
 const patientHighlights = [
   {
@@ -21,7 +25,11 @@ const patientHighlights = [
 
 const PatientHomePage = () => {
   return (
+<<<<<<< Updated upstream
     <PortalLayout
+=======
+    <PatientLayout
+>>>>>>> Stashed changes
       eyebrow="Patient Portal"
       title="Welcome to your patient workspace"
       description="Access your patient account through a secure, streamlined care workspace."
@@ -41,7 +49,11 @@ const PatientHomePage = () => {
           </div>
         ))}
       </div>
+<<<<<<< Updated upstream
     </PortalLayout>
+=======
+    </PatientLayout>
+>>>>>>> Stashed changes
   );
 };
 

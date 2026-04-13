@@ -600,14 +600,23 @@ const AdminProfileSettingsPage = () => {
                     ) : null}
                   </label>
 
-                  <button
-                    type="submit"
-                    disabled={savingPassword}
-                    className="rounded-2xl bg-[#0B1F3A] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
-                  >
-                    {savingPassword ? "Updating password..." : "Update password"}
-                  </button>
+                  {/* Action footer */}
+                  <div className="mt-2 border-t border-[#E0E7EF] pt-5">
+                    <button
+                      type="submit"
+                      disabled={savingPassword}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(11,31,58,0.4)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #0B1F3A, #1D3A6B)" }}
+                    >
+                      <KeyRound size={15} />
+                      {savingPassword ? "Updating password…" : "Update password"}
+                    </button>
+                    <p className="mt-3 text-center text-[11px] leading-5 text-[#8BA0B8]">
+                      You will be signed out immediately after a successful password change.
+                    </p>
+                  </div>
                 </form>
+
               </div>
             </div>
           </div>

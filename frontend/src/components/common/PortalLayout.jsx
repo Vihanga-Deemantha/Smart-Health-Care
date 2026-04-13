@@ -144,8 +144,14 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
             </div>
           </Motion.div>
 
-          {/* Sidebar */}
-          <Motion.aside variants={fadeUp} initial="hidden" animate="visible" custom={0.2} className="space-y-5">
+          {/* Sidebar — reordered to appear below content on mobile */}
+          <Motion.aside
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0.2}
+            className="order-last space-y-5 lg:order-none"
+          >
             {/* Account Snapshot */}
             <div
               className="rounded-2xl p-6"

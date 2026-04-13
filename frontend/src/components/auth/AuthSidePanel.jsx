@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import { ShieldCheck, Stethoscope, UserRoundCheck, HeartPulse } from "lucide-react";
 
@@ -53,27 +54,29 @@ const AuthSidePanel = () => {
       />
 
       <div className="relative z-10">
-        {/* Logo */}
-        <Motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center gap-3"
-        >
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-2xl"
-            style={{
-              background: "linear-gradient(135deg, #2F80ED, #56CCF2)",
-              boxShadow: "0 0 28px rgba(47,128,237,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
-            }}
+        {/* Logo — links back to home */}
+        <Link to="/" aria-label="Back to Healio home" className="inline-flex transition-opacity hover:opacity-80">
+          <Motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="flex items-center gap-3"
           >
-            <HeartPulse size={24} className="text-white" strokeWidth={2.5} />
-          </div>
-          <div>
-            <span className="text-xl font-black text-white tracking-tight block leading-none">Healio</span>
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.35em] block mt-0.5" style={{ color: "#56CCF2" }}>Medical Platform</span>
-          </div>
-        </Motion.div>
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-2xl"
+              style={{
+                background: "linear-gradient(135deg, #2F80ED, #56CCF2)",
+                boxShadow: "0 0 28px rgba(47,128,237,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
+              }}
+            >
+              <HeartPulse size={24} className="text-white" strokeWidth={2.5} />
+            </div>
+            <div>
+              <span className="text-xl font-black text-white tracking-tight block leading-none">Healio</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.35em] block mt-0.5" style={{ color: "#56CCF2" }}>Medical Platform</span>
+            </div>
+          </Motion.div>
+        </Link>
 
         {/* Badge */}
         <Motion.div

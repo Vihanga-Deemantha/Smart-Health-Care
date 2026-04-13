@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import SectionHeading from "../../components/common/SectionHeading.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
@@ -35,7 +35,29 @@ const UsersManagementPage = () => {
     [filters.page, filters.role, filters.accountStatus, debouncedSearch]
   );
 
-  const loadUsers = async () => {
+  const snapshotMetrics = useMemo(() => {
+    const users = usersData?.users || [];
+
+    return [
+      {
+        label: "Visible results",
+        value: users.length,
+        detail: "Accounts loaded into the current page"
+      },
+      {
+        label: "Doctors in view",
+        value: users.filter((user) => user.role === "DOCTOR").length,
+        detail: "Clinical accounts included in the current filter state"
+      },
+      {
+        label: "Suspended in view",
+        value: users.filter((user) => user.accountStatus === "SUSPENDED").length,
+        detail: "Accounts currently restricted inside this result set"
+      }
+    ];
+  }, [usersData]);
+
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     setErrorMessage("");
     try {
@@ -46,11 +68,11 @@ const UsersManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params]);
 
   useEffect(() => {
     loadUsers();
-  }, [debouncedSearch, filters.role, filters.accountStatus, filters.page]);
+  }, [loadUsers]);
 
   const handleFilterChange = (field, value) => {
     setFilters((current) => ({
@@ -60,10 +82,10 @@ const UsersManagementPage = () => {
     }));
   };
 
-  const handleToggleStatus = async (id, status) => {
+  const handleToggleStatus = async (id, status, reason) => {
     setUpdatingUserId(id);
     try {
-      await updateUserStatus(id, { status });
+      await updateUserStatus(id, { status, reason });
       toast.success(`User ${status === "SUSPENDED" ? "suspended" : "activated"} successfully`);
       await loadUsers();
     } catch (error) {
@@ -79,7 +101,25 @@ const UsersManagementPage = () => {
         eyebrow="User management"
         title="Search, filter, and control platform access"
         description="Search accounts, review status, and manage access across the platform."
+        tone="dark"
       />
+
+      {usersData?.users?.length ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          {snapshotMetrics.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[24px] border border-[#E0E7EF] bg-white px-5 py-4 shadow-[0_10px_30px_rgba(47,128,237,0.08)]"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#5C708A]">
+                {item.label}
+              </p>
+              <p className="mt-2 text-3xl font-black text-[#0B1F3A]">{item.value}</p>
+              <p className="mt-2 text-sm leading-6 text-[#5C708A]">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <UserFilters filters={filters} onChange={handleFilterChange} />
 

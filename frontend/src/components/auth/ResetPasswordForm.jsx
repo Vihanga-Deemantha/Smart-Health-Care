@@ -2,81 +2,98 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { resetPasswordSchema } from "../../schemas/auth.schema.js";
 import PasswordStrengthHint from "./PasswordStrengthHint.jsx";
+import { Mail, Key, Lock, ShieldCheck, ArrowRight } from "lucide-react";
+import { useState } from "react";
 
 const ResetPasswordForm = ({ defaultEmail = "", onSubmit, loading }) => {
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      email: defaultEmail,
-      otpCode: "",
-      newPassword: "",
-      confirmPassword: ""
-    }
+    defaultValues: { email: defaultEmail, otpCode: "", newPassword: "", confirmPassword: "" },
   });
 
   const password = useWatch({ control, name: "newPassword" }) || "";
+  const [focused, setFocused] = useState(null);
+
+  const fieldStyle = (name) => ({
+    background: focused === name ? "rgba(47,128,237,0.05)" : "rgba(11,31,58,0.03)",
+    border: focused === name ? "1.5px solid rgba(47,128,237,0.5)" : "1.5px solid rgba(47,128,237,0.15)",
+    boxShadow: focused === name ? "0 0 0 4px rgba(47,128,237,0.08)" : "none",
+    color: "#0B1F3A",
+    transition: "all 0.2s ease",
+  });
+
+  const fields = [
+    { name: "email",           label: "Email Address",   icon: Mail,        type: "email",    ph: "you@example.com" },
+    { name: "otpCode",         label: "OTP Code",        icon: Key,         type: "text",     ph: "Enter your 6-digit OTP" },
+    { name: "newPassword",     label: "New Password",    icon: Lock,        type: "password", ph: "Create a strong password" },
+  ];
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
-        <input
-          {...register("email")}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
-          placeholder="you@example.com"
-        />
-        {errors.email ? <p className="mt-2 text-xs text-rose-600">{errors.email.message}</p> : null}
-      </div>
+    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      {fields.map(({ name, label, icon, type, ph }) => {
+        const IconComponent = icon;
 
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">OTP code</label>
-        <input
-          {...register("otpCode")}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
-          placeholder="123456"
-        />
-        {errors.otpCode ? <p className="mt-2 text-xs text-rose-600">{errors.otpCode.message}</p> : null}
-      </div>
+        return (
+          <div key={name}>
+            <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest" style={{ color: "#334155" }}>
+              <IconComponent size={11} style={{ color: "#2F80ED" }} />
+              {label}
+            </label>
+            <input
+              {...register(name)}
+              type={type}
+              className="w-full rounded-xl px-4 py-3.5 text-sm outline-none"
+              style={fieldStyle(name)}
+              placeholder={ph}
+              onFocus={() => setFocused(name)}
+              onBlur={() => setFocused(null)}
+            />
+            {errors[name] && <p className="mt-1.5 text-xs font-semibold" style={{ color: "#EB5757" }}>{errors[name].message}</p>}
+            {name === "newPassword" && <div className="mt-3"><PasswordStrengthHint value={password} /></div>}
+          </div>
+        );
+      })}
 
+      {/* Confirm password */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">New password</label>
-        <input
-          {...register("newPassword")}
-          type="password"
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
-          placeholder="Create a new password"
-        />
-        {errors.newPassword ? (
-          <p className="mt-2 text-xs text-rose-600">{errors.newPassword.message}</p>
-        ) : null}
-      </div>
-
-      <PasswordStrengthHint value={password} />
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">Confirm password</label>
+        <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest" style={{ color: "#334155" }}>
+          <ShieldCheck size={11} style={{ color: "#2F80ED" }} />
+          Confirm Password
+        </label>
         <input
           {...register("confirmPassword")}
           type="password"
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+          className="w-full rounded-xl px-4 py-3.5 text-sm outline-none"
+          style={fieldStyle("confirmPassword")}
           placeholder="Confirm your new password"
+          onFocus={() => setFocused("confirmPassword")}
+          onBlur={() => setFocused(null)}
         />
-        {errors.confirmPassword ? (
-          <p className="mt-2 text-xs text-rose-600">{errors.confirmPassword.message}</p>
-        ) : null}
+        {errors.confirmPassword && <p className="mt-1.5 text-xs font-semibold" style={{ color: "#EB5757" }}>{errors.confirmPassword.message}</p>}
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-2xl bg-linear-to-r from-cyan-400 via-blue-500 to-emerald-400 px-5 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_24px_60px_-28px_rgba(34,211,238,0.75)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+        className="group relative w-full overflow-hidden rounded-xl py-4 text-sm font-extrabold text-white transition-all duration-300 hover:scale-[1.015] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        style={{
+          background: "linear-gradient(135deg, #2F80ED 0%, #56CCF2 100%)",
+          boxShadow: "0 8px 32px rgba(47,128,237,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
+        }}
       >
-        {loading ? "Resetting password..." : "Reset password"}
+        <span
+          className="pointer-events-none absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)" }}
+        />
+        <span className="relative flex items-center justify-center gap-2">
+          {loading ? "Resetting…" : "Reset Password"}
+          {!loading && <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />}
+        </span>
       </button>
     </form>
   );

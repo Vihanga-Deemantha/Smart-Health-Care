@@ -26,6 +26,10 @@ services:
       EMAIL_USER: ${EMAIL_USER:-change-me@example.com}
       EMAIL_PASS: ${EMAIL_PASS:-change-me}
       EMAIL_FROM: ${EMAIL_FROM:-change-me@example.com}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
+      CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-verification}
 
   admin-service:
     build:
@@ -44,6 +48,47 @@ services:
       AUTH_SERVICE_URL: http://auth-service:5024
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
 
+  patient-service:
+    build:
+      context: ./backend/patient-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+    ports:
+      - "${PATIENT_PORT:-5028}:5028"
+    environment:
+      PORT: 5028
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGODB_URI: ${PATIENT_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/patient_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      APPOINTMENT_SERVICE_URL: ${APPOINTMENT_SERVICE_URL:-http://appointment-service:5027}
+      DOCTOR_SERVICE_URL: ${DOCTOR_SERVICE_URL:-http://doctor-service:5029}
+      REPORT_MAX_FILE_SIZE_MB: ${REPORT_MAX_FILE_SIZE_MB:-10}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
+      CLOUDINARY_REPORTS_FOLDER: ${CLOUDINARY_REPORTS_FOLDER:-smart-health/patient-reports}
+
+  ai-chatbot-service:
+    build:
+      context: ./backend/ai-chatbot-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+    ports:
+      - "${AI_CHATBOT_PORT:-5031}:5031"
+    environment:
+      PORT: 5031
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-change-me}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-1.5-flash}
+      GEMINI_MAX_RETRIES: ${GEMINI_MAX_RETRIES:-2}
+
   api-gateway:
     build:
       context: ./backend/api-gateway
@@ -51,11 +96,11 @@ services:
     depends_on:
       - auth-service
       - admin-service
-<<<<<<< Updated upstream
-=======
       - appointment-service
       - payment-service
->>>>>>> Stashed changes
+      - patient-service
+      - ai-chatbot-service
+
     ports:
       - "${GATEWAY_PORT:-5026}:5026"
     environment:
@@ -65,8 +110,6 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       AUTH_SERVICE_URL: http://auth-service:5024
       ADMIN_SERVICE_URL: http://admin-service:5025
-<<<<<<< Updated upstream
-=======
       APPOINTMENT_SERVICE_URL: http://appointment-service:5027
       PAYMENT_SERVICE_URL: http://payment-service:5034
 
@@ -141,7 +184,10 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
->>>>>>> Stashed changes
+      PATIENT_SERVICE_URL: http://patient-service:5028
+      AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
+      APPOINTMENT_SERVICE_URL: ${APPOINTMENT_SERVICE_URL:-http://appointment-service:5027}
+      PAYMENT_SERVICE_URL: ${PAYMENT_SERVICE_URL:-http://payment-service:5034}
 
   frontend:
     build:

@@ -4,10 +4,10 @@ import AdminTopbar from "./AdminTopbar.jsx";
 
 const AdminLayout = () => {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
+    <div className="min-h-screen bg-[#F5F9FF] text-[#1D2D50]">
+      <div className="mx-auto min-h-screen max-w-[1680px]">
         <AdminSidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-72">
           <AdminTopbar />
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />

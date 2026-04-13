@@ -5,7 +5,7 @@ import { handleGetDashboardStats } from "../controllers/dashboard.controller.js"
 
 const router = express.Router();
 
-router.get("/stats", protect, allowRoles("ADMIN"), handleGetDashboardStats);
+router.get("/stats", protect, allowRoles("ADMIN", "SUPER_ADMIN"), handleGetDashboardStats);
 
 export default router;
 

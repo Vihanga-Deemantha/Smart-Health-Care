@@ -6,11 +6,20 @@ metadata:
 data:
   AUTH_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/auth_db?retryWrites=true&w=majority
   ADMIN_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/admin_db?retryWrites=true&w=majority
+  PATIENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/patient_db?retryWrites=true&w=majority
   AUTH_SERVICE_URL: http://auth-service:5024
   ADMIN_SERVICE_URL: http://admin-service:5025
+  PATIENT_SERVICE_URL: http://patient-service:5028
+  AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
+  APPOINTMENT_SERVICE_URL: http://appointment-service:5027
+  DOCTOR_SERVICE_URL: http://doctor-service:5029
+  PAYMENT_SERVICE_URL: http://payment-service:5034
   CLIENT_URL: http://smart-health.local
   NODE_ENV: production
   COOKIE_SECURE: "false"
+  REPORT_MAX_FILE_SIZE_MB: "10"
+  CLOUDINARY_REPORTS_FOLDER: smart-health/patient-reports
+  GEMINI_MODEL: gemini-1.5-flash
   JWT_ACCESS_EXPIRES: 15m
   JWT_REFRESH_EXPIRES: 7d
   OTP_RESEND_COOLDOWN_SECONDS: "60"

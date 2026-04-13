@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import SectionHeading from "../../components/common/SectionHeading.jsx";
 import EmptyState from "../../components/common/EmptyState.jsx";
@@ -32,6 +32,27 @@ const PendingDoctorsPage = () => {
     loadDoctors();
   }, [loadDoctors]);
 
+  const queueMetrics = useMemo(
+    () => [
+      {
+        label: "Doctors waiting",
+        value: doctors.length,
+        detail: "Profiles currently sitting in the active review queue"
+      },
+      {
+        label: "With documents",
+        value: doctors.filter((doctor) => (doctor.verificationDocuments || []).length > 0).length,
+        detail: "Submissions that already include uploaded verification files"
+      },
+      {
+        label: "With links",
+        value: doctors.filter((doctor) => (doctor.verificationLinks || []).length > 0).length,
+        detail: "Profiles that also include external supporting references"
+      }
+    ],
+    [doctors]
+  );
+
   const handleApprove = async (id) => {
     setUpdatingId(id);
     try {
@@ -49,10 +70,10 @@ const PendingDoctorsPage = () => {
     setUpdatingId(id);
     try {
       await rejectDoctor(id, { reason });
-      toast.success("Doctor rejected successfully");
+      toast.success("Doctor changes requested successfully");
       await loadDoctors();
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to reject doctor."));
+      toast.error(getApiErrorMessage(error, "Unable to request changes."));
     } finally {
       setUpdatingId(null);
     }
@@ -78,7 +99,25 @@ const PendingDoctorsPage = () => {
         eyebrow="Approvals"
         title="Pending doctor verification queue"
         description="Review submitted doctor profiles and complete approval decisions."
+        tone="dark"
       />
+
+      {doctors.length ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          {queueMetrics.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[24px] border border-[#E0E7EF] bg-white px-5 py-4 shadow-[0_10px_30px_rgba(47,128,237,0.08)]"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#5C708A]">
+                {item.label}
+              </p>
+              <p className="mt-2 text-3xl font-black text-[#0B1F3A]">{item.value}</p>
+              <p className="mt-2 text-sm leading-6 text-[#5C708A]">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {errorMessage ? (
         <div className="rounded-[24px] border border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">

@@ -17,3 +17,11 @@ export const createAuthLog = async ({
     metadata
   });
 };
+
+export const createAuthLogSafely = async (payload, context = "auth audit log") => {
+  try {
+    await createAuthLog(payload);
+  } catch (error) {
+    console.error(`[audit] Failed to write ${context}:`, error);
+  }
+};

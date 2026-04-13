@@ -42,6 +42,26 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: ADMIN_SERVICE_URL
+            - name: PATIENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: PATIENT_SERVICE_URL
+            - name: AI_CHATBOT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: AI_CHATBOT_SERVICE_URL
+            - name: APPOINTMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: APPOINTMENT_SERVICE_URL
+            - name: PAYMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: PAYMENT_SERVICE_URL
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:

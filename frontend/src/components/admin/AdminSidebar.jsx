@@ -22,7 +22,7 @@ const AdminSidebar = ({ mobileOpen = false, onMobileClose }) => {
   const handleLogout = async () => {
     onMobileClose?.();
     await clearAuth();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   const NavItems = () => (

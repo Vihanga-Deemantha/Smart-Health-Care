@@ -22,10 +22,19 @@ const profileProjection = {
   updatedAt: 1
 };
 
+const normalizeClaimValue = (value) => {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+};
+
 const defaultProfile = (user) => ({
   userId: user.userId,
-  email: user.email || null,
-  fullName: user.fullName || "Patient",
+  email: normalizeClaimValue(user.email) || null,
+  fullName: normalizeClaimValue(user.fullName) || "Patient",
+  contactNumber: normalizeClaimValue(user.phone || user.contactNumber) || null,
   allergies: []
 });
 
@@ -37,8 +46,28 @@ const getOrCreatePatientByUser = async (user) => {
     return patient;
   }
 
-  if (!patient.email && user.email) {
-    patient.email = user.email;
+  const fallbackEmail = normalizeClaimValue(user.email);
+  const fallbackFullName = normalizeClaimValue(user.fullName);
+  const fallbackContactNumber = normalizeClaimValue(user.phone || user.contactNumber);
+
+  let shouldSave = false;
+
+  if (!patient.email && fallbackEmail) {
+    patient.email = fallbackEmail;
+    shouldSave = true;
+  }
+
+  if ((!patient.fullName || patient.fullName === "Patient") && fallbackFullName) {
+    patient.fullName = fallbackFullName;
+    shouldSave = true;
+  }
+
+  if (!patient.contactNumber && fallbackContactNumber) {
+    patient.contactNumber = fallbackContactNumber;
+    shouldSave = true;
+  }
+
+  if (shouldSave) {
     await patient.save();
   }
 

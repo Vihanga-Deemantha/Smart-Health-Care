@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import AuthSidePanel from "./AuthSidePanel.jsx";
 import { HeartPulse, Shield } from "lucide-react";
 
@@ -41,21 +42,41 @@ const AuthLayout = ({ title, description, children, footer }) => {
         <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
 
-            {/* Left: Side Panel */}
-            <motion.div
+            {/* Left: Side Panel — visible only on lg+ */}
+            <Motion.div
               initial={{ opacity: 0, x: -32 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              className="hidden lg:block"
             >
               <AuthSidePanel />
-            </motion.div>
+            </Motion.div>
 
-            {/* Right: Form card */}
-            <motion.div
+            {/* Right: Form card (full-width on mobile, right column on lg+) */}
+            <Motion.div
               initial={{ opacity: 0, y: 32, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+              className="lg:col-start-2"
             >
+              {/* Mobile-only compact brand header */}
+              <Link
+                to="/"
+                className="mb-6 flex items-center justify-center gap-3 lg:hidden transition-opacity hover:opacity-80"
+                aria-label="Back to Healio home"
+              >
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #2F80ED, #56CCF2)", boxShadow: "0 6px 20px rgba(47,128,237,0.35)" }}
+                >
+                  <HeartPulse size={19} className="text-white" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <span className="text-base font-black tracking-tight leading-none block text-white">Healio</span>
+                  <span className="text-[9px] font-extrabold uppercase tracking-[0.35em] block" style={{ color: "#56CCF2" }}>Medical Platform</span>
+                </div>
+              </Link>
+
               <div
                 className="relative w-full rounded-3xl overflow-hidden"
                 style={{
@@ -70,9 +91,13 @@ const AuthLayout = ({ title, description, children, footer }) => {
                   style={{ background: "linear-gradient(90deg, #2F80ED, #56CCF2, #2F80ED)" }}
                 />
 
-                <div className="p-8 sm:p-10">
-                  {/* Brand mark */}
-                  <div className="flex items-center gap-3 mb-7">
+                <div className="p-6 sm:p-8 lg:p-10">
+                  {/* Brand mark — hidden on mobile (replaced by compact header above) */}
+                  <Link
+                    to="/"
+                    className="hidden items-center gap-3 mb-7 lg:flex transition-opacity hover:opacity-80"
+                    aria-label="Back to Healio home"
+                  >
                     <div
                       className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
                       style={{
@@ -86,7 +111,7 @@ const AuthLayout = ({ title, description, children, footer }) => {
                       <span className="text-base font-black tracking-tight leading-none block" style={{ color: "#0B1F3A" }}>Healio</span>
                       <span className="text-[9px] font-extrabold uppercase tracking-[0.35em]" style={{ color: "#2F80ED" }}>Medical Platform</span>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Title + description */}
                   <div className="mb-7">
@@ -118,7 +143,7 @@ const AuthLayout = ({ title, description, children, footer }) => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </Motion.div>
 
           </div>
         </div>

@@ -12,5 +12,10 @@ resources:
   - ai-chatbot-service-deployment.yaml
   - ai-chatbot-service-service.yaml
   - api-gateway.yaml
+<<<<<<< Updated upstream
+=======
+  - appointment-deployment.yaml
+  - payment-deployment.yaml
+>>>>>>> Stashed changes
   - frontend.yaml
   - ingress.yaml

@@ -29,38 +29,38 @@ const copyForwardHeaders = (req) => {
   return headers;
 };
 
-const buildRequestInit = (req) => {
+const buildRequestOptions = (req) => {
   if (req.method === "GET" || req.method === "HEAD") {
     return {};
   }
 
   const contentType = req.headers["content-type"] || "";
-  const isJsonPayload = /^application\/(.+\+)?json\b/i.test(contentType);
 
-  // express.json() consumes JSON request streams, so rebuild the body string.
-  if (isJsonPayload && req.body !== undefined) {
+  if (contentType.startsWith("multipart/form-data")) {
+    return {
+      body: req,
+      duplex: "half"
+    };
+  }
+
+  if (req.body && Object.keys(req.body).length > 0) {
     return {
       body: JSON.stringify(req.body)
     };
   }
 
-  // Forward multipart/form-data and other non-JSON payloads as raw streams.
-  return {
-    body: req,
-    duplex: "half"
-  };
+  return {};
 };
 
 export const createServiceProxy = (target) => {
   return async (req, res, next) => {
     try {
       const upstreamPath = `${req.baseUrl}${req.url}`;
-      const requestInit = buildRequestInit(req);
-
+      const requestOptions = buildRequestOptions(req);
       const response = await fetch(`${target}${upstreamPath}`, {
         method: req.method,
         headers: copyForwardHeaders(req),
-        ...requestInit
+        ...requestOptions
       });
 
       const setCookies = response.headers.getSetCookie?.() || [];

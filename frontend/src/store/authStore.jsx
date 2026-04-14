@@ -1,12 +1,11 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
   useState
 } from "react";
+import { AuthContext } from "./AuthContext.js";
 import { getMe, logoutUser, refreshToken } from "../services/authApi.js";
 import {
   clearAccessToken,
@@ -17,8 +16,6 @@ import {
   setSessionHint
 } from "../utils/token.js";
 import { AUTH_EXPIRED_EVENT } from "../utils/authEvents.js";
-
-const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -89,7 +86,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       setInitialized(true);
     }
-  }, [refreshSession]);
+  }, [refreshSession, setAuth]);
 
   useEffect(() => {
     if (hasHydratedRef.current) {
@@ -130,14 +127,4 @@ export const AuthProvider = ({ children }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuthContext = () => {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuthContext must be used within AuthProvider");
-  }
-
-  return context;
 };

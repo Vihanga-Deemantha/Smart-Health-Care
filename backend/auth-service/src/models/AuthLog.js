@@ -22,7 +22,18 @@ const authLogSchema = new mongoose.Schema(
         "OTP_SENT",
         "OTP_VERIFIED",
         "PASSWORD_RESET_REQUESTED",
-        "PASSWORD_RESET_SUCCESS"
+        "PASSWORD_RESET_SUCCESS",
+        "DOCTOR_VERIFICATION_RESUBMITTED",
+        "DOCTOR_APPROVED",
+        "DOCTOR_CHANGES_REQUESTED",
+        "ADMIN_CREATED",
+        "ADMIN_DELETED",
+        "ADMIN_PROFILE_UPDATED",
+        "ADMIN_PROFILE_PHOTO_UPDATED",
+        "ADMIN_PROFILE_PHOTO_REMOVED",
+        "ADMIN_PASSWORD_CHANGED",
+        "ACCOUNT_SUSPENDED",
+        "ACCOUNT_ACTIVATED"
       ],
       required: true
     },

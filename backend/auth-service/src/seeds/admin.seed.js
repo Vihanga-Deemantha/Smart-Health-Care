@@ -13,7 +13,17 @@ const seedAdmin = async () => {
     const existingAdmin = await User.findOne({ email: "admin@smarthealth.com" });
 
     if (existingAdmin) {
-      console.log("Admin user already exists");
+      if (existingAdmin.role !== "SUPER_ADMIN") {
+        existingAdmin.role = "SUPER_ADMIN";
+        existingAdmin.isEmailVerified = true;
+        existingAdmin.accountStatus = "ACTIVE";
+        existingAdmin.doctorVerificationStatus = "NOT_REQUIRED";
+        await existingAdmin.save();
+        console.log("Existing seeded admin promoted to SUPER_ADMIN");
+        process.exit(0);
+      }
+
+      console.log("Super admin user already exists");
       process.exit(0);
     }
 
@@ -24,13 +34,13 @@ const seedAdmin = async () => {
       email: "admin@smarthealth.com",
       phone: "0700000000",
       passwordHash,
-      role: "ADMIN",
+      role: "SUPER_ADMIN",
       isEmailVerified: true,
       accountStatus: "ACTIVE",
       doctorVerificationStatus: "NOT_REQUIRED"
     });
 
-    console.log("Admin user seeded successfully");
+    console.log("Super admin user seeded successfully");
     process.exit(0);
   } catch (error) {
     console.error("Failed to seed admin:", error.message);

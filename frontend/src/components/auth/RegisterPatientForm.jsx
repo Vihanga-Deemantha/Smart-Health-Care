@@ -1,13 +1,13 @@
-import { useWatch, useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { patientRegisterSchema } from "../../schemas/auth.schema.js";
-import PasswordStrengthHint from "./PasswordStrengthHint.jsx";
 import {
   User, Mail, Phone, Lock, ShieldCheck,
-  ArrowRight, ArrowLeft, CheckCircle2,
+  ArrowRight, ArrowLeft, CheckCircle2, CreditCard,
   UserCircle2, KeyRound
 } from "lucide-react";
-import { useState } from "react";
+import { patientRegisterSchema } from "../../schemas/auth.schema.js";
+import PasswordStrengthHint from "./PasswordStrengthHint.jsx";
 
 // ─── Step progress bar ────────────────────────────────────────────
 const steps = [
@@ -71,12 +71,13 @@ const StepBar = ({ current, total }) => (
 );
 
 // ─── Reusable field ───────────────────────────────────────────────
-const Field = ({ label, icon: Icon, name, type = "text", placeholder, register, error, focused, onFocus, onBlur }) => {
+const Field = ({ label, icon, name, type = "text", placeholder, register, error, focused, onFocus, onBlur }) => {
   const isActive = focused === name;
+  const IconComponent = icon;
   return (
     <div>
       <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest" style={{ color: "#334155" }}>
-        <Icon size={11} style={{ color: "#2F80ED" }} />
+        <IconComponent size={11} style={{ color: "#2F80ED" }} />
         {label}
       </label>
       <input
@@ -99,8 +100,30 @@ const Field = ({ label, icon: Icon, name, type = "text", placeholder, register, 
   );
 };
 
+const IdentityOption = ({ active, label, description, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="rounded-2xl px-4 py-3 text-left transition-all duration-200"
+    style={{
+      background: active ? "rgba(47,128,237,0.12)" : "rgba(11,31,58,0.03)",
+      border: active
+        ? "1.5px solid rgba(47,128,237,0.4)"
+        : "1.5px solid rgba(47,128,237,0.12)",
+      boxShadow: active ? "0 12px 24px rgba(47,128,237,0.12)" : "none"
+    }}
+  >
+    <p className="text-sm font-bold" style={{ color: "#0B1F3A" }}>
+      {label}
+    </p>
+    <p className="mt-1 text-xs leading-relaxed" style={{ color: "#64748b" }}>
+      {description}
+    </p>
+  </button>
+);
+
 // ─── Nav buttons ──────────────────────────────────────────────────
-const NavButtons = ({ step, totalSteps, onBack, loading, isLast }) => (
+const NavButtons = ({ step, onBack, loading, isLast }) => (
   <div className={`flex gap-3 pt-2 ${step > 1 ? "justify-between" : "justify-end"}`}>
     {step > 1 && (
       <button
@@ -151,18 +174,59 @@ const RegisterPatientForm = ({ onSubmit, loading }) => {
     control,
     handleSubmit,
     trigger,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(patientRegisterSchema),
-    defaultValues: { fullName: "", email: "", phone: "", password: "", confirmPassword: "" },
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+      identityType: undefined,
+      nic: "",
+      passportNumber: "",
+      nationality: ""
+    },
     mode: "onTouched",
   });
 
   const password = useWatch({ control, name: "password" }) || "";
+  const identityType = useWatch({ control, name: "identityType" });
+
+  const handleIdentityTypeChange = (nextType) => {
+    const resolvedType = identityType === nextType ? undefined : nextType;
+
+    setValue("identityType", resolvedType, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true
+    });
+
+    if (resolvedType === "NIC") {
+      setValue("passportNumber", "", { shouldDirty: true });
+      setValue("nationality", "", { shouldDirty: true });
+      clearErrors(["passportNumber", "nationality"]);
+    }
+
+    if (resolvedType === "PASSPORT") {
+      setValue("nic", "", { shouldDirty: true });
+      clearErrors(["nic"]);
+    }
+
+    if (!resolvedType) {
+      setValue("nic", "", { shouldDirty: true });
+      setValue("passportNumber", "", { shouldDirty: true });
+      setValue("nationality", "", { shouldDirty: true });
+      clearErrors(["identityType", "nic", "passportNumber", "nationality"]);
+    }
+  };
 
   const handleNext = async () => {
     const fieldsToValidate = step === 1
-      ? ["fullName", "email", "phone"]
+      ? ["fullName", "email", "phone", "identityType", "nic", "passportNumber", "nationality"]
       : ["password", "confirmPassword"];
     const valid = await trigger(fieldsToValidate);
     if (valid) setStep((s) => s + 1);
@@ -182,6 +246,7 @@ const RegisterPatientForm = ({ onSubmit, loading }) => {
         }
       >
         {/* Step 1 — Personal Info */}
+        <input type="hidden" {...register("identityType")} />
         {step === 1 && (
           <div className="space-y-4">
             <Field
@@ -202,6 +267,86 @@ const RegisterPatientForm = ({ onSubmit, loading }) => {
               register={register} error={errors.phone?.message}
               focused={focused} onFocus={setFocused} onBlur={() => setFocused(null)}
             />
+            <div
+              className="rounded-[22px] p-4"
+              style={{
+                background: "linear-gradient(180deg, rgba(47,128,237,0.06) 0%, rgba(86,204,242,0.05) 100%)",
+                border: "1px solid rgba(47,128,237,0.12)"
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl"
+                  style={{ background: "rgba(47,128,237,0.12)" }}
+                >
+                  <CreditCard size={18} style={{ color: "#2F80ED" }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold uppercase tracking-widest" style={{ color: "#0B1F3A" }}>
+                    Identification Details
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed" style={{ color: "#64748b" }}>
+                    Optional. Add either your NIC or your passport details to align signup with
+                    identity-based registration.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <IdentityOption
+                  active={!identityType}
+                  label="Skip for now"
+                  description="Complete registration first and add identity details later if needed."
+                  onClick={() => handleIdentityTypeChange(undefined)}
+                />
+                <IdentityOption
+                  active={identityType === "NIC"}
+                  label="NIC Number"
+                  description="Use your Sri Lankan national identity card number."
+                  onClick={() => handleIdentityTypeChange("NIC")}
+                />
+                <IdentityOption
+                  active={identityType === "PASSPORT"}
+                  label="Passport"
+                  description="Use your passport number together with nationality."
+                  onClick={() => handleIdentityTypeChange("PASSPORT")}
+                />
+              </div>
+
+              {errors.identityType?.message && (
+                <p className="mt-3 text-xs font-semibold" style={{ color: "#EB5757" }}>
+                  {errors.identityType.message}
+                </p>
+              )}
+
+              {identityType === "NIC" && (
+                <div className="mt-4">
+                  <Field
+                    label="NIC Number" icon={CreditCard} name="nic" type="text"
+                    placeholder="200012345678 or 901234567V"
+                    register={register} error={errors.nic?.message}
+                    focused={focused} onFocus={setFocused} onBlur={() => setFocused(null)}
+                  />
+                </div>
+              )}
+
+              {identityType === "PASSPORT" && (
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="Nationality" icon={User} name="nationality" type="text"
+                    placeholder="e.g. Sri Lankan"
+                    register={register} error={errors.nationality?.message}
+                    focused={focused} onFocus={setFocused} onBlur={() => setFocused(null)}
+                  />
+                  <Field
+                    label="Passport Number" icon={CreditCard} name="passportNumber" type="text"
+                    placeholder="Enter your passport number"
+                    register={register} error={errors.passportNumber?.message}
+                    focused={focused} onFocus={setFocused} onBlur={() => setFocused(null)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -228,7 +373,6 @@ const RegisterPatientForm = ({ onSubmit, loading }) => {
 
         <NavButtons
           step={step}
-          totalSteps={steps.length}
           onBack={handleBack}
           loading={loading}
           isLast={step === steps.length}

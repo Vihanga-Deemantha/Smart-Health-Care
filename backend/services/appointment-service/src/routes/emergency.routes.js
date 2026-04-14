@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   "/",
   protect,
-  allowRoles(USER_ROLES.DOCTOR, USER_ROLES.STAFF, USER_ROLES.ADMIN),
+  allowRoles(USER_ROLES.DOCTOR, USER_ROLES.STAFF, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   createEmergencyAlertValidation,
   validateRequest,
   handleCreateEmergencyAlert

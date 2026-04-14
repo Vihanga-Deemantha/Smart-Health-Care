@@ -1,13 +1,14 @@
+import { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { doctorRegisterSchema } from "../../schemas/auth.schema.js";
-import PasswordStrengthHint from "./PasswordStrengthHint.jsx";
 import {
   User, Mail, Phone, Lock, ShieldCheck,
   ArrowRight, ArrowLeft, CheckCircle2,
-  UserCircle2, Stethoscope, KeyRound, FileText, Award, Clock3
+  UserCircle2, Stethoscope, KeyRound, FileText, Award, Clock3,
+  Link2, Upload, FileBadge2, X
 } from "lucide-react";
-import { useState } from "react";
+import { doctorRegisterSchema } from "../../schemas/auth.schema.js";
+import PasswordStrengthHint from "./PasswordStrengthHint.jsx";
 
 // ─── Steps definition ─────────────────────────────────────────────
 const steps = [
@@ -71,12 +72,13 @@ const StepBar = ({ current }) => (
 );
 
 // ─── Reusable field ───────────────────────────────────────────────
-const Field = ({ label, icon: Icon, name, type = "text", placeholder, register, error, focused, onFocus, onBlur, hint }) => {
+const Field = ({ label, icon, name, type = "text", placeholder, register, error, focused, onFocus, onBlur, hint }) => {
   const isActive = focused === name;
+  const IconComponent = icon;
   return (
     <div>
       <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest" style={{ color: "#334155" }}>
-        <Icon size={11} style={{ color: "#2F80ED" }} />
+        <IconComponent size={11} style={{ color: "#2F80ED" }} />
         {label}
       </label>
       <input
@@ -98,6 +100,18 @@ const Field = ({ label, icon: Icon, name, type = "text", placeholder, register, 
       {hint && !error && <p className="mt-1.5 text-xs" style={{ color: "#94a3b8" }}>{hint}</p>}
     </div>
   );
+};
+
+const formatFileSize = (size) => {
+  if (!Number.isFinite(size)) {
+    return "";
+  }
+
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return `${Math.max(1, Math.round(size / 1024))} KB`;
 };
 
 // ─── Nav buttons ──────────────────────────────────────────────────
@@ -144,8 +158,12 @@ const NavButtons = ({ step, onBack, loading, isLast }) => (
 
 // ─── Main Component ───────────────────────────────────────────────
 const RegisterDoctorForm = ({ onSubmit, loading }) => {
+  const maxFileSizeBytes = 10 * 1024 * 1024;
   const [step, setStep] = useState(1);
   const [focused, setFocused] = useState(null);
+  const [verificationFiles, setVerificationFiles] = useState([]);
+  const [filesError, setFilesError] = useState("");
+  const fileInputRef = useRef(null);
 
   const {
     register,
@@ -164,27 +182,104 @@ const RegisterDoctorForm = ({ onSubmit, loading }) => {
       medicalLicenseNumber: "",
       specialization: "",
       yearsOfExperience: "",
-      qualificationDocuments: "",
+      verificationLinksInput: "",
     },
     mode: "onTouched",
   });
 
   const password = useWatch({ control, name: "password" }) || "";
+  const verificationLinksInput = useWatch({ control, name: "verificationLinksInput" }) || "";
 
   const stepFields = {
     1: ["fullName", "email", "phone"],
     2: ["medicalLicenseNumber", "specialization", "yearsOfExperience"],
-    3: ["qualificationDocuments", "password", "confirmPassword"],
+    3: ["verificationLinksInput", "password", "confirmPassword"],
+  };
+
+  const verificationLinks = verificationLinksInput
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const addFiles = (incomingFiles) => {
+    const supportedFiles = Array.from(incomingFiles || []);
+
+    if (!supportedFiles.length) {
+      return;
+    }
+
+    setVerificationFiles((currentFiles) => {
+      const fileMap = new Map(
+        currentFiles.map((file) => [
+          `${file.name}-${file.size}-${file.lastModified}`,
+          file
+        ])
+      );
+
+      for (const file of supportedFiles) {
+        fileMap.set(`${file.name}-${file.size}-${file.lastModified}`, file);
+      }
+
+      const oversizedFile = supportedFiles.find((file) => file.size > maxFileSizeBytes);
+
+      if (oversizedFile) {
+        setFilesError(`${oversizedFile.name} is larger than 10 MB.`);
+        return currentFiles;
+      }
+
+      const nextFiles = Array.from(fileMap.values()).slice(0, 5);
+
+      if (fileMap.size > 5) {
+        setFilesError("You can upload up to 5 files.");
+      } else {
+        setFilesError("");
+      }
+
+      return nextFiles;
+    });
+  };
+
+  const removeFile = (fileToRemove) => {
+    setVerificationFiles((currentFiles) =>
+      currentFiles.filter(
+        (file) =>
+          `${file.name}-${file.size}-${file.lastModified}` !==
+          `${fileToRemove.name}-${fileToRemove.size}-${fileToRemove.lastModified}`
+      )
+    );
   };
 
   const handleNext = async () => {
     const valid = await trigger(stepFields[step]);
-    if (valid) setStep((s) => s + 1);
+
+    if (!valid) {
+      return;
+    }
+
+    if (step === 3 && !verificationFiles.length && !verificationLinks.length) {
+      setFilesError("Add at least one verification file or one supporting link.");
+      return;
+    }
+
+    setFilesError("");
+    setStep((s) => s + 1);
   };
 
   const handleBack = () => setStep((s) => s - 1);
 
   const fieldProps = { register, errors, focused, onFocus: setFocused, onBlur: () => setFocused(null) };
+  const handleFinalSubmit = handleSubmit((values) => {
+    if (!verificationFiles.length && !values.verificationLinks.length) {
+      setFilesError("Add at least one verification file or one supporting link.");
+      return;
+    }
+
+    setFilesError("");
+    onSubmit({
+      ...values,
+      verificationFiles
+    });
+  });
 
   return (
     <div>
@@ -194,7 +289,7 @@ const RegisterDoctorForm = ({ onSubmit, loading }) => {
         className="space-y-5"
         onSubmit={step < steps.length
           ? (e) => { e.preventDefault(); handleNext(); }
-          : handleSubmit(onSubmit)
+          : handleFinalSubmit
         }
       >
         {/* Step 1 — Personal Info */}
@@ -225,10 +320,148 @@ const RegisterDoctorForm = ({ onSubmit, loading }) => {
         {/* Step 3 — Account Security */}
         {step === 3 && (
           <div className="space-y-4">
-            <Field label="Qualification Documents" icon={FileText} name="qualificationDocuments"
-              placeholder="Document names or URLs, comma-separated"
-              hint="List relevant certificates or paste document links"
-              {...fieldProps} error={errors.qualificationDocuments?.message} />
+            <div
+              className="rounded-[24px] p-4"
+              style={{
+                background: "linear-gradient(180deg, rgba(47,128,237,0.06) 0%, rgba(86,204,242,0.05) 100%)",
+                border: "1px solid rgba(47,128,237,0.12)"
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl"
+                  style={{ background: "rgba(47,128,237,0.12)" }}
+                >
+                  <FileBadge2 size={18} style={{ color: "#2F80ED" }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold uppercase tracking-widest" style={{ color: "#0B1F3A" }}>
+                    Verification Files
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed" style={{ color: "#64748b" }}>
+                    Upload certificates, scanned documents, or clear images. PDF, JPG, PNG, DOC,
+                    and DOCX are accepted.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-4 flex w-full flex-col items-center justify-center rounded-[22px] border border-dashed px-4 py-6 text-center transition-all duration-200 hover:scale-[1.01]"
+                style={{
+                  borderColor: "rgba(47,128,237,0.24)",
+                  background: "rgba(255,255,255,0.45)"
+                }}
+              >
+                <Upload size={22} style={{ color: "#2F80ED" }} />
+                <p className="mt-3 text-sm font-bold" style={{ color: "#0B1F3A" }}>
+                  Select verification files
+                </p>
+                <p className="mt-1 text-xs" style={{ color: "#64748b" }}>
+                  Up to 5 files, 10 MB each
+                </p>
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,application/pdf,image/png,image/jpeg,image/jpg,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  addFiles(event.target.files);
+                  event.target.value = "";
+                }}
+              />
+
+              {verificationFiles.length ? (
+                <div className="mt-4 space-y-3">
+                  {verificationFiles.map((file) => (
+                    <div
+                      key={`${file.name}-${file.size}-${file.lastModified}`}
+                      className="flex items-center justify-between rounded-2xl px-4 py-3"
+                      style={{
+                        background: "rgba(255,255,255,0.6)",
+                        border: "1px solid rgba(47,128,237,0.1)"
+                      }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold" style={{ color: "#0B1F3A" }}>
+                          {file.name}
+                        </p>
+                        <p className="mt-1 text-xs" style={{ color: "#64748b" }}>
+                          {file.type || "Document"} • {formatFileSize(file.size)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(file)}
+                        className="ml-3 rounded-full p-2 transition-colors hover:bg-slate-200/70"
+                        style={{ color: "#475569" }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest" style={{ color: "#334155" }}>
+                <Link2 size={11} style={{ color: "#2F80ED" }} />
+                Supporting Links
+              </label>
+              <textarea
+                {...register("verificationLinksInput")}
+                rows={4}
+                className="w-full rounded-xl px-4 py-3.5 text-sm outline-none"
+                style={{
+                  background: focused === "verificationLinksInput" ? "rgba(47,128,237,0.05)" : "rgba(11,31,58,0.03)",
+                  border: focused === "verificationLinksInput"
+                    ? "1.5px solid rgba(47,128,237,0.5)"
+                    : "1.5px solid rgba(47,128,237,0.15)",
+                  boxShadow: focused === "verificationLinksInput" ? "0 0 0 4px rgba(47,128,237,0.08)" : "none",
+                  color: "#0B1F3A",
+                  transition: "all 0.2s ease",
+                  resize: "vertical"
+                }}
+                placeholder={"https://example.com/certificate\nhttps://example.com/profile"}
+                onFocus={() => setFocused("verificationLinksInput")}
+                onBlur={() => setFocused(null)}
+              />
+              {errors.verificationLinksInput?.message ? (
+                <p className="mt-1.5 text-xs font-semibold" style={{ color: "#EB5757" }}>
+                  {errors.verificationLinksInput.message}
+                </p>
+              ) : (
+                <p className="mt-1.5 text-xs" style={{ color: "#94a3b8" }}>
+                  Optional. Add one URL per line if you want to share license registry or portfolio links.
+                </p>
+              )}
+            </div>
+
+            {filesError ? (
+              <p className="text-xs font-semibold" style={{ color: "#EB5757" }}>
+                {filesError}
+              </p>
+            ) : null}
+
+            {(verificationFiles.length || verificationLinks.length) ? (
+              <div
+                className="rounded-xl p-3"
+                style={{ background: "rgba(47,128,237,0.05)", border: "1px solid rgba(47,128,237,0.12)" }}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.22em]" style={{ color: "#2F80ED" }}>
+                  Submission Summary
+                </p>
+                <p className="mt-2 text-sm" style={{ color: "#475569" }}>
+                  {verificationFiles.length} file{verificationFiles.length === 1 ? "" : "s"} selected
+                  {verificationLinks.length ? ` and ${verificationLinks.length} supporting link${verificationLinks.length === 1 ? "" : "s"}` : ""}.
+                </p>
+              </div>
+            ) : null}
 
             <div
               className="rounded-xl p-3 flex items-start gap-2"

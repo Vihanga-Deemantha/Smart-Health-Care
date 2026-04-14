@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, LogOut, ShieldCheck, HeartPulse, ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import StatusBadge from "./StatusBadge.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
 import PageContainer from "./PageContainer.jsx";
@@ -24,8 +24,9 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
   };
 
   const isDoctor = user?.role === "DOCTOR";
-  const accentColor = isDoctor ? "#2F80ED" : "#56CCF2";
-  const accentBg = isDoctor ? "rgba(47,128,237,0.12)" : "rgba(86,204,242,0.12)";
+  const accentColor = accent === "blue" || isDoctor ? "#2F80ED" : "#56CCF2";
+  const accentBg =
+    accent === "blue" || isDoctor ? "rgba(47,128,237,0.12)" : "rgba(86,204,242,0.12)";
 
   return (
     <div
@@ -53,7 +54,7 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
 
       <PageContainer className="relative py-6 sm:py-8">
         {/* ── Header ── */}
-        <motion.header
+        <Motion.header
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -111,12 +112,12 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
               Sign Out
             </button>
           </div>
-        </motion.header>
+        </Motion.header>
 
         {/* ── Body ── */}
         <section className="grid gap-8 py-8 lg:grid-cols-[1.2fr_0.8fr]">
           {/* Main */}
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0.1}>
+          <Motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0.1}>
             {/* Eyebrow + title */}
             <div className="mb-6">
               <span
@@ -141,10 +142,16 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
             >
               {children}
             </div>
-          </motion.div>
+          </Motion.div>
 
-          {/* Sidebar */}
-          <motion.aside variants={fadeUp} initial="hidden" animate="visible" custom={0.2} className="space-y-5">
+          {/* Sidebar — reordered to appear below content on mobile */}
+          <Motion.aside
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0.2}
+            className="order-last space-y-5 lg:order-none"
+          >
             {/* Account Snapshot */}
             <div
               className="rounded-2xl p-6"
@@ -207,7 +214,7 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
                 </p>
               </div>
             </div>
-          </motion.aside>
+          </Motion.aside>
         </section>
       </PageContainer>
     </div>

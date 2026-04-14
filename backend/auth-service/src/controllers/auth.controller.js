@@ -7,6 +7,7 @@ import {
 import {
   registerPatient,
   registerDoctor,
+  resubmitDoctorVerification,
   loginUser,
   getCurrentUser
 } from "../services/auth.service.js";
@@ -36,6 +37,7 @@ export const handleRegisterPatient = asyncHandler(async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
+      profilePhoto: user.profilePhoto,
       role: user.role,
       accountStatus: user.accountStatus,
       isEmailVerified: user.isEmailVerified
@@ -46,7 +48,7 @@ export const handleRegisterPatient = asyncHandler(async (req, res) => {
 });
 
 export const handleRegisterDoctor = asyncHandler(async (req, res) => {
-  const { user, otpSent } = await registerDoctor(req.body, req);
+  const { user, otpSent } = await registerDoctor(req.body, req.files, req);
 
   sendResponse(
     res,
@@ -60,9 +62,11 @@ export const handleRegisterDoctor = asyncHandler(async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
+      profilePhoto: user.profilePhoto,
       role: user.role,
       accountStatus: user.accountStatus,
       doctorVerificationStatus: user.doctorVerificationStatus,
+      doctorRejectionReason: user.doctorRejectionReason,
       isEmailVerified: user.isEmailVerified
     },
     otpSent
@@ -70,8 +74,31 @@ export const handleRegisterDoctor = asyncHandler(async (req, res) => {
   );
 });
 
+export const handleResubmitDoctorVerification = asyncHandler(async (req, res) => {
+  const user = await resubmitDoctorVerification(req.user.userId, req.body, req.files, req);
+
+  sendResponse(res, 200, "Doctor verification re-submitted successfully", {
+    user: {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profilePhoto: user.profilePhoto,
+      role: user.role,
+      accountStatus: user.accountStatus,
+      doctorVerificationStatus: user.doctorVerificationStatus,
+      doctorRejectionReason: user.doctorRejectionReason,
+      isEmailVerified: user.isEmailVerified,
+      medicalLicenseNumber: user.medicalLicenseNumber,
+      specialization: user.specialization,
+      yearsOfExperience: user.yearsOfExperience,
+      verificationDocuments: user.verificationDocuments,
+      verificationLinks: user.verificationLinks
+    }
+  });
+});
+
 export const handleLogin = asyncHandler(async (req, res) => {
-  const { user, accessToken, refreshToken } = await loginUser(req.body, req);
+  const { user, accessToken, refreshToken, restrictedDoctorAccess, loginMessage } = await loginUser(req.body, req);
 
   setRefreshTokenCookie(res, refreshToken);
 
@@ -81,12 +108,21 @@ export const handleLogin = asyncHandler(async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
+      profilePhoto: user.profilePhoto,
       role: user.role,
       accountStatus: user.accountStatus,
       doctorVerificationStatus: user.doctorVerificationStatus,
-      isEmailVerified: user.isEmailVerified
+      doctorRejectionReason: user.doctorRejectionReason,
+      isEmailVerified: user.isEmailVerified,
+      medicalLicenseNumber: user.medicalLicenseNumber,
+      specialization: user.specialization,
+      yearsOfExperience: user.yearsOfExperience,
+      verificationDocuments: user.verificationDocuments,
+      verificationLinks: user.verificationLinks
     },
-    accessToken
+    accessToken,
+    restrictedDoctorAccess: Boolean(restrictedDoctorAccess),
+    loginMessage: loginMessage || null
   });
 });
 
@@ -132,10 +168,17 @@ export const handleRefreshToken = asyncHandler(async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
+      profilePhoto: user.profilePhoto,
       role: user.role,
       accountStatus: user.accountStatus,
       doctorVerificationStatus: user.doctorVerificationStatus,
-      isEmailVerified: user.isEmailVerified
+      doctorRejectionReason: user.doctorRejectionReason,
+      isEmailVerified: user.isEmailVerified,
+      medicalLicenseNumber: user.medicalLicenseNumber,
+      specialization: user.specialization,
+      yearsOfExperience: user.yearsOfExperience,
+      verificationDocuments: user.verificationDocuments,
+      verificationLinks: user.verificationLinks
     }
   });
 });

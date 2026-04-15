@@ -18,8 +18,13 @@ import { holdExpiryQueue, reminderQueue, waitlistQueue } from "../config/redis.j
 const slotHoldTtlMinutes = Number(process.env.SLOT_HOLD_TTL_MINUTES || 10);
 const maxActiveHolds = Number(process.env.MAX_ACTIVE_HOLDS_PER_PATIENT || 3);
 const cancellationCutoffHours = Number(process.env.CANCELLATION_CUTOFF_HOURS || 12);
+const paymentCurrency = process.env.PAYMENT_DEFAULT_CURRENCY || "USD";
+const telemedicineFee = Number(process.env.PAYMENT_DEFAULT_TELEMEDICINE_FEE || 50);
+const inPersonFee = Number(process.env.PAYMENT_DEFAULT_IN_PERSON_FEE || 75);
 
 const dateOnly = (value) => new Date(value).toISOString().slice(0, 10);
+const getBillableAmount = (mode) =>
+  mode === CONSULTATION_MODE.IN_PERSON ? inPersonFee : telemedicineFee;
 
 export const createSlotHold = async ({ patientId, doctorId, startTime, endTime, actor }) => {
   const activeHolds = await SlotHold.countDocuments({
@@ -228,7 +233,9 @@ export const bookAppointment = async ({ holdId, patientId, doctorId, mode, hospi
       patientId,
       mode,
       startTime: hold.startTime,
-      endTime: hold.endTime
+      endTime: hold.endTime,
+      billableAmount: getBillableAmount(mode),
+      currency: paymentCurrency
     });
 
     if (reminderQueue) {
@@ -270,6 +277,14 @@ export const cancelAppointment = async ({ appointmentId, actor, reason, override
   const isAdmin = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF].includes(
     actor.role
   );
+
+  if (!isAdmin && actor.role === USER_ROLES.PATIENT && appointment.patientId !== actor.id) {
+    throw new AppError("You can only cancel your own appointments", 403, "FORBIDDEN");
+  }
+
+  if (!isAdmin && actor.role === USER_ROLES.DOCTOR && appointment.doctorId !== actor.id) {
+    throw new AppError("You can only cancel your own appointments", 403, "FORBIDDEN");
+  }
 
   if (!overridePolicy && !isAdmin && hoursLeft < cancellationCutoffHours) {
     throw new AppError("Cancellation cutoff exceeded", 409, "CANCELLATION_CUTOFF_EXCEEDED");

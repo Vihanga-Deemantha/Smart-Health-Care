@@ -88,6 +88,9 @@ export const handleResubmitDoctorVerification = asyncHandler(async (req, res) =>
       isEmailVerified: user.isEmailVerified,
       medicalLicenseNumber: user.medicalLicenseNumber,
       specialization: user.specialization,
+      hospital: user.hospital,
+      language: user.language,
+      consultationModes: user.consultationModes,
       yearsOfExperience: user.yearsOfExperience,
       verificationDocuments: user.verificationDocuments,
       verificationLinks: user.verificationLinks
@@ -113,6 +116,9 @@ export const handleLogin = asyncHandler(async (req, res) => {
       isEmailVerified: user.isEmailVerified,
       medicalLicenseNumber: user.medicalLicenseNumber,
       specialization: user.specialization,
+      hospital: user.hospital,
+      language: user.language,
+      consultationModes: user.consultationModes,
       yearsOfExperience: user.yearsOfExperience,
       verificationDocuments: user.verificationDocuments,
       verificationLinks: user.verificationLinks

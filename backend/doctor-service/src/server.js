@@ -2,7 +2,7 @@ import "./config/env.js";
 import mongoose from "mongoose";
 import app from "./app.js";
 
-const PORT = Number(process.env.PORT) || 5003;
+const PORT = Number(process.env.PORT) || 5029;
 const MONGO_URI = process.env.MONGO_URI;
 
 const startServer = async () => {

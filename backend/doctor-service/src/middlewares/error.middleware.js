@@ -1,6 +1,8 @@
 const errorMiddleware = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal server error";
+  const multerLimitError = err?.name === "MulterError" && err?.code === "LIMIT_FILE_SIZE";
+  const statusCode = err.statusCode || (multerLimitError ? 413 : 500);
+  const message =
+    err.message || (multerLimitError ? "Uploaded file is too large" : "Internal server error");
   const code =
     err.code ||
     (statusCode === 400

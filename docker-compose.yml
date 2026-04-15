@@ -116,6 +116,22 @@ services:
       TWILIO_SMS_FROM: ${TWILIO_SMS_FROM:-}
       SWAGGER_SERVER_URL: ${SWAGGER_SERVER_URL:-http://localhost:5027}
 
+  doctor-service:
+    build:
+      context: ./backend/doctor-service
+    restart: unless-stopped
+    ports:
+      - "5029:5029"
+    environment:
+      PORT: 5029
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGO_URI: ${DOCTOR_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/doctor_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      PATIENT_SERVICE_URL: ${PATIENT_SERVICE_URL:-http://patient-service:5028}
+      APPOINTMENT_SERVICE_URL: ${APPOINTMENT_SERVICE_URL:-http://appointment-service:5027}
+
   payment-service:
     build:
       context: ./backend/services/payment-service

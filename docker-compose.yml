@@ -3,6 +3,8 @@ services:
     build:
       context: ./backend/auth-service
     restart: unless-stopped
+    depends_on:
+      - rabbitmq
     ports:
       - "${AUTH_PORT:-5024}:5024"
     environment:
@@ -26,6 +28,8 @@ services:
       EMAIL_USER: ${EMAIL_USER:-change-me@example.com}
       EMAIL_PASS: ${EMAIL_PASS:-change-me}
       EMAIL_FROM: ${EMAIL_FROM:-change-me@example.com}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-smart_health.events}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
@@ -37,6 +41,7 @@ services:
     restart: unless-stopped
     depends_on:
       - auth-service
+      - rabbitmq
     ports:
       - "${ADMIN_PORT:-5025}:5025"
     environment:
@@ -47,6 +52,8 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       AUTH_SERVICE_URL: http://auth-service:5024
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-smart_health.events}
 
   patient-service:
     build:

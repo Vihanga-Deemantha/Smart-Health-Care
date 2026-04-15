@@ -1,14 +1,11 @@
 import Otp from "../models/Otp.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
-import {
-  sendOtpEmail,
-  sendPatientWelcomeEmail,
-  sendEmailSafely
-} from "./email.service.js";
+import { sendOtpEmail } from "./email.service.js";
 import { createAuthLogSafely } from "./audit.service.js";
 import { hashPassword, comparePassword } from "../utils/hash.js";
 import { revokeAllUserRefreshTokens } from "./token.service.js";
+import { publishNotificationEventSafely } from "../events/publishers/notificationPublisher.js";
 
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -210,14 +207,16 @@ export const verifyEmailOtp = async ({ email, otpCode }, req) => {
   }, `otp verified log for ${user.email}`);
 
   if (user.role === "PATIENT") {
-    await sendEmailSafely(
-      () =>
-        sendPatientWelcomeEmail({
-          email: user.email,
-          fullName: user.fullName
-        }),
-      `patient welcome email for ${user.email}`
-    );
+    publishNotificationEventSafely({
+      routingKey: "notification.user.registered",
+      user,
+      metadata: {
+        registeredAt: user.createdAt,
+        accountStatus: user.accountStatus,
+        isEmailVerified: user.isEmailVerified
+      },
+      contextLabel: `patient welcome event for ${user.email}`
+    });
   }
 
   return user;

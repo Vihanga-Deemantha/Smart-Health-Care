@@ -19,6 +19,7 @@ data:
   TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5033
   NOTIFICATION_SERVICE_URL: http://notification-service:5032
   RABBITMQ_URL: amqp://rabbitmq:5672
+  RABBITMQ_EXCHANGE: smart_health.events
   REDIS_URL: redis://redis:6379
   CLIENT_URL: http://smart-health.local
   NODE_ENV: production

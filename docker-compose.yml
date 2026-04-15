@@ -184,9 +184,12 @@ services:
       EMAIL_USER: ${EMAIL_USER:-change-me@example.com}
       EMAIL_PASS: ${EMAIL_PASS:-change-me}
       EMAIL_FROM: ${EMAIL_FROM:-change-me@example.com}
+      NOTIFY_LK_API_URL: ${NOTIFY_LK_API_URL:-https://app.notify.lk/api/v1/send}
+      NOTIFY_LK_USER_ID: ${NOTIFY_LK_USER_ID:-}
+      NOTIFY_LK_API_KEY: ${NOTIFY_LK_API_KEY:-}
+      NOTIFY_LK_SENDER_ID: ${NOTIFY_LK_SENDER_ID:-NotifyDEMO}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_SMS_FROM: ${TWILIO_SMS_FROM:-}
       TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
 
   ai-chatbot-service:

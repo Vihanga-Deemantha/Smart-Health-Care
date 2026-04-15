@@ -1,38 +1,47 @@
-import twilio from "twilio";
 import env from "../config/env.js";
-import { formatPhone } from "../utils/phone.utils.js";
-
-let client = null;
-
-const getClient = () => {
-  if (client) {
-    return client;
-  }
-
-  if (!env.twilioAccountSid || !env.twilioAuthToken) {
-    throw new Error("Twilio credentials not configured");
-  }
-
-  client = twilio(env.twilioAccountSid, env.twilioAuthToken);
-  return client;
-};
+import { formatNotifyLK } from "../utils/phone.utils.js";
 
 export const sendSms = async ({ to, message }) => {
-  const formatted = formatPhone(to);
+  const formatted = formatNotifyLK(to);
 
   if (!formatted) {
     throw new Error("Invalid SMS recipient phone");
   }
 
-  if (!env.twilioSmsFrom) {
-    throw new Error("TWILIO_SMS_FROM not configured");
+  if (!env.notifyLkUserId || !env.notifyLkApiKey || !env.notifyLkSenderId) {
+    throw new Error("Notify.lk credentials not configured");
   }
 
-  const twilioClient = getClient();
-
-  return twilioClient.messages.create({
-    from: env.twilioSmsFrom,
+  const body = new URLSearchParams({
+    user_id: env.notifyLkUserId,
+    api_key: env.notifyLkApiKey,
+    sender_id: env.notifyLkSenderId,
     to: formatted,
-    body: message
+    message
   });
+
+  const response = await fetch(env.notifyLkApiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString()
+  });
+
+  const text = await response.text();
+  let payload = null;
+
+  try {
+    payload = JSON.parse(text);
+  } catch (err) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Notify.lk request failed: HTTP ${response.status}`);
+  }
+
+  if (payload && payload.status !== "success") {
+    throw new Error(`Notify.lk error: ${payload.data || "unknown"}`);
+  }
+
+  return payload || { status: "success", data: text };
 };

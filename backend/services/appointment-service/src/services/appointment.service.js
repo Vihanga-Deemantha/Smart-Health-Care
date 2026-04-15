@@ -499,6 +499,125 @@ export const listAppointments = async ({ userId, role, status, from, to, page = 
   };
 };
 
+export const getAppointmentById = async ({ appointmentId, actor }) => {
+  const appointment = await Appointment.findById(appointmentId).lean();
+
+  if (!appointment) {
+    throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
+  }
+
+  const isAdmin = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF].includes(
+    actor.role
+  );
+
+  if (!isAdmin) {
+    if (actor.role === USER_ROLES.DOCTOR && String(appointment.doctorId) !== String(actor.id)) {
+      throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
+
+    if (actor.role === USER_ROLES.PATIENT && String(appointment.patientId) !== String(actor.id)) {
+      throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
+  }
+
+  return appointment;
+};
+
+export const respondToAppointment = async ({ appointmentId, action, reason, actor }) => {
+  const appointment = await Appointment.findById(appointmentId);
+
+  if (!appointment) {
+    throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
+  }
+
+  if (actor.role !== USER_ROLES.DOCTOR) {
+    throw new AppError("Forbidden", 403, "FORBIDDEN");
+  }
+
+  if (String(appointment.doctorId) !== String(actor.id)) {
+    throw new AppError("Forbidden", 403, "FORBIDDEN");
+  }
+
+  if (
+    [
+      APPOINTMENT_STATUS.CANCELLED,
+      APPOINTMENT_STATUS.COMPLETED,
+      APPOINTMENT_STATUS.NO_SHOW
+    ].includes(appointment.status)
+  ) {
+    throw new AppError("Appointment cannot be updated", 409, "APPOINTMENT_FINALIZED");
+  }
+
+  const normalizedAction = String(action || "").toUpperCase();
+
+  if (normalizedAction === "REJECT") {
+    return cancelAppointment({
+      appointmentId,
+      reason: reason || "Rejected by doctor",
+      overridePolicy: true,
+      actor
+    });
+  }
+
+  if (normalizedAction !== "ACCEPT") {
+    throw new AppError("Invalid appointment action", 400, "INVALID_ACTION");
+  }
+
+  const oldStatus = appointment.status;
+
+  appointment.status = APPOINTMENT_STATUS.CONFIRMED;
+  appointment.statusTimestamps.confirmedAt = new Date();
+  await appointment.save();
+
+  let attendance = await Attendance.findOne({ appointmentId: appointment._id });
+
+  if (!attendance) {
+    attendance = await Attendance.create({ appointmentId: appointment._id });
+  }
+
+  attendance.doctorConfirmedAt = new Date();
+  attendance.doctorConfirmedBy = actor.id;
+  attendance.status = "CONFIRMED";
+  await attendance.save();
+
+  await createAuditLog({
+    appointmentId: appointment._id,
+    entityType: "APPOINTMENT",
+    entityId: appointment._id.toString(),
+    action: "APPOINTMENT_CONFIRMED",
+    actorId: actor.id,
+    actorRole: actor.role,
+    oldValue: { status: oldStatus },
+    newValue: { status: appointment.status }
+  });
+
+  await publishEvent("appointment.confirmed", {
+    appointmentId: appointment._id.toString(),
+    doctorId: appointment.doctorId,
+    patientId: appointment.patientId
+  });
+
+  return appointment;
+};
+
+export const getTelemedicineSession = async ({ appointmentId, actor }) => {
+  const appointment = await getAppointmentById({ appointmentId, actor });
+
+  if (appointment.mode !== CONSULTATION_MODE.TELEMEDICINE) {
+    throw new AppError("Appointment is not telemedicine", 409, "APPOINTMENT_NOT_TELEMEDICINE");
+  }
+
+  return {
+    appointmentId: appointment._id || appointment.id || appointmentId,
+    roomUrl: appointment.telemedicine?.meetingLink || null,
+    meetingLink: appointment.telemedicine?.meetingLink || null,
+    provider: appointment.telemedicine?.provider || null,
+    calendarEventId: appointment.telemedicine?.calendarEventId || null,
+    startTime: appointment.startTime,
+    endTime: appointment.endTime
+  };
+};
+
 export const promoteWaitlistForSlot = async ({ doctorId, mode, startTime, endTime }) => {
   const candidate = await Waitlist.findOne({
     doctorId,

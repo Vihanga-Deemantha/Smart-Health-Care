@@ -1,0 +1,787 @@
+{
+  "info": {
+    "name": "Doctor Service API - Smart Healthcare",
+    "description": "Comprehensive Postman collection for testing Doctor Service endpoints with test cases and workflows",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dr.smith@hospital.com\",\n  \"password\": \"SecurePassword123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Smith\",\n  \"role\": \"DOCTOR\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/doctor",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", "doctor"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Doctor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    var token = jsonData.data.accessToken || jsonData.accessToken || jsonData.token;",
+                  "    var userId = jsonData.data.user.id || jsonData.data.user.userId || jsonData.data.userId;",
+                  "    if (token && userId) {",
+                  "        pm.environment.set('doctor_token', token);",
+                  "        pm.environment.set('doctor_user_id', userId);",
+                  "        pm.collectionVariables.set('doctor_token', token);",
+                  "        pm.collectionVariables.set('doctor_user_id', userId);",
+                  "        pm.test('Login successful - Token stored', function() {",
+                  "            pm.expect(token).to.exist;",
+                  "            pm.expect(userId).to.exist;",
+                  "        });",
+                  "    } else {",
+                  "        pm.test('Token or ID not found in response', function() {",
+                  "            pm.expect.fail('accessToken or user ID missing in response');",
+                  "        });",
+                  "    }",
+                  "} else {",
+                  "    pm.test('Login failed', function() {",
+                  "        pm.expect.fail('Auth request failed with status ' + pm.response.code);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{doctor_email}}\",\n  \"password\": \"{{doctor_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Doctor Profile Management",
+      "item": [
+        {
+          "name": "Get All Doctors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has doctors array', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.doctors).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Resolve doctor_id from doctor_user_id when possible', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var doctors = (jsonData.data && jsonData.data.doctors) || [];",
+                  "    var doctorUserId = pm.collectionVariables.get('doctor_user_id') || pm.environment.get('doctor_user_id');",
+                  "    if (!doctorUserId) {",
+                  "        return;",
+                  "    }",
+                  "",
+                  "    var match = doctors.find(function(d) {",
+                  "        return String(d.userId) === String(doctorUserId);",
+                  "    });",
+                  "",
+                  "    if (match && match._id) {",
+                  "        pm.collectionVariables.set('doctor_id', match._id);",
+                  "        pm.environment.set('doctor_id', match._id);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Doctor fields are correct', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.doctors.length > 0) {",
+                  "        var doctor = jsonData.data.doctors[0];",
+                  "        pm.expect(doctor).to.have.property('_id');",
+                  "        pm.expect(doctor).to.have.property('licenseNumber');",
+                  "        pm.expect(doctor).to.have.property('specialties');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{doctor_service_url}}/api/doctors",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "doctors"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Doctor by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Doctor has expected fields', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var doctor = jsonData.data.doctor;",
+                  "    pm.expect(doctor).to.have.property('_id');",
+                  "    pm.expect(doctor).to.have.property('licenseNumber');",
+                  "    pm.expect(doctor).to.have.property('specialties');",
+                  "    pm.expect(doctor).to.have.property('qualifications');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{doctor_service_url}}/api/doctors/{{doctor_id}}",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "doctors", "{{doctor_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Doctor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "",
+                  "pm.test('Doctor created with all fields', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var doctor = jsonData.data.doctor;",
+                  "    pm.expect(doctor).to.have.property('_id');",
+                  "    pm.expect(doctor.licenseNumber).to.equal('LIC123456789');",
+                  "    pm.expect(doctor.specialties).to.include('Cardiology');",
+                  "    pm.collectionVariables.set('doctor_id', doctor._id);",
+                  "    pm.environment.set('doctor_id', doctor._id);",
+                  "    if (doctor.userId) {",
+                  "        pm.collectionVariables.set('doctor_user_id', String(doctor.userId));",
+                  "        pm.environment.set('doctor_user_id', String(doctor.userId));",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{doctor_user_id}}\",\n  \"licenseNumber\": \"LIC123456789\",\n  \"specialties\": [\"Cardiology\", \"Internal Medicine\"],\n  \"bio\": \"Experienced cardiologist with 10+ years of practice\",\n  \"hospitalId\": \"HOSP001\",\n  \"contactNumber\": \"+1234567890\",\n  \"consultationFee\": 100,\n  \"isAvailable\": true,\n  \"qualifications\": [\n    {\n      \"title\": \"MD - Medicine\",\n      \"institution\": \"Harvard Medical School\",\n      \"year\": 2010,\n      \"documentUrl\": \"https://example.com/md.pdf\",\n      \"notes\": \"Cardiology specialization\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{doctor_service_url}}/api/doctors",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "doctors"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Doctor Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Profile updated successfully', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('updated');",
+                  "});",
+                  "",
+                  "pm.test('Updated fields reflect changes', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var doctor = jsonData.data.doctor;",
+                  "    pm.expect(doctor.consultationFee).to.equal(150);",
+                  "    pm.expect(doctor.specialties).to.include('Emergency Medicine');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialties\": [\"Cardiology\", \"Internal Medicine\", \"Emergency Medicine\"],\n  \"consultationFee\": 150,\n  \"bio\": \"Highly experienced cardiologist specializing in preventive care\",\n  \"contactNumber\": \"+1-555-0123\",\n  \"qualifications\": [\n    {\n      \"title\": \"MD - Medicine\",\n      \"institution\": \"Harvard Medical School\",\n      \"year\": 2010,\n      \"documentUrl\": \"https://example.com/md.pdf\"\n    },\n    {\n      \"title\": \"Board Certification - Cardiology\",\n      \"institution\": \"American Board of Internal Medicine\",\n      \"year\": 2012,\n      \"documentUrl\": \"https://example.com/board-cert.pdf\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{doctor_service_url}}/api/doctors/{{doctor_id}}/profile",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "doctors", "{{doctor_id}}", "profile"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Doctor Availability Management",
+      "item": [
+        {
+          "name": "Update Availability Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Availability updated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Availability updated');",
+                  "});",
+                  "",
+                  "pm.test('Availability has correct slots', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var doctor = jsonData.data.doctor;",
+                  "    pm.expect(doctor.availability).to.be.an('array');",
+                  "    pm.expect(doctor.availability.length).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availability\": [\n    {\n      \"weekday\": 1,\n      \"startHour\": 9,\n      \"endHour\": 17,\n      \"slotDurationMinutes\": 30,\n      \"mode\": \"IN_PERSON\",\n      \"bufferMinutes\": 5,\n      \"timezone\": \"UTC\",\n      \"active\": true\n    },\n    {\n      \"weekday\": 2,\n      \"startHour\": 10,\n      \"endHour\": 18,\n      \"slotDurationMinutes\": 45,\n      \"mode\": \"TELEMEDICINE\",\n      \"bufferMinutes\": 10,\n      \"timezone\": \"UTC\",\n      \"active\": true\n    },\n    {\n      \"weekday\": 3,\n      \"startHour\": 14,\n      \"endHour\": 20,\n      \"slotDurationMinutes\": 30,\n      \"mode\": \"IN_PERSON\",\n      \"bufferMinutes\": 5,\n      \"timezone\": \"UTC\",\n      \"active\": true\n    },\n    {\n      \"weekday\": 5,\n      \"startHour\": 9,\n      \"endHour\": 16,\n      \"slotDurationMinutes\": 45,\n      \"mode\": \"TELEMEDICINE\",\n      \"bufferMinutes\": 10,\n      \"timezone\": \"UTC\",\n      \"active\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{doctor_service_url}}/api/doctors/{{doctor_id}}/availability",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "doctors", "{{doctor_id}}", "availability"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Appointment Response Management",
+      "item": [
+        {
+          "name": "Accept Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Appointment accepted successfully', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('response recorded');",
+                  "});",
+                  "",
+                  "pm.test('Response contains appointment data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('appointment');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"ACCEPT\"\n}"
+            },
+            "url": {
+              "raw": "{{doctor_service_url}}/api/appointments/{{appointment_id}}/respond",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "appointments", "{{appointment_id}}", "respond"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Appointment rejected with reason', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('response recorded');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"REJECT\",\n  \"reason\": \"Schedule conflict due to emergency surgery\"\n}"
+            },
+            "url": {
+              "raw": "{{doctor_service_url}}/api/appointments/{{appointment_id}}/respond",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "appointments", "{{appointment_id}}", "respond"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Telemedicine Sessions",
+      "item": [
+        {
+          "name": "Get Telemedicine Session Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Session has meeting link', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.session).to.have.property('meetingLink');",
+                  "});",
+                  "",
+                  "pm.test('Session contains appointment details', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var session = jsonData.data.session;",
+                  "    pm.expect(session).to.have.property('appointmentId');",
+                  "    pm.expect(session).to.have.property('startTime');",
+                  "    pm.expect(session).to.have.property('endTime');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{doctor_service_url}}/api/appointments/{{appointment_id}}/telemedicine",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "appointments", "{{appointment_id}}", "telemedicine"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Prescription Management",
+      "item": [
+        {
+          "name": "Issue Prescription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "",
+                  "pm.test('Prescription created successfully', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Prescription issued');",
+                  "});",
+                  "",
+                  "pm.test('Prescription has required fields', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var prescription = jsonData.data.prescription;",
+                  "    pm.expect(prescription).to.have.property('_id');",
+                  "    pm.expect(prescription).to.have.property('medicines');",
+                  "    pm.expect(prescription.medicines).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patient_id}}\",\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"medicines\": [\n    {\n      \"name\": \"Lisinopril\",\n      \"dosage\": \"10mg\",\n      \"frequency\": \"Once daily\",\n      \"duration\": \"30 days\",\n      \"instructions\": \"Take in the morning with food\"\n    },\n    {\n      \"name\": \"Atorvastatin\",\n      \"dosage\": \"20mg\",\n      \"frequency\": \"Once daily\",\n      \"duration\": \"90 days\",\n      \"instructions\": \"Take at bedtime\"\n    },\n    {\n      \"name\": \"Aspirin\",\n      \"dosage\": \"100mg\",\n      \"frequency\": \"Once daily\",\n      \"duration\": \"As needed\",\n      \"instructions\": \"Take with water after meals\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{doctor_service_url}}/api/prescriptions",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "prescriptions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Patient Prescriptions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Prescriptions list is array', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.prescriptions).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{doctor_service_url}}/api/prescriptions/patient/{{patient_id}}",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "prescriptions", "patient", "{{patient_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Patient Reports",
+      "item": [
+        {
+          "name": "Get Patient Reports",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns patient report data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Patient reports fetched');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{doctor_service_url}}/api/doctors/{{doctor_id}}/patient-reports/{{patient_id}}",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["api", "doctors", "{{doctor_id}}", "patient-reports", "{{patient_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Internal Service Endpoints",
+      "item": [
+        {
+          "name": "Get All Doctors (Internal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Internal endpoint returns doctors', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (Array.isArray(jsonData)) {",
+                  "        pm.expect(jsonData).to.be.an('array');",
+                  "    } else {",
+                  "        pm.expect(jsonData.data || jsonData).to.exist;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-internal-service-secret",
+                "value": "super_internal_secret"
+              }
+            ],
+            "url": {
+              "raw": "{{doctor_service_url}}/internal/doctors",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["internal", "doctors"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Doctor by ID (Internal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns doctor details', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-internal-service-secret",
+                "value": "super_internal_secret"
+              }
+            ],
+            "url": {
+              "raw": "{{doctor_service_url}}/internal/doctors/{{doctor_id}}",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["internal", "doctors", "{{doctor_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Service Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Service is running', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('Doctor service running');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{doctor_service_url}}/health",
+              "host": ["{{doctor_service_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5024",
+      "type": "default",
+      "description": "Auth Service URL"
+    },
+    {
+      "key": "doctor_service_url",
+      "value": "http://localhost:5029",
+      "type": "default",
+      "description": "Doctor Service URL"
+    },
+    {
+      "key": "doctor_email",
+      "value": "irushashaveen.dev@gmail.com",
+      "type": "default",
+      "description": "Doctor login email"
+    },
+    {
+      "key": "doctor_password",
+      "value": "Is@#1216",
+      "type": "default",
+      "description": "Doctor login password"
+    },
+    {
+      "key": "doctor_token",
+      "value": "",
+      "type": "default",
+      "description": "Doctor JWT Token (auto-populated after login)"
+    },
+    {
+      "key": "doctor_id",
+      "value": "",
+      "type": "default",
+      "description": "Doctor document _id from doctor-service (used in /api/doctors/:id routes)"
+    },
+    {
+      "key": "doctor_user_id",
+      "value": "",
+      "type": "default",
+      "description": "Auth user id from login response (used as userId when creating doctor profile)"
+    },
+    {
+      "key": "patient_id",
+      "value": "",
+      "type": "default",
+      "description": "Patient ID (set manually)"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "default",
+      "description": "Appointment ID (set manually)"
+    }
+  ]
+}

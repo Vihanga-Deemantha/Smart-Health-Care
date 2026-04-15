@@ -10,20 +10,18 @@ import {
   buildRoleDistribution,
   buildUserGrowthDataset
 } from "../utils/dashboardAnalytics.js";
-import {
-  sendAccountStatusEmail,
-  sendDoctorApprovedEmail,
-  sendDoctorRejectedEmail,
-  sendEmailSafely
-} from "./email.service.js";
 import { revokeAllUserRefreshTokens } from "./token.service.js";
 import {
   deleteAdminProfilePhotoByPublicId,
   uploadAdminProfilePhotoBuffer
 } from "./storage.service.js";
+import { publishNotificationEventSafely } from "../events/publishers/notificationPublisher.js";
+import { normalizeSriLankanPhone } from "../utils/phone.js";
 
 const ADMIN_ROLES = ["ADMIN", "SUPER_ADMIN"];
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
+const normalizePhone = (phone = "") =>
+  normalizeSriLankanPhone(phone) || phone.trim();
 
 export const getAuthLogsInternal = async ({
   page = 1,
@@ -165,7 +163,7 @@ export const updateCurrentAdminProfileInternal = async (adminUserId, payload) =>
   }
 
   if (typeof payload.phone === "string" && payload.phone.trim() !== admin.phone) {
-    admin.phone = payload.phone.trim();
+    admin.phone = normalizePhone(payload.phone);
     changedFields.push("phone");
   }
 
@@ -379,7 +377,7 @@ export const createAdminInternal = async (payload, adminUserId) => {
   const admin = await User.create({
     fullName: payload.fullName.trim(),
     email,
-    phone: payload.phone.trim(),
+    phone: normalizePhone(payload.phone),
     jobTitle: payload.jobTitle?.trim() || null,
     passwordHash,
     role: "ADMIN",
@@ -492,14 +490,16 @@ export const approveDoctorInternal = async (doctorUserId, adminUserId) => {
     }
   }, `doctor approved log for ${user.email}`);
 
-  await sendEmailSafely(
-    () =>
-      sendDoctorApprovedEmail({
-        email: user.email,
-        fullName: user.fullName
-      }),
-    `doctor approval email for ${user.email}`
-  );
+  publishNotificationEventSafely({
+    routingKey: "notification.doctor.approved",
+    user,
+    metadata: {
+      doctorVerificationStatus: user.doctorVerificationStatus,
+      accountStatus: user.accountStatus,
+      adminUserId
+    },
+    contextLabel: `doctor approved event for ${user.email}`
+  });
 
   return user;
 };
@@ -532,15 +532,17 @@ export const rejectDoctorInternal = async (doctorUserId, adminUserId, reason) =>
     }
   }, `doctor changes requested log for ${user.email}`);
 
-  await sendEmailSafely(
-    () =>
-      sendDoctorRejectedEmail({
-        email: user.email,
-        fullName: user.fullName,
-        reason: user.doctorRejectionReason
-      }),
-    `doctor rejection email for ${user.email}`
-  );
+  publishNotificationEventSafely({
+    routingKey: "notification.doctor.rejected",
+    user,
+    metadata: {
+      doctorVerificationStatus: user.doctorVerificationStatus,
+      accountStatus: user.accountStatus,
+      reason: user.doctorRejectionReason,
+      adminUserId
+    },
+    contextLabel: `doctor rejected event for ${user.email}`
+  });
 
   return user;
 };
@@ -573,16 +575,19 @@ export const updateUserStatusInternal = async (userId, status, adminUserId, reas
   }, `account status change log for ${user.email}`);
 
   if (status === "ACTIVE" || status === "SUSPENDED") {
-    await sendEmailSafely(
-      () =>
-        sendAccountStatusEmail({
-          email: user.email,
-          fullName: user.fullName,
-          status,
-          reason: user.accountStatusReason
-        }),
-      `account status email for ${user.email}`
-    );
+    publishNotificationEventSafely({
+      routingKey:
+        status === "SUSPENDED"
+          ? "notification.account.suspended"
+          : "notification.account.reactivated",
+      user,
+      metadata: {
+        accountStatus: status,
+        reason: user.accountStatusReason,
+        adminUserId
+      },
+      contextLabel: `account status event for ${user.email}`
+    });
   }
 
   return user;

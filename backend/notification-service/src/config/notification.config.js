@@ -11,8 +11,18 @@ export const NOTIFICATION_CONFIG = {
   },
   "notification.doctor.rejected": {
     recipient: "doctor",
-    channels: ["email"],
+    channels: ["email", "sms"],
     email: { subject: "Doctor profile not approved" }
+  },
+  "notification.account.suspended": {
+    recipient: "recipient",
+    channels: ["email", "sms"],
+    email: { subject: "Account suspended" }
+  },
+  "notification.account.reactivated": {
+    recipient: "recipient",
+    channels: ["email", "sms"],
+    email: { subject: "Account reactivated" }
   },
   "notification.appointment.booked": {
     recipient: "patient",

@@ -35,12 +35,14 @@ export const sendSms = async ({ to, message }) => {
     payload = null;
   }
 
+  const responseDetail = payload?.data || text || "unknown";
+
   if (!response.ok) {
-    throw new Error(`Notify.lk request failed: HTTP ${response.status}`);
+    throw new Error(`Notify.lk request failed: HTTP ${response.status} - ${responseDetail}`);
   }
 
   if (payload && payload.status !== "success") {
-    throw new Error(`Notify.lk error: ${payload.data || "unknown"}`);
+    throw new Error(`Notify.lk error: ${responseDetail}`);
   }
 
   return payload || { status: "success", data: text };

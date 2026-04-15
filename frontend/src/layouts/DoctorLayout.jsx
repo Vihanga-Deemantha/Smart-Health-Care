@@ -1,10 +1,11 @@
-import { CalendarCheck2, LayoutDashboard, LogOut } from "lucide-react";
+import { CalendarCheck2, LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import PageContainer from "../components/common/PageContainer.jsx";
 
 const navItems = [
   { label: "Dashboard", to: "/doctor/dashboard", icon: LayoutDashboard },
-  { label: "Availability", to: "/doctor/availability", icon: CalendarCheck2 }
+  { label: "Availability", to: "/doctor/availability", icon: CalendarCheck2 },
+  { label: "Profile", to: "/doctor/profile", icon: UserRound }
 ];
 
 const DoctorLayout = () => {

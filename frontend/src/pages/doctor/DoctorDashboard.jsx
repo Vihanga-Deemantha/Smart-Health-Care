@@ -21,7 +21,12 @@ const DoctorDashboard = () => {
 
     try {
       const response = await api.get("/api/appointments");
-      const payload = response.data?.data?.appointments || response.data?.appointments || [];
+      const payload =
+        response.data?.data?.appointments ||
+        response.data?.appointments ||
+        response.data?.data?.items ||
+        response.data?.items ||
+        [];
       setAppointments(Array.isArray(payload) ? payload : []);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -54,7 +59,9 @@ const DoctorDashboard = () => {
     setActionMessage("");
 
     try {
-      const response = await api.patch(`/api/appointments/${appointmentId}/respond`, { action });
+      const response = await api.patch(`/api/appointments/${appointmentId}/respond`, {
+        action: String(action).toUpperCase()
+      });
       const updated =
         response.data?.data?.appointment || response.data?.appointment || response.data?.data;
       const nextStatus = action === "accept" ? "CONFIRMED" : "CANCELLED";

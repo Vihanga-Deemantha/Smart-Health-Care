@@ -19,6 +19,7 @@ import PatientHistoryPage from "../pages/patient/PatientHistoryPage.jsx";
 import PatientAiChatPage from "../pages/patient/PatientAiChatPage.jsx";
 import DoctorAvailability from "../pages/doctor/DoctorAvailability.jsx";
 import DoctorDashboard from "../pages/doctor/DoctorDashboard.jsx";
+import DoctorProfile from "../pages/doctor/DoctorProfile.jsx";
 import PrescriptionForm from "../pages/doctor/PrescriptionForm.jsx";
 import VideoConsultation from "../pages/doctor/VideoConsultation.jsx";
 import PatientAppointmentsPage from "../pages/patient/PatientAppointmentsPage.jsx";
@@ -228,6 +229,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/doctor/dashboard" replace /> },
       { path: "dashboard", element: <DoctorDashboard /> },
       { path: "availability", element: <DoctorAvailability /> },
+      { path: "profile", element: <DoctorProfile /> },
       { path: "consultation/:appointmentId", element: <VideoConsultation /> },
       { path: "prescription/:appointmentId", element: <PrescriptionForm /> }
     ]

@@ -11,10 +11,16 @@ export const createDoctorValidation = [
   body("bio").optional().isString().withMessage("Bio must be a string"),
   body("hospitalId").optional().trim().isString().withMessage("hospitalId must be a string"),
   body("contactNumber").optional().trim().isString().withMessage("contactNumber must be a string"),
+  body("address").optional().trim().isString().withMessage("address must be a string"),
   body("consultationFee")
     .optional()
     .isFloat({ min: 0 })
     .withMessage("consultationFee must be a positive number"),
+  body("yearsOfExperience")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("yearsOfExperience must be a positive number"),
+  body("profilePhoto").optional().trim().isURL().withMessage("profilePhoto must be a URL"),
   body("isAvailable").optional().isBoolean().withMessage("isAvailable must be boolean"),
   body("qualifications").optional().isArray().withMessage("qualifications must be an array"),
   body("qualifications.*.title")
@@ -33,12 +39,15 @@ export const updateDoctorProfileValidation = [
     const allowedFields = [
       "hospitalId",
       "contactNumber",
+      "address",
       "consultationFee",
+      "yearsOfExperience",
       "specialties",
       "bio",
       "licenseNumber",
       "isAvailable",
-      "qualifications"
+      "qualifications",
+      "profilePhoto"
     ];
 
     const hasField = allowedFields.some((field) => Object.prototype.hasOwnProperty.call(req.body, field));
@@ -51,15 +60,21 @@ export const updateDoctorProfileValidation = [
   }),
   body("hospitalId").optional().trim().isString().withMessage("hospitalId must be a string"),
   body("contactNumber").optional().trim().isString().withMessage("contactNumber must be a string"),
+  body("address").optional().trim().isString().withMessage("address must be a string"),
   body("consultationFee")
     .optional()
     .isFloat({ min: 0 })
     .withMessage("consultationFee must be a positive number"),
+  body("yearsOfExperience")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("yearsOfExperience must be a positive number"),
   body("specialties").optional().isArray().withMessage("specialties must be an array"),
   body("specialties.*").optional().trim().isString().withMessage("specialties must be strings"),
   body("bio").optional().isString().withMessage("bio must be a string"),
   body("licenseNumber").optional().trim().notEmpty().withMessage("licenseNumber cannot be empty"),
   body("isAvailable").optional().isBoolean().withMessage("isAvailable must be boolean"),
+  body("profilePhoto").optional().trim().isURL().withMessage("profilePhoto must be a URL"),
   body("qualifications").optional().isArray().withMessage("qualifications must be an array"),
   body("qualifications.*.title")
     .optional()

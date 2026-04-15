@@ -5,7 +5,10 @@ import {
   cancelAppointment,
   confirmAttendance,
   createSlotHold,
+  getAppointmentById,
+  getTelemedicineSession,
   listAppointments,
+  respondToAppointment,
   markNoShow,
   rescheduleAppointment
 } from "../services/appointment.service.js";
@@ -97,4 +100,42 @@ export const handleListAppointments = asyncHandler(async (req, res) => {
   });
 
   return sendResponse(res, 200, "Appointments fetched", result);
+});
+
+export const handleGetAppointment = asyncHandler(async (req, res) => {
+  const appointment = await getAppointmentById({
+    appointmentId: req.params.id,
+    actor: {
+      id: req.user.userId,
+      role: req.user.role
+    }
+  });
+
+  return sendResponse(res, 200, "Appointment fetched", { appointment });
+});
+
+export const handleRespondToAppointment = asyncHandler(async (req, res) => {
+  const appointment = await respondToAppointment({
+    appointmentId: req.params.id,
+    action: req.body.action,
+    reason: req.body.reason,
+    actor: {
+      id: req.user.userId,
+      role: req.user.role
+    }
+  });
+
+  return sendResponse(res, 200, "Appointment response recorded", { appointment });
+});
+
+export const handleGetTelemedicineSession = asyncHandler(async (req, res) => {
+  const session = await getTelemedicineSession({
+    appointmentId: req.params.id,
+    actor: {
+      id: req.user.userId,
+      role: req.user.role
+    }
+  });
+
+  return sendResponse(res, 200, "Telemedicine session fetched", { session });
 });

@@ -8,6 +8,8 @@ import {
   confirmAttendanceValidation,
   holdSlotValidation,
   listAppointmentsValidation,
+  appointmentIdValidation,
+  respondAppointmentValidation,
   markNoShowValidation,
   rescheduleAppointmentValidation
 } from "../validations/appointment.validation.js";
@@ -16,7 +18,10 @@ import {
   handleConfirmAttendance,
   handleCreateAppointment,
   handleCreateHold,
+  handleGetAppointment,
+  handleGetTelemedicineSession,
   handleListAppointments,
+  handleRespondToAppointment,
   handleNoShow,
   handleRescheduleAppointment
 } from "../controllers/appointment.controller.js";
@@ -38,6 +43,33 @@ router.get(
   listAppointmentsValidation,
   validateRequest,
   handleListAppointments
+);
+router.get(
+  "/:id",
+  allowRoles(
+    USER_ROLES.PATIENT,
+    USER_ROLES.DOCTOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.STAFF
+  ),
+  appointmentIdValidation,
+  validateRequest,
+  handleGetAppointment
+);
+router.patch(
+  "/:id/respond",
+  allowRoles(USER_ROLES.DOCTOR),
+  respondAppointmentValidation,
+  validateRequest,
+  handleRespondToAppointment
+);
+router.get(
+  "/:id/telemedicine",
+  allowRoles(USER_ROLES.DOCTOR, USER_ROLES.PATIENT),
+  appointmentIdValidation,
+  validateRequest,
+  handleGetTelemedicineSession
 );
 router.post("/hold", allowRoles(USER_ROLES.PATIENT), holdSlotValidation, validateRequest, handleCreateHold);
 router.post("/", allowRoles(USER_ROLES.PATIENT), bookAppointmentValidation, validateRequest, handleCreateAppointment);

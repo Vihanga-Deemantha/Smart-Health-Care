@@ -17,7 +17,11 @@ import PatientProfilePage from "../pages/patient/PatientProfilePage.jsx";
 import PatientReportsPage from "../pages/patient/PatientReportsPage.jsx";
 import PatientHistoryPage from "../pages/patient/PatientHistoryPage.jsx";
 import PatientAiChatPage from "../pages/patient/PatientAiChatPage.jsx";
-import DoctorHomePage from "../pages/doctor/DoctorHomePage.jsx";
+import DoctorAvailability from "../pages/doctor/DoctorAvailability.jsx";
+import DoctorDashboard from "../pages/doctor/DoctorDashboard.jsx";
+import DoctorProfile from "../pages/doctor/DoctorProfile.jsx";
+import PrescriptionForm from "../pages/doctor/PrescriptionForm.jsx";
+import VideoConsultation from "../pages/doctor/VideoConsultation.jsx";
 import PatientAppointmentsPage from "../pages/patient/PatientAppointmentsPage.jsx";
 import PatientFindDoctorPage from "../pages/patient/PatientFindDoctorPage.jsx";
 import PatientBookingsPage from "../pages/patient/PatientBookingsPage.jsx";
@@ -31,6 +35,7 @@ import NotFoundPage from "../pages/shared/NotFoundPage.jsx";
 import ProtectedRoute from "../components/common/ProtectedRoute.jsx";
 import RoleProtectedRoute from "../components/common/RoleProtectedRoute.jsx";
 import AdminLayout from "../components/admin/AdminLayout.jsx";
+import DoctorLayout from "../layouts/DoctorLayout.jsx";
 
 export const router = createBrowserRouter([
   { path: "/", element: <LandingPage /> },
@@ -216,10 +221,18 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <RoleProtectedRoute allowedRoles={["DOCTOR"]}>
-          <DoctorHomePage />
+          <DoctorLayout />
         </RoleProtectedRoute>
       </ProtectedRoute>
-    )
+    ),
+    children: [
+      { index: true, element: <Navigate to="/doctor/dashboard" replace /> },
+      { path: "dashboard", element: <DoctorDashboard /> },
+      { path: "availability", element: <DoctorAvailability /> },
+      { path: "profile", element: <DoctorProfile /> },
+      { path: "consultation/:appointmentId", element: <VideoConsultation /> },
+      { path: "prescription/:appointmentId", element: <PrescriptionForm /> }
+    ]
   },
   {
     path: "/admin",

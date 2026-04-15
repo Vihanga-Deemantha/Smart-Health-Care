@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  namespace: smart-health
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+    spec:
+      containers:
+        - name: admin-service
+          image: smart-health-care-admin-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5025
+          env:
+            - name: PORT
+              value: "5025"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: NODE_ENV
+            - name: CLIENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLIENT_URL
+            - name: MONGODB_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: ADMIN_MONGODB_URI
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: AUTH_SERVICE_URL
+            - name: JWT_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: JWT_ACCESS_SECRET
+            - name: INTERNAL_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: INTERNAL_SERVICE_SECRET
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5025
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5025
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-service
+  namespace: smart-health
+spec:
+  selector:
+    app: admin-service
+  ports:
+    - port: 5025
+      targetPort: 5025

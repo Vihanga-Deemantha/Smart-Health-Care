@@ -1,0 +1,7 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+gateway.out.log
+gateway.err.log

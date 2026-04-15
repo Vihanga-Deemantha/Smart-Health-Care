@@ -1,0 +1,227 @@
+services:
+  auth-service:
+    build:
+      context: ./backend/auth-service
+    restart: unless-stopped
+    ports:
+      - "${AUTH_PORT:-5024}:5024"
+    environment:
+      PORT: 5024
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      COOKIE_SECURE: "false"
+      MONGODB_URI: ${AUTH_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/auth_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-15m}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshkey}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-7d}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      OTP_RESEND_COOLDOWN_SECONDS: ${OTP_RESEND_COOLDOWN_SECONDS:-60}
+      OTP_RATE_LIMIT_WINDOW_MINUTES: ${OTP_RATE_LIMIT_WINDOW_MINUTES:-15}
+      OTP_RATE_LIMIT_MAX: ${OTP_RATE_LIMIT_MAX:-5}
+      OTP_MAX_VERIFY_ATTEMPTS: ${OTP_MAX_VERIFY_ATTEMPTS:-5}
+      OTP_ATTEMPT_BLOCK_MINUTES: ${OTP_ATTEMPT_BLOCK_MINUTES:-15}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-change-me@example.com}
+      EMAIL_PASS: ${EMAIL_PASS:-change-me}
+      EMAIL_FROM: ${EMAIL_FROM:-change-me@example.com}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
+      CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-verification}
+
+  admin-service:
+    build:
+      context: ./backend/admin-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+    ports:
+      - "${ADMIN_PORT:-5025}:5025"
+    environment:
+      PORT: 5025
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGODB_URI: ${ADMIN_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/admin_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      AUTH_SERVICE_URL: http://auth-service:5024
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+
+  patient-service:
+    build:
+      context: ./backend/patient-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - appointment-service
+    ports:
+      - "${PATIENT_PORT:-5028}:5028"
+    environment:
+      PORT: 5028
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGODB_URI: ${PATIENT_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/patient_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      APPOINTMENT_SERVICE_URL: ${APPOINTMENT_SERVICE_URL:-http://appointment-service:5027}
+      DOCTOR_SERVICE_URL: ${DOCTOR_SERVICE_URL:-http://doctor-service:5029}
+      REPORT_MAX_FILE_SIZE_MB: ${REPORT_MAX_FILE_SIZE_MB:-10}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
+      CLOUDINARY_REPORTS_FOLDER: ${CLOUDINARY_REPORTS_FOLDER:-smart-health/patient-reports}
+
+  appointment-service:
+    build:
+      context: ./backend/services/appointment-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - rabbitmq
+      - redis
+    ports:
+      - "5027:5027"
+    environment:
+      PORT: 5027
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGODB_URI: ${APPOINTMENT_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/appointment_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-15m}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      AUTH_SERVICE_URL: http://auth-service:5024
+      PATIENT_SERVICE_URL: http://patient-service:5028
+      DOCTOR_SERVICE_URL: ${DOCTOR_SERVICE_URL:-http://doctor-service:5029}
+      TELEMEDICINE_SERVICE_URL: ${TELEMEDICINE_SERVICE_URL:-http://telemedicine-service:5033}
+      ROOM_SERVICE_URL: ${ROOM_SERVICE_URL:-http://room-service:5030}
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service:5032}
+      PAYMENT_SERVICE_URL: ${PAYMENT_SERVICE_URL:-http://payment-service:5034}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_EXCHANGE: smart_health.events
+      REDIS_URL: redis://redis:6379
+      SLOT_HOLD_TTL_MINUTES: ${SLOT_HOLD_TTL_MINUTES:-10}
+      MAX_ACTIVE_HOLDS_PER_PATIENT: ${MAX_ACTIVE_HOLDS_PER_PATIENT:-3}
+      CANCELLATION_CUTOFF_HOURS: ${CANCELLATION_CUTOFF_HOURS:-12}
+      REMINDER_24H_ENABLED: ${REMINDER_24H_ENABLED:-true}
+      REMINDER_1H_ENABLED: ${REMINDER_1H_ENABLED:-true}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      GOOGLE_CALENDAR_ID: ${GOOGLE_CALENDAR_ID:-primary}
+      GOOGLE_ENCRYPTION_KEY: ${GOOGLE_ENCRYPTION_KEY:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
+      TWILIO_SMS_FROM: ${TWILIO_SMS_FROM:-}
+      SWAGGER_SERVER_URL: ${SWAGGER_SERVER_URL:-http://localhost:5027}
+
+  doctor-service:
+    build:
+      context: ./backend/doctor-service
+    restart: unless-stopped
+    ports:
+      - "5029:5029"
+    environment:
+      PORT: 5029
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGO_URI: ${DOCTOR_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/doctor_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      PATIENT_SERVICE_URL: ${PATIENT_SERVICE_URL:-http://patient-service:5028}
+      APPOINTMENT_SERVICE_URL: ${APPOINTMENT_SERVICE_URL:-http://appointment-service:5027}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
+      CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-qualification-docs}
+      CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER: ${CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER:-smart-health/doctor-profile-photos}
+      DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB: ${DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB:-10}
+      DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB: ${DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB:-5}
+
+  payment-service:
+    build:
+      context: ./backend/services/payment-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - rabbitmq
+    ports:
+      - "5034:5034"
+    environment:
+      PORT: 5034
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGODB_URI: ${PAYMENT_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/payment_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_EXCHANGE: smart_health.events
+
+  ai-chatbot-service:
+    build:
+      context: ./backend/ai-chatbot-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+    ports:
+      - "${AI_CHATBOT_PORT:-5031}:5031"
+    environment:
+      PORT: 5031
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-change-me}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-1.5-flash}
+      GEMINI_MAX_RETRIES: ${GEMINI_MAX_RETRIES:-2}
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - admin-service
+      - patient-service
+      - appointment-service
+      - payment-service
+      - ai-chatbot-service
+    ports:
+      - "${GATEWAY_PORT:-5026}:5026"
+    environment:
+      PORT: 5026
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      AUTH_SERVICE_URL: http://auth-service:5024
+      ADMIN_SERVICE_URL: http://admin-service:5025
+      PATIENT_SERVICE_URL: http://patient-service:5028
+      AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
+      APPOINTMENT_SERVICE_URL: http://appointment-service:5027
+      DOCTOR_SERVICE_URL: http://doctor-service:5029
+      PAYMENT_SERVICE_URL: http://payment-service:5034
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"

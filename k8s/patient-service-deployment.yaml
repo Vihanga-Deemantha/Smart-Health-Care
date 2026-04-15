@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patient-service
+  namespace: smart-health
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: patient-service
+  template:
+    metadata:
+      labels:
+        app: patient-service
+    spec:
+      containers:
+        - name: patient-service
+          image: smart-health-care-patient-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5028
+          env:
+            - name: PORT
+              value: "5028"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: NODE_ENV
+            - name: CLIENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLIENT_URL
+            - name: MONGODB_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: PATIENT_MONGODB_URI
+            - name: APPOINTMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: APPOINTMENT_SERVICE_URL
+            - name: DOCTOR_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: DOCTOR_SERVICE_URL
+            - name: REPORT_MAX_FILE_SIZE_MB
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: REPORT_MAX_FILE_SIZE_MB
+            - name: CLOUDINARY_REPORTS_FOLDER
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLOUDINARY_REPORTS_FOLDER
+            - name: JWT_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: JWT_ACCESS_SECRET
+            - name: INTERNAL_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: INTERNAL_SERVICE_SECRET
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_API_KEY
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_API_SECRET
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5028
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5028
+            initialDelaySeconds: 20
+            periodSeconds: 20

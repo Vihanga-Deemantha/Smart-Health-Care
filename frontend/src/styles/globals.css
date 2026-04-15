@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-cyan: #22d3ee;
+  --color-brand-blue: #3b82f6;
+  --color-brand-emerald: #34d399;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.16), transparent 24%),
+    linear-gradient(180deg, #020617 0%, #020617 48%, #04111f 100%);
+  color: #e2e8f0;
+  font-family: "Trebuchet MS", "Segoe UI Variable", "Segoe UI", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Mobile: prevent iOS input zoom (font-size must be ≥ 16px on inputs) ── */
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: max(16px, 1em); /* prevents iOS auto-zoom on focus */
+}
+
+button,
+a {
+  /* Remove iOS tap blue flash */
+  -webkit-tap-highlight-color: transparent;
+  /* Enforce minimum touch target per Apple HIG */
+  min-height: 44px;
+}
+
+/* Exceptions: small decorative elements that are not interactive targets */
+span[role="img"] {
+  min-height: unset;
+}
+
+/* ── Remove outline flash on touch (style handled by :focus-visible) ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe-area insets for iPhone notch / Dynamic Island */
+#root {
+  min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height (iOS 15+) */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.grid-glow {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+  background-size: 42px 42px;
+}

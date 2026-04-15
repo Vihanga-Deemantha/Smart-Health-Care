@@ -25,6 +25,26 @@ const availabilitySchema = new mongoose.Schema(
       min: 5,
       max: 120,
       default: 30
+    },
+    mode: {
+      type: String,
+      enum: ["IN_PERSON", "TELEMEDICINE"],
+      default: "IN_PERSON"
+    },
+    bufferMinutes: {
+      type: Number,
+      min: 0,
+      max: 60,
+      default: 0
+    },
+    timezone: {
+      type: String,
+      trim: true,
+      default: "UTC"
+    },
+    active: {
+      type: Boolean,
+      default: true
     }
   },
   { _id: false }
@@ -92,7 +112,17 @@ const doctorSchema = new mongoose.Schema(
       trim: true,
       default: null
     },
+    address: {
+      type: String,
+      trim: true,
+      default: null
+    },
     consultationFee: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    yearsOfExperience: {
       type: Number,
       min: 0,
       default: 0
@@ -104,6 +134,11 @@ const doctorSchema = new mongoose.Schema(
     bio: {
       type: String,
       trim: true
+    },
+    profilePhoto: {
+      type: String,
+      trim: true,
+      default: null
     },
     isVerified: {
       type: Boolean,

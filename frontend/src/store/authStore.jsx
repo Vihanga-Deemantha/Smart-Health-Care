@@ -31,9 +31,23 @@ export const AuthProvider = ({ children }) => {
     if (nextAccessToken) {
       setAccessToken(nextAccessToken);
       setSessionHint();
+      localStorage.setItem("accessToken", nextAccessToken);
+      const nextUserId = nextUser?.id || nextUser?._id || "";
+      const nextFullName = nextUser?.fullName || nextUser?.name || "";
+
+      if (nextUserId) {
+        localStorage.setItem("userId", nextUserId);
+      }
+
+      if (nextFullName) {
+        localStorage.setItem("fullName", nextFullName);
+      }
     } else {
       clearAccessToken();
       clearSessionHint();
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("fullName");
     }
   }, []);
 
@@ -103,6 +117,9 @@ export const AuthProvider = ({ children }) => {
       setAccessTokenState(null);
       clearAccessToken();
       clearSessionHint();
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("fullName");
     };
 
     window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);

@@ -13,7 +13,7 @@ const getRoleHomePath = (role) => {
   }
 
   if (role === "DOCTOR") {
-    return "/doctor";
+    return "/doctor/dashboard";
   }
 
   if (role === "PATIENT") {

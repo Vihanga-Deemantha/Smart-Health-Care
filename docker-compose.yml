@@ -116,6 +116,29 @@ services:
       TWILIO_SMS_FROM: ${TWILIO_SMS_FROM:-}
       SWAGGER_SERVER_URL: ${SWAGGER_SERVER_URL:-http://localhost:5027}
 
+  doctor-service:
+    build:
+      context: ./backend/doctor-service
+    restart: unless-stopped
+    ports:
+      - "5029:5029"
+    environment:
+      PORT: 5029
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      MONGO_URI: ${DOCTOR_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/doctor_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      PATIENT_SERVICE_URL: ${PATIENT_SERVICE_URL:-http://patient-service:5028}
+      APPOINTMENT_SERVICE_URL: ${APPOINTMENT_SERVICE_URL:-http://appointment-service:5027}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
+      CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-qualification-docs}
+      CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER: ${CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER:-smart-health/doctor-profile-photos}
+      DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB: ${DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB:-10}
+      DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB: ${DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB:-5}
+
   payment-service:
     build:
       context: ./backend/services/payment-service
@@ -176,6 +199,7 @@ services:
       PATIENT_SERVICE_URL: http://patient-service:5028
       AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
       APPOINTMENT_SERVICE_URL: http://appointment-service:5027
+      DOCTOR_SERVICE_URL: http://doctor-service:5029
       PAYMENT_SERVICE_URL: http://payment-service:5034
 
   rabbitmq:

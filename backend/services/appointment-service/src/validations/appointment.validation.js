@@ -43,3 +43,23 @@ export const listAppointmentsValidation = [
   query("page").optional().isInt({ min: 1 }),
   query("limit").optional().isInt({ min: 1, max: 100 })
 ];
+
+export const appointmentIdValidation = [
+  param("id").isMongoId().withMessage("Invalid appointment id")
+];
+
+export const respondAppointmentValidation = [
+  param("id").isMongoId().withMessage("Invalid appointment id"),
+  body("action")
+    .customSanitizer((value) => String(value || "").toUpperCase())
+    .isIn(["ACCEPT", "REJECT"])
+    .withMessage("action must be ACCEPT or REJECT"),
+  body("reason").custom((value, { req }) => {
+    const action = String(req.body.action || "").toUpperCase();
+    if (action === "REJECT" && !value) {
+      throw new Error("reason is required when rejecting an appointment");
+    }
+
+    return true;
+  })
+];

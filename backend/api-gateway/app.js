@@ -48,7 +48,7 @@ app.use(
   protect,
   createServiceProxy(process.env.AI_CHATBOT_SERVICE_URL)
 );
-app.use("/api/doctors", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/doctors", createServiceProxy(process.env.DOCTOR_SERVICE_URL));
 app.use("/api/feedback/doctors", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
 app.use("/api/emergency-resources", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
 app.use("/api/appointments", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));

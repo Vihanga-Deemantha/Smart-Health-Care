@@ -8,7 +8,9 @@ import {
   listInternalDoctors,
   getInternalDoctor,
   updateDoctorAvailability,
-  updateDoctorProfile
+  updateDoctorProfile,
+  uploadDoctorProfilePhoto,
+  addDoctorQualificationDocument
 } from "../services/doctor.service.js";
 import { respondToAppointment, getTelemedicineSession } from "../services/appointment.service.js";
 import { getPatientReportsForDoctor } from "../services/patientReport.service.js";
@@ -72,6 +74,27 @@ export const handleUpdateProfile = asyncHandler(async (req, res) => {
   sendResponse(res, 200, "Doctor profile updated", { doctor });
 });
 
+export const handleUploadDoctorProfilePhoto = asyncHandler(async (req, res) => {
+  const doctor = await uploadDoctorProfilePhoto({
+    doctorId: req.params.id,
+    actorUserId: req.user.userId,
+    file: req.file
+  });
+
+  sendResponse(res, 200, "Doctor profile photo updated", { doctor });
+});
+
+export const handleUploadQualificationDocument = asyncHandler(async (req, res) => {
+  const doctor = await addDoctorQualificationDocument({
+    doctorId: req.params.id,
+    actorUserId: req.user.userId,
+    payload: req.body,
+    file: req.file
+  });
+
+  sendResponse(res, 200, "Qualification document uploaded", { doctor });
+});
+
 export const handleRespondToAppointment = asyncHandler(async (req, res) => {
   const response = await respondToAppointment({
     appointmentId: req.params.id,
@@ -125,6 +148,15 @@ export const handleCreatePrescription = asyncHandler(async (req, res) => {
 export const handleListPrescriptionsForPatient = asyncHandler(async (req, res) => {
   const prescriptions = await listPrescriptionsForPatient({
     patientId: req.params.patientId,
+    limit: req.query.limit
+  });
+
+  sendResponse(res, 200, "Prescriptions fetched", { prescriptions });
+});
+
+export const handleListPrescriptionsForCurrentPatient = asyncHandler(async (req, res) => {
+  const prescriptions = await listPrescriptionsForPatient({
+    patientId: req.user.userId,
     limit: req.query.limit
   });
 

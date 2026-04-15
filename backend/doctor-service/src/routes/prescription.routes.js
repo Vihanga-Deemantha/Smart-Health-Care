@@ -5,11 +5,13 @@ import verifyInternalService from "../middlewares/internal.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
 import {
   handleCreatePrescription,
+  handleListPrescriptionsForCurrentPatient,
   handleListPrescriptionsForPatient
 } from "../controllers/doctor.controller.js";
 import {
   createPrescriptionValidation,
-  listPrescriptionsForPatientValidation
+  listPrescriptionsForPatientValidation,
+  listPrescriptionsValidation
 } from "../validations/prescription.validation.js";
 
 const router = express.Router();
@@ -21,6 +23,15 @@ router.post(
   createPrescriptionValidation,
   validateRequest,
   handleCreatePrescription
+);
+
+router.get(
+  "/",
+  protect,
+  allowRoles("PATIENT"),
+  listPrescriptionsValidation,
+  validateRequest,
+  handleListPrescriptionsForCurrentPatient
 );
 
 router.get(

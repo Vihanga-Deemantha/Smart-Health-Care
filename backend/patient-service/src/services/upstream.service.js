@@ -60,6 +60,10 @@ const normalizePrescriptionList = (payload) => {
     return data.items;
   }
 
+  if (Array.isArray(data?.prescriptions)) {
+    return data.prescriptions;
+  }
+
   return [];
 };
 

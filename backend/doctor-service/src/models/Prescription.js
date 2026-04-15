@@ -4,6 +4,7 @@ const medicineSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     dose: { type: String, trim: true, default: null },
+    frequency: { type: String, trim: true, default: null },
     duration: { type: String, trim: true, default: null },
     notes: { type: String, trim: true, default: null }
   },

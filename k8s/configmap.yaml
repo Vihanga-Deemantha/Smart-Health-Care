@@ -4,11 +4,6 @@ metadata:
   name: smart-health-config
   namespace: smart-health
 data:
-  AUTH_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/auth_db?retryWrites=true&w=majority
-  ADMIN_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/admin_db?retryWrites=true&w=majority
-  APPOINTMENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/appointment_db?retryWrites=true&w=majority
-  PAYMENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/payment_db?retryWrites=true&w=majority
-  PATIENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/patient_db?retryWrites=true&w=majority
   AUTH_SERVICE_URL: http://auth-service:5024
   ADMIN_SERVICE_URL: http://admin-service:5025
   PATIENT_SERVICE_URL: http://patient-service:5028
@@ -17,16 +12,28 @@ data:
   DOCTOR_SERVICE_URL: http://doctor-service:5029
   PAYMENT_SERVICE_URL: http://payment-service:5034
   TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5033
+  ROOM_SERVICE_URL: http://room-service:5030
   NOTIFICATION_SERVICE_URL: http://notification-service:5032
   RABBITMQ_URL: amqp://rabbitmq:5672
   RABBITMQ_EXCHANGE: smart_health.events
+  RABBITMQ_QUEUE: notification.universal.queue
+  RABBITMQ_BINDING_KEY: notification.#
+  RABBITMQ_RETRY_MS: "5000"
   REDIS_URL: redis://redis:6379
   CLIENT_URL: http://smart-health.local
   NODE_ENV: production
   COOKIE_SECURE: "false"
   REPORT_MAX_FILE_SIZE_MB: "10"
+  CLOUDINARY_ADMIN_PROFILE_PHOTOS_FOLDER: smart-health/admin-profile-photos
+  CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: smart-health/doctor-verification
+  CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER: smart-health/doctor-profile-photos
   CLOUDINARY_REPORTS_FOLDER: smart-health/patient-reports
-  GEMINI_MODEL: gemini-1.5-flash
+  ADMIN_PROFILE_PHOTO_MAX_FILE_SIZE_MB: "5"
+  DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB: "10"
+  DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB: "5"
+  GEMINI_MODEL: gemini-2.5-flash
+  GEMINI_FALLBACK_MODELS: gemini-2.5-flash
+  GEMINI_MAX_RETRIES: "2"
   JWT_ACCESS_EXPIRES: 15m
   JWT_REFRESH_EXPIRES: 7d
   OTP_RESEND_COOLDOWN_SECONDS: "60"
@@ -34,5 +41,15 @@ data:
   OTP_RATE_LIMIT_MAX: "5"
   OTP_MAX_VERIFY_ATTEMPTS: "5"
   OTP_ATTEMPT_BLOCK_MINUTES: "15"
+  SLOT_HOLD_TTL_MINUTES: "10"
+  MAX_ACTIVE_HOLDS_PER_PATIENT: "3"
+  CANCELLATION_CUTOFF_HOURS: "12"
+  REMINDER_24H_ENABLED: "true"
+  REMINDER_1H_ENABLED: "true"
+  GOOGLE_REDIRECT_URI: ""
+  GOOGLE_CALENDAR_ID: primary
+  SWAGGER_SERVER_URL: http://appointment-service:5027
   EMAIL_HOST: smtp.gmail.com
   EMAIL_PORT: "587"
+  NOTIFY_LK_API_URL: https://app.notify.lk/api/v1/send
+  NOTIFY_LK_SENDER_ID: BrightEdu

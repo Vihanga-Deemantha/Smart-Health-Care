@@ -1,7 +1,11 @@
 import "./src/config/env.js";
 import app from "./app.js";
 import connectDB from "./src/config/db.js";
-import { connectRabbitMQ } from "./src/config/rabbitmq.js";
+import {
+  connectRabbitMQ,
+  startNotificationStatusConsumer,
+  startPaymentStatusConsumer
+} from "./src/config/rabbitmq.js";
 import { initQueues } from "./src/config/redis.js";
 import { initWorkers } from "./src/jobs/workers.js";
 import logger from "./src/utils/logger.js";
@@ -12,6 +16,8 @@ const startServer = async () => {
   try {
     await connectDB();
     await connectRabbitMQ();
+    await startNotificationStatusConsumer();
+    await startPaymentStatusConsumer();
     await initQueues();
     initWorkers();
 

@@ -21,6 +21,68 @@ const cancellationCutoffHours = Number(process.env.CANCELLATION_CUTOFF_HOURS || 
 
 const dateOnly = (value) => new Date(value).toISOString().slice(0, 10);
 
+const buildPatientSummary = (profile, patientId) => {
+  if (!profile && !patientId) {
+    return null;
+  }
+
+  return {
+    userId: profile?.userId || profile?._id || profile?.id || patientId || null,
+    fullName: profile?.fullName || profile?.name || "Patient",
+    email: profile?.email || null,
+    phone: profile?.contactNumber || profile?.phone || null
+  };
+};
+
+const enrichAppointmentsWithPatients = async (appointments, role) => {
+  const canSeePatient = [
+    USER_ROLES.DOCTOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.STAFF
+  ].includes(role);
+
+  if (!canSeePatient || !appointments?.length) {
+    return appointments;
+  }
+
+  const patientIds = Array.from(
+    new Set(appointments.map((appointment) => appointment.patientId).filter(Boolean))
+  );
+
+  if (!patientIds.length) {
+    return appointments;
+  }
+
+  const patientProfiles = await Promise.all(patientIds.map((id) => getPatientProfile(id)));
+  const patientMap = new Map();
+
+  patientIds.forEach((id, index) => {
+    patientMap.set(id, buildPatientSummary(patientProfiles[index], id));
+  });
+
+  return appointments.map((appointment) => {
+    if (appointment?.patient && typeof appointment.patient === "object") {
+      const hasDetails =
+        appointment.patient.fullName ||
+        appointment.patient.name ||
+        appointment.patient.email ||
+        appointment.patient.phone ||
+        appointment.patient.contactNumber;
+      if (hasDetails) {
+        return appointment;
+      }
+    }
+
+    const summary = patientMap.get(appointment.patientId);
+    if (!summary) {
+      return appointment;
+    }
+
+    return { ...appointment, patient: summary };
+  });
+};
+
 export const createSlotHold = async ({ patientId, doctorId, startTime, endTime, actor }) => {
   const activeHolds = await SlotHold.countDocuments({
     patientId,
@@ -493,8 +555,10 @@ export const listAppointments = async ({ userId, role, status, from, to, page = 
     Appointment.countDocuments(query)
   ]);
 
+  const enrichedItems = await enrichAppointmentsWithPatients(items, role);
+
   return {
-    items,
+    items: enrichedItems,
     pagination: {
       total,
       page: Number(page),

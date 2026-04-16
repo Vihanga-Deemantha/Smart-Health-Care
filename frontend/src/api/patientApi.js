@@ -10,6 +10,15 @@ export const uploadPatientReport = (file) => {
   return api.post("/patients/reports", formData);
 };
 
+export const downloadPatientReport = ({ publicId, url }) =>
+  api.get("/patients/reports/download", {
+    params: {
+      publicId,
+      url
+    },
+    responseType: "blob"
+  });
+
 export const deletePatientReport = ({ publicId, url }) =>
   api.delete("/patients/reports", {
     data: { publicId, url }

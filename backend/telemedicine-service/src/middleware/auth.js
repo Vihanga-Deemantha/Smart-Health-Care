@@ -17,7 +17,11 @@ export const protect = (req, res, next) => {
   }
 
   try {
-    req.user = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, secret);
+    if (decoded?.role) {
+      decoded.role = String(decoded.role).toUpperCase();
+    }
+    req.user = decoded;
     return next();
   } catch {
     return sendError(res, 401, "Invalid or expired token");

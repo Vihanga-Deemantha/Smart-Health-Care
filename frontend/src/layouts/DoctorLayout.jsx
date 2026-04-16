@@ -5,7 +5,8 @@ import {
   FileUp,
   LayoutDashboard,
   LogOut,
-  UserRound
+  UserRound,
+  Video
 } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
@@ -99,6 +100,7 @@ const DoctorLayout = () => {
       badge: pendingCount
     },
     { label: "My Schedule", to: "/doctor/schedule", icon: CalendarClock },
+    { label: "Video Sessions", to: "/doctor/sessions", icon: Video },
     { label: "Availability", to: "/doctor/availability", icon: CalendarCheck2 },
     { label: "Profile", to: "/doctor/profile", icon: UserRound }
   ];

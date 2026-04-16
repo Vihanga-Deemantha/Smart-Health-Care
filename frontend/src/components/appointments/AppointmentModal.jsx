@@ -103,11 +103,11 @@ const AppointmentModal = ({
   }, []);
 
   const handleViewReports = () => {
-    if (!appointment?.patientId) {
+    if (!appointmentId) {
       return;
     }
 
-    navigate(`/doctor/patients/${appointment.patientId}/reports`);
+    navigate(`/doctor/consultation/${appointmentId}`);
   };
 
   const handleWritePrescription = () => {
@@ -115,7 +115,7 @@ const AppointmentModal = ({
       return;
     }
 
-    navigate(`/doctor/prescriptions/new?appointmentId=${appointmentId}`);
+    navigate(`/doctor/prescription/${appointmentId}`);
   };
 
   const handleOverlayMouseDown = (event) => {
@@ -255,7 +255,7 @@ const AppointmentModal = ({
               ) : null}
               {!hideDefaultActions ? (
                 <>
-                  {mode === "TELEMEDICINE" && appointment?.videoUrl ? (
+                  {mode === "TELEMEDICINE" ? (
                     <button
                       type="button"
                       aria-label="Join video call"

@@ -128,8 +128,26 @@ export const handleLogin = asyncHandler(async (req, res) => {
 
 export const handleMe = asyncHandler(async (req, res) => {
   const user = await getCurrentUser(req.user.userId, req);
+  const responseUser = {
+    id: user._id,
+    _id: user._id,
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    profilePhoto: user.profilePhoto,
+    role: user.role,
+    accountStatus: user.accountStatus,
+    doctorVerificationStatus: user.doctorVerificationStatus,
+    doctorRejectionReason: user.doctorRejectionReason,
+    isEmailVerified: user.isEmailVerified,
+    medicalLicenseNumber: user.medicalLicenseNumber,
+    specialization: user.specialization,
+    yearsOfExperience: user.yearsOfExperience,
+    verificationDocuments: user.verificationDocuments,
+    verificationLinks: user.verificationLinks
+  };
 
-  sendResponse(res, 200, "Current user fetched successfully", { user });
+  sendResponse(res, 200, "Current user fetched successfully", { user: responseUser });
 });
 
 export const handleVerifyEmailOtp = asyncHandler(async (req, res) => {

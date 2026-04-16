@@ -12,10 +12,11 @@ resources:
   - ai-chatbot-service-deployment.yaml
   - ai-chatbot-service-service.yaml
   - api-gateway.yaml
-<<<<<<< Updated upstream
-=======
   - appointment-deployment.yaml
+  - doctor-service.yaml
   - payment-deployment.yaml
->>>>>>> Stashed changes
+  - notification-service.yaml
+  - rabbitmq.yaml
+  - redis.yaml
   - frontend.yaml
   - ingress.yaml

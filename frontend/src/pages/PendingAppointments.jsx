@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import PendingCard from "../components/appointments/PendingCard.jsx";
+import AppointmentModal from "../components/appointments/AppointmentModal.jsx";
 import Toast from "../components/common/Toast.jsx";
 import { groupAppointmentsByDate } from "../utils/groupByDate.js";
 
@@ -46,12 +47,12 @@ const resolveDoctorId = () => {
 const getErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Something went wrong.";
 
-const buildFallbackPatient = (patientId) => ({
-  id: patientId || "",
-  fullName: "Patient",
-  email: "Not available",
-  phone: "Not available",
-  profilePhoto: ""
+const buildFallbackPatient = (patientId, fallback = {}) => ({
+  id: fallback?.id || patientId || "",
+  fullName: fallback?.fullName || "Patient",
+  email: fallback?.email || "Not available",
+  phone: fallback?.phone || "Not available",
+  profilePhoto: fallback?.profilePhoto || ""
 });
 
 const dispatchPendingCount = (count) => {
@@ -81,6 +82,8 @@ const PendingAppointments = () => {
   const [busyId, setBusyId] = useState("");
   const [exitingIds, setExitingIds] = useState([]);
   const [toasts, setToasts] = useState([]);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const doctorApi = useMemo(
     () => axios.create({ baseURL: DOCTOR_SERVICE_URL }),
@@ -103,9 +106,9 @@ const PendingAppointments = () => {
   }, []);
 
   const fetchPatient = useCallback(
-    async (patientId) => {
+    async (patientId, fallback) => {
       if (!patientId) {
-        return buildFallbackPatient("");
+        return buildFallbackPatient("", fallback);
       }
 
       try {
@@ -115,13 +118,13 @@ const PendingAppointments = () => {
         const payload = response.data?.data?.patient || response.data?.patient || response.data;
         return {
           id: payload?._id || payload?.id || patientId,
-          fullName: payload?.fullName || payload?.name || "Patient",
-          email: payload?.email || "Not available",
-          phone: payload?.phone || payload?.contactNumber || "Not available",
-          profilePhoto: payload?.profilePhoto || ""
+          fullName: payload?.fullName || payload?.name || fallback?.fullName || "Patient",
+          email: payload?.email || fallback?.email || "Not available",
+          phone: payload?.phone || payload?.contactNumber || fallback?.phone || "Not available",
+          profilePhoto: payload?.profilePhoto || fallback?.profilePhoto || ""
         };
       } catch {
-        return buildFallbackPatient(patientId);
+        return buildFallbackPatient(patientId, fallback);
       }
     },
     [patientApi]
@@ -154,7 +157,26 @@ const PendingAppointments = () => {
 
       const enriched = await Promise.all(
         items.map(async (appointment) => {
-          const patient = await fetchPatient(appointment.patientId);
+          const rawPatient = appointment.patient;
+          const patientRecord = rawPatient && typeof rawPatient === "object" ? rawPatient : {};
+          const patientId =
+            appointment.patientId ||
+            patientRecord?._id ||
+            patientRecord?.id ||
+            (typeof rawPatient === "string" ? rawPatient : "");
+          const fallbackPatient = {
+            id: patientId,
+            fullName:
+              patientRecord?.fullName ||
+              patientRecord?.name ||
+              appointment.patientName ||
+              appointment.patientFullName ||
+              "Patient",
+            email: patientRecord?.email,
+            phone: patientRecord?.phone || patientRecord?.contactNumber,
+            profilePhoto: patientRecord?.profilePhoto
+          };
+          const patient = await fetchPatient(patientId, fallbackPatient);
           return {
             ...appointment,
             patient,
@@ -195,7 +217,7 @@ const PendingAppointments = () => {
     }, 220);
   };
 
-  const handleAccept = async (appointment) => {
+  const handleConfirm = async (appointment) => {
     const appointmentId = appointment?._id || appointment?.id;
     if (!appointmentId) {
       addToast("Missing appointment id.", "error");
@@ -212,12 +234,19 @@ const PendingAppointments = () => {
       );
 
       markExiting(appointmentId);
+      setSelectedAppointment(null);
+      setRejectReason("");
       addToast("Appointment confirmed - patient will be notified", "success");
     } catch (err) {
       addToast(getErrorMessage(err), "error");
     } finally {
       setBusyId("");
     }
+  };
+
+  const openDetailsModal = (appointment) => {
+    setSelectedAppointment(appointment);
+    setRejectReason("");
   };
 
   const handleReject = async (appointment, reason) => {
@@ -237,6 +266,8 @@ const PendingAppointments = () => {
       );
 
       markExiting(appointmentId);
+      setSelectedAppointment(null);
+      setRejectReason("");
       addToast("Appointment rejected", "error");
     } catch (err) {
       addToast(getErrorMessage(err), "error");
@@ -338,8 +369,7 @@ const PendingAppointments = () => {
                     <PendingCard
                       key={appointmentId}
                       appointment={appointment}
-                      onAccept={handleAccept}
-                      onReject={handleReject}
+                      onView={openDetailsModal}
                       busy={busyId === appointmentId}
                       isExiting={exitingIds.includes(appointmentId)}
                     />
@@ -353,6 +383,27 @@ const PendingAppointments = () => {
       )}
 
       <Toast toasts={toasts} onRemove={removeToast} />
+
+      {selectedAppointment ? (
+        <AppointmentModal
+          appointment={selectedAppointment}
+          onClose={() => {
+            setSelectedAppointment(null);
+            setRejectReason("");
+          }}
+          primaryActionLabel="Approve"
+          primaryActionDisabled={busyId === (selectedAppointment?._id || selectedAppointment?.id)}
+          onPrimaryAction={handleConfirm}
+          secondaryActionLabel="Reject"
+          secondaryActionDisabled={busyId === (selectedAppointment?._id || selectedAppointment?.id)}
+          onSecondaryAction={handleReject}
+          showReasonInput
+          reasonValue={rejectReason}
+          onReasonChange={setRejectReason}
+          reasonPlaceholder="Reason for rejection (optional)"
+          hideDefaultActions
+        />
+      ) : null}
     </div>
   );
 };

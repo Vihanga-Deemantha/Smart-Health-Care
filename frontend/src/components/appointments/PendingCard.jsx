@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Avatar from "../common/Avatar.jsx";
 
 const formatTime = (value) => {
@@ -30,30 +30,26 @@ const modeStyles = {
   }
 };
 
-const PendingCard = ({ appointment, onAccept, onReject, busy, isExiting }) => {
-  const [showReject, setShowReject] = useState(false);
-  const [reason, setReason] = useState("");
-
-  const patient = appointment?.patient || {};
-  const patientName = patient.fullName || "Patient";
+const PendingCard = ({ appointment, onView, busy, isExiting }) => {
+  const rawPatient = appointment?.patient;
+  const patient = rawPatient && typeof rawPatient === "object" ? rawPatient : {};
+  const patientName =
+    patient.fullName ||
+    patient.name ||
+    appointment?.patientName ||
+    appointment?.patientFullName ||
+    "Patient";
   const mode = appointment?.mode || "IN_PERSON";
   const timeLabel = useMemo(
     () => formatTime(appointment?.startTime || appointment?.appointmentDate),
     [appointment?.startTime, appointment?.appointmentDate]
   );
 
-  const handleAccept = () => {
+  const handleView = () => {
     if (busy) {
       return;
     }
-    onAccept?.(appointment);
-  };
-
-  const handleConfirmReject = () => {
-    if (busy) {
-      return;
-    }
-    onReject?.(appointment, reason);
+    onView?.(appointment);
   };
 
   return (
@@ -108,66 +104,16 @@ const PendingCard = ({ appointment, onAccept, onReject, busy, isExiting }) => {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            aria-label="Accept appointment"
-            onClick={handleAccept}
+            aria-label="View appointment details"
+            onClick={handleView}
             disabled={busy}
             className="rounded-lg px-3 py-2 text-sm font-semibold"
-            style={{ background: "#238636", color: "#ffffff" }}
+            style={{ background: "#00b4c8", color: "#0d1117" }}
           >
-            Accept
-          </button>
-          <button
-            type="button"
-            aria-label="Reject appointment"
-            onClick={() => setShowReject((current) => !current)}
-            disabled={busy}
-            className="rounded-lg border px-3 py-2 text-sm font-semibold"
-            style={{ borderColor: "#f85149", color: "#f85149" }}
-          >
-            Reject
+            View
           </button>
         </div>
       </div>
-
-      {showReject ? (
-        <div className="mt-3">
-          <textarea
-            rows={2}
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Reason for rejection (optional)"
-            aria-label="Reason for rejection"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-            style={{
-              borderColor: "#30363d",
-              background: "#0d1117",
-              color: "#e6edf3",
-              resize: "none"
-            }}
-          />
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              aria-label="Confirm reject appointment"
-              onClick={handleConfirmReject}
-              disabled={busy}
-              className="rounded-lg border px-3 py-2 text-sm font-semibold"
-              style={{ borderColor: "#f85149", color: "#f85149" }}
-            >
-              Confirm Reject
-            </button>
-            <button
-              type="button"
-              aria-label="Cancel reject appointment"
-              onClick={() => setShowReject(false)}
-              className="rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: "#30363d", color: "#8b949e" }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 };

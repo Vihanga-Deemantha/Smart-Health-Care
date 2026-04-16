@@ -30,7 +30,7 @@ const PortalLayout = ({ eyebrow, title, description, accent = "cyan", children }
 
   return (
     <div
-      className="min-h-screen text-left"
+      className="min-h-screen"
       style={{
         background: "#071324",
         backgroundImage: `

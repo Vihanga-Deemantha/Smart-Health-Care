@@ -3,11 +3,16 @@ import sendResponse from "../utils/apiResponse.js";
 import {
   addPatientReport,
   deletePatientReport,
+  cancelPatientAppointment,
+  confirmPatientAppointmentAttendance,
+  getPatientAppointmentById,
+  getPatientAppointments,
   getPatientForInternalService,
   getPatientHistory,
   getPatientPrescriptions,
   getPatientProfile,
   getPatientReports,
+  reschedulePatientAppointment,
   updatePatientProfile
 } from "../services/patient.service.js";
 
@@ -62,4 +67,53 @@ export const handleGetPrescriptions = asyncHandler(async (req, res) => {
 export const handleGetPatientInternal = asyncHandler(async (req, res) => {
   const patient = await getPatientForInternalService(req.params.patientId);
   return sendResponse(res, 200, "Internal patient profile fetched", patient);
+});
+
+export const handleGetAppointments = asyncHandler(async (req, res) => {
+  const appointments = await getPatientAppointments({
+    authorization: req.headers.authorization,
+    query: req.query
+  });
+
+  return sendResponse(res, 200, "Patient appointments fetched", appointments);
+});
+
+export const handleGetAppointment = asyncHandler(async (req, res) => {
+  const appointment = await getPatientAppointmentById({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization
+  });
+
+  return sendResponse(res, 200, "Patient appointment fetched", appointment);
+});
+
+export const handleCancelAppointment = asyncHandler(async (req, res) => {
+  const appointment = await cancelPatientAppointment({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization,
+    reason: req.body.reason,
+    overridePolicy: req.body.overridePolicy
+  });
+
+  return sendResponse(res, 200, "Appointment cancelled", appointment);
+});
+
+export const handleRescheduleAppointment = asyncHandler(async (req, res) => {
+  const appointment = await reschedulePatientAppointment({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization,
+    newStartTime: req.body.newStartTime,
+    newEndTime: req.body.newEndTime
+  });
+
+  return sendResponse(res, 200, "Appointment rescheduled", appointment);
+});
+
+export const handleConfirmAppointmentAttendance = asyncHandler(async (req, res) => {
+  const appointment = await confirmPatientAppointmentAttendance({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization
+  });
+
+  return sendResponse(res, 200, "Attendance updated", appointment);
 });

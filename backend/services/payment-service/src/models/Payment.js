@@ -9,12 +9,14 @@ const paymentSchema = new mongoose.Schema(
     currency: { type: String, default: "USD" },
     status: {
       type: String,
-      enum: ["PENDING", "AUTHORIZED", "CAPTURED", "FAILED", "REFUNDED"],
+      enum: ["PENDING", "REQUIRES_ACTION", "AUTHORIZED", "CAPTURED", "FAILED", "REFUNDED"],
       default: "PENDING",
       index: true
     },
-    provider: { type: String, default: "INTERNAL" },
+    provider: { type: String, default: "STRIPE" },
     providerPaymentId: { type: String, default: null },
+    providerCheckoutSessionId: { type: String, default: null, index: true },
+    webhookEvents: { type: [String], default: [] },
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} }
   },
   { timestamps: true }

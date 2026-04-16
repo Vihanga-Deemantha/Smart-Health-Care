@@ -165,6 +165,9 @@ services:
       MONGODB_URI: ${PAYMENT_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/payment_db?retryWrites=true&w=majority}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-STRIPE}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       RABBITMQ_URL: amqp://rabbitmq:5672
       RABBITMQ_EXCHANGE: smart_health.events
 

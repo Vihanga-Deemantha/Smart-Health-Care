@@ -22,8 +22,6 @@ const cancellationCutoffHours = Number(process.env.CANCELLATION_CUTOFF_HOURS || 
 
 const dateOnly = (value) => new Date(value).toISOString().slice(0, 10);
 
-<<<<<<< Updated upstream
-=======
 const buildPatientSummary = (profile, patientId) => {
   if (!profile && !patientId) {
     return null;
@@ -119,7 +117,7 @@ const enrichAppointmentsWithPatients = async (appointments, role) => {
   });
 };
 
->>>>>>> Stashed changes
+
 export const createSlotHold = async ({ patientId, doctorId, startTime, endTime, actor }) => {
   const activeHolds = await SlotHold.countDocuments({
     patientId,
@@ -615,8 +613,10 @@ export const listAppointments = async ({ userId, role, status, from, to, page = 
     Appointment.countDocuments(query)
   ]);
 
+  const enrichedItems = await enrichAppointmentsWithPatients(items, role);
+
   return {
-    items,
+    items: enrichedItems,
     pagination: {
       total,
       page: Number(page),

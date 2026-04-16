@@ -5,6 +5,7 @@ import accountSuspended from "./account.suspended.js";
 import accountReactivated from "./account.reactivated.js";
 import appointmentBooked from "./appointment.booked.js";
 import appointmentConfirmed from "./appointment.confirmed.js";
+import appointmentRejected from "./appointment.rejected.js";
 import appointmentCancelled from "./appointment.cancelled.js";
 import appointmentReminder from "./appointment.reminder.js";
 import waitlistPromoted from "./waitlist.promoted.js";
@@ -20,6 +21,7 @@ const templates = {
   "notification.appointment.booked": appointmentBooked,
   "notification.appointment.created": appointmentBooked,
   "notification.appointment.confirmed": appointmentConfirmed,
+  "notification.appointment.rejected": appointmentRejected,
   "notification.appointment.cancelled": appointmentCancelled,
   "notification.appointment.reminder": appointmentReminder,
   "notification.waitlist.promoted": waitlistPromoted,

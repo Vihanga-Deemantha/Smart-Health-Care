@@ -62,6 +62,11 @@ const templates = {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment confirmed for ${date}. ID ${shortId(payload?.appointmentId)}.`;
   },
+  "notification.appointment.rejected": (payload) => {
+    const date = formatDate(payload?.appointmentDate || payload?.startTime);
+    const reason = payload?.reason ? ` Reason: ${payload.reason}.` : "";
+    return `Smart Health: Appointment rejected for ${date}. ID ${shortId(payload?.appointmentId)}.${reason}`;
+  },
   "notification.appointment.cancelled": (payload) => {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment cancelled for ${date}. ID ${shortId(payload?.appointmentId)}.`;

@@ -39,6 +39,11 @@ export const NOTIFICATION_CONFIG = {
     channels: ["email", "sms"],
     email: { subject: "Appointment confirmed" }
   },
+  "notification.appointment.rejected": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment rejected" }
+  },
   "notification.appointment.cancelled": {
     recipient: "patient",
     channels: ["email", "sms"],

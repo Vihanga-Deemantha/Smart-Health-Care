@@ -1,15 +1,21 @@
-import { CalendarCheck2, LayoutDashboard, LogOut, UserRound } from "lucide-react";
+import { CalendarCheck2, FileUp, LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import PageContainer from "../components/common/PageContainer.jsx";
+import { useAuth } from "../hooks/useAuth.js";
 
-const navItems = [
+const defaultNavItems = [
   { label: "Dashboard", to: "/doctor/dashboard", icon: LayoutDashboard },
   { label: "Availability", to: "/doctor/availability", icon: CalendarCheck2 },
   { label: "Profile", to: "/doctor/profile", icon: UserRound }
 ];
 
+const restrictedNavItems = [
+  { label: "Verification", to: "/doctor/verification/resubmit", icon: FileUp }
+];
+
 const DoctorLayout = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const fullName = localStorage.getItem("fullName") || "";
   const trimmedName = fullName.trim();
   const displayName = trimmedName
@@ -17,6 +23,9 @@ const DoctorLayout = () => {
       ? trimmedName
       : `Dr. ${trimmedName}`
     : "Doctor";
+  const isRestricted =
+    user?.role === "DOCTOR" && user?.doctorVerificationStatus !== "APPROVED";
+  const navItems = isRestricted ? restrictedNavItems : defaultNavItems;
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -38,22 +47,26 @@ const DoctorLayout = () => {
           </div>
 
           <nav className="mt-8 space-y-2">
-            {navItems.map(({ label, to, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                    isActive
-                      ? "bg-[#01696f]/20 text-[#7be0e6] shadow-[0_10px_30px_-20px_rgba(1,105,111,0.9)]"
-                      : "text-slate-300 hover:bg-slate-900/60"
-                  }`
-                }
-              >
-                <Icon size={18} />
-                {label}
-              </NavLink>
-            ))}
+            {navItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                      isActive
+                        ? "bg-[#01696f]/20 text-[#7be0e6] shadow-[0_10px_30px_-20px_rgba(1,105,111,0.9)]"
+                        : "text-slate-300 hover:bg-slate-900/60"
+                    }`
+                  }
+                >
+                  <Icon size={18} />
+                  {item.label}
+                </NavLink>
+              );
+            })}
           </nav>
 
           <button
@@ -77,9 +90,14 @@ const DoctorLayout = () => {
                   <h1 className="mt-1 text-2xl font-semibold text-white">
                     Welcome back, {displayName}
                   </h1>
+                  {isRestricted ? (
+                    <p className="mt-2 text-sm text-amber-300">
+                      Verification updates are required before full doctor access is restored.
+                    </p>
+                  ) : null}
                 </div>
                 <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
-                  Secure access via API Gateway
+                  {isRestricted ? "Restricted doctor access" : "Secure access via API Gateway"}
                 </div>
               </div>
             </PageContainer>

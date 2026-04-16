@@ -5,6 +5,12 @@ import PatientLayout from "../../components/patient/PatientLayout.jsx";
 import api from "../../services/axios.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 import { useAuth } from "../../hooks/useAuth.js";
+import {
+  cancelPatientAppointment,
+  confirmPatientAppointmentAttendance,
+  fetchPatientAppointments,
+  reschedulePatientAppointment
+} from "../../api/patientApi.js";
 
 const pretty = (data) => JSON.stringify(data, null, 2);
 
@@ -73,9 +79,7 @@ const PatientServiceToolsPage = () => {
   const loadAppointments = async () => {
     try {
       setAppointmentsLoading(true);
-      const response = await api.get("/appointments", {
-        params: { page: 1, limit: 20 }
-      });
+      const response = await fetchPatientAppointments({ page: 1, limit: 20 });
       const items = response.data?.data?.items || [];
       setAppointments(items);
       showSuccess("Appointments loaded.", { count: items.length });
@@ -88,12 +92,9 @@ const PatientServiceToolsPage = () => {
 
   const cancelAppointment = async () => {
     try {
-      const response = await api.patch(
-        `/appointments/${appointmentActionForm.appointmentId}/cancel`,
-        {
-          reason: appointmentActionForm.cancelReason || "Cancelled by patient"
-        }
-      );
+      const response = await cancelPatientAppointment(appointmentActionForm.appointmentId, {
+        reason: appointmentActionForm.cancelReason || "Cancelled by patient"
+      });
       showSuccess("Appointment cancelled.", response.data?.data);
       await loadAppointments();
     } catch (error) {
@@ -103,13 +104,10 @@ const PatientServiceToolsPage = () => {
 
   const rescheduleAppointment = async () => {
     try {
-      const response = await api.patch(
-        `/appointments/${appointmentActionForm.appointmentId}/reschedule`,
-        {
-          newStartTime: appointmentActionForm.newStartTime,
-          newEndTime: appointmentActionForm.newEndTime
-        }
-      );
+      const response = await reschedulePatientAppointment(appointmentActionForm.appointmentId, {
+        newStartTime: appointmentActionForm.newStartTime,
+        newEndTime: appointmentActionForm.newEndTime
+      });
       showSuccess("Appointment rescheduled.", response.data?.data);
       await loadAppointments();
     } catch (error) {
@@ -119,9 +117,7 @@ const PatientServiceToolsPage = () => {
 
   const confirmAttendance = async () => {
     try {
-      const response = await api.patch(
-        `/appointments/${appointmentActionForm.appointmentId}/confirm-attendance`
-      );
+      const response = await confirmPatientAppointmentAttendance(appointmentActionForm.appointmentId);
       showSuccess("Attendance confirmed.", response.data?.data);
       await loadAppointments();
     } catch (error) {
@@ -199,15 +195,6 @@ const PatientServiceToolsPage = () => {
       showSuccess("Checkout created.", payment);
     } catch (error) {
       showError(error, "Failed to create checkout.");
-    }
-  };
-
-  const capturePayment = async () => {
-    try {
-      const response = await api.patch(`/payments/${paymentForm.paymentId}/capture`);
-      showSuccess("Payment captured.", response.data?.data);
-    } catch (error) {
-      showError(error, "Failed to capture payment.");
     }
   };
 
@@ -400,7 +387,6 @@ const PatientServiceToolsPage = () => {
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={createCheckout} className="rounded-lg bg-cyan-500/20 px-3 py-2 text-sm text-cyan-100">Create Checkout</button>
-            <button onClick={capturePayment} className="rounded-lg bg-green-500/20 px-3 py-2 text-sm text-green-100">Capture Payment</button>
             <button onClick={failPayment} className="rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">Fail Payment</button>
             <button onClick={getPaymentByAppointment} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-100">Get By Appointment</button>
           </div>

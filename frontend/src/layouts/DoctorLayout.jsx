@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import PageContainer from "../components/common/PageContainer.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import api from "../services/axios.js";
 
 const DOCTOR_SERVICE_URL =
   import.meta.env.VITE_DOCTOR_SERVICE_URL || "http://localhost:5029";
@@ -32,6 +33,32 @@ const decodeTokenPayload = (token) => {
   } catch {
     return null;
   }
+};
+
+const storeDoctorId = (id) => {
+  if (id) {
+    localStorage.setItem("doctorId", id);
+  }
+};
+
+const buildDoctorCreatePayload = (user, userId) => {
+  const payload = {
+    userId,
+    licenseNumber: user.medicalLicenseNumber,
+    specialties: user.specialization ? [user.specialization] : [],
+    isAvailable: true
+  };
+
+  if (user.phone) {
+    payload.contactNumber = user.phone;
+  }
+
+  const yearsOfExperience = Number(user.yearsOfExperience);
+  if (Number.isFinite(yearsOfExperience)) {
+    payload.yearsOfExperience = yearsOfExperience;
+  }
+
+  return payload;
 };
 
 const resolveDoctorId = () => {
@@ -78,6 +105,49 @@ const DoctorLayout = () => {
 
   const navItems = isRestricted ? restrictedNavItems : defaultNavItems;
 
+  const ensureDoctorProfile = useCallback(async () => {
+    if (!user || user.role !== "DOCTOR" || user.doctorVerificationStatus !== "APPROVED") {
+      return;
+    }
+
+    const storedDoctorId = localStorage.getItem("doctorId");
+    if (storedDoctorId) {
+      return;
+    }
+
+    const storedUserId = localStorage.getItem("userId") || user.id || user._id;
+    if (!storedUserId) {
+      return;
+    }
+
+    try {
+      const response = await api.get("/doctors", { params: { userId: storedUserId } });
+      const doctors = response.data?.data?.doctors || response.data?.doctors || [];
+      const match = doctors.find((doctor) => String(doctor.userId) === String(storedUserId));
+
+      if (match?._id) {
+        storeDoctorId(match._id);
+        return;
+      }
+
+      if (!user.medicalLicenseNumber) {
+        return;
+      }
+
+      const created = await api.post(
+        "/doctors",
+        buildDoctorCreatePayload(user, storedUserId)
+      );
+      const doctor = created.data?.data?.doctor || created.data?.doctor;
+
+      if (doctor?._id) {
+        storeDoctorId(doctor._id);
+      }
+    } catch {
+      // Ignore auto-create errors to avoid blocking navigation.
+    }
+  }, [user]);
+
   const fetchPendingCount = useCallback(async () => {
     try {
       const doctorId = resolveDoctorId();
@@ -115,6 +185,10 @@ const DoctorLayout = () => {
       fetchPendingCount();
     }
   }, [fetchPendingCount, isRestricted]);
+
+  useEffect(() => {
+    ensureDoctorProfile();
+  }, [ensureDoctorProfile]);
 
   useEffect(() => {
     const handler = (event) => {

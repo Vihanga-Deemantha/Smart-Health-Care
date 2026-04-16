@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userId");
       localStorage.removeItem("fullName");
+      localStorage.removeItem("doctorId");
     }
   }, []);
 
@@ -120,6 +121,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userId");
       localStorage.removeItem("fullName");
+      localStorage.removeItem("doctorId");
     };
 
     window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);

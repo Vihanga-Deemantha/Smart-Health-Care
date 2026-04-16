@@ -1,4 +1,7 @@
 import { body, param, query } from "express-validator";
+import { normalizeSriLankanPhone } from "../utils/phone.js";
+
+const sanitizePhone = (value) => normalizeSriLankanPhone(value) || String(value || "").trim();
 
 export const listAdminsValidation = [
   query("page")
@@ -24,9 +27,14 @@ export const updateCurrentAdminProfileValidation = [
     .withMessage("Full name must be at least 3 characters"),
   body("phone")
     .optional()
-    .trim()
-    .isLength({ min: 10, max: 15 })
-    .withMessage("Phone number must be between 10 and 15 characters"),
+    .customSanitizer((value) => sanitizePhone(value))
+    .custom((value) => {
+      if (!normalizeSriLankanPhone(value)) {
+        throw new Error("Phone number must be a valid Sri Lankan mobile number");
+      }
+
+      return true;
+    }),
   body("jobTitle")
     .optional({ values: "falsy" })
     .trim()
@@ -85,11 +93,16 @@ export const createAdminValidation = [
     .withMessage("Valid email is required")
     .normalizeEmail(),
   body("phone")
-    .trim()
+    .customSanitizer((value) => sanitizePhone(value))
     .notEmpty()
     .withMessage("Phone number is required")
-    .isLength({ min: 10, max: 15 })
-    .withMessage("Phone number must be between 10 and 15 characters"),
+    .custom((value) => {
+      if (!normalizeSriLankanPhone(value)) {
+        throw new Error("Phone number must be a valid Sri Lankan mobile number");
+      }
+
+      return true;
+    }),
   body("jobTitle")
     .optional({ values: "falsy" })
     .trim()

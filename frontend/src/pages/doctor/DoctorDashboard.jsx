@@ -1,182 +1,193 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  fetchDoctorAppointments,
-  fetchDoctorTelemedicineSession,
-  respondDoctorAppointment
-} from "../../api/doctorApi.js";
-import AppointmentCard from "../../components/doctor/AppointmentCard.jsx";
-import EmptyState from "../../components/common/EmptyState.jsx";
-import ErrorState from "../../components/common/ErrorState.jsx";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 
+const DOCTOR_SERVICE_URL =
+	import.meta.env.VITE_DOCTOR_SERVICE_URL || "http://localhost:5029";
+
+const getToken = () =>
+	localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
+
+const decodeTokenPayload = (token) => {
+	const payload = token?.split(".")?.[1];
+	if (!payload) {
+		return null;
+	}
+
+	try {
+		const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+		const json = atob(base64);
+		return JSON.parse(json);
+	} catch {
+		return null;
+	}
+};
+
+const resolveDoctorId = () => {
+	const storedDoctorId = localStorage.getItem("doctorId");
+	if (storedDoctorId) {
+		return storedDoctorId;
+	}
+
+	const token = getToken();
+	const payload = decodeTokenPayload(token);
+	return payload?.doctorId || payload?.id || payload?.userId || null;
+};
+
 const getErrorMessage = (error) =>
-  error?.response?.data?.message || error?.message || "Something went wrong.";
+	error?.response?.data?.message || error?.message || "Something went wrong.";
 
 const DoctorDashboard = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [actionId, setActionId] = useState("");
-  const [actionMessage, setActionMessage] = useState("");
+	const navigate = useNavigate();
+	const [pendingCount, setPendingCount] = useState(0);
+	const [scheduleCount, setScheduleCount] = useState(0);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState("");
 
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
-    setError("");
+	const loadSummary = useCallback(async () => {
+		setLoading(true);
+		setError("");
 
-    try {
-      const response = await fetchDoctorAppointments();
-      const payload =
-        response.data?.data?.appointments ||
-        response.data?.appointments ||
-        response.data?.data?.items ||
-        response.data?.items ||
-        [];
-      setAppointments(Array.isArray(payload) ? payload : []);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+		try {
+			const doctorId = resolveDoctorId();
+			const token = getToken();
+			if (!doctorId || !token) {
+				throw new Error("Doctor ID not found.");
+			}
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+			const headers = { Authorization: `Bearer ${token}` };
+			const [pendingResponse, scheduleResponse] = await Promise.all([
+				axios.get(`${DOCTOR_SERVICE_URL}/api/appointments/doctor/${doctorId}`, {
+					headers,
+					params: { status: "BOOKED" }
+				}),
+				axios.get(`${DOCTOR_SERVICE_URL}/api/appointments/doctor/${doctorId}`, {
+					headers,
+					params: { status: "CONFIRMED" }
+				})
+			]);
 
-  const updateAppointment = (appointmentId, updates) => {
-    setAppointments((current) =>
-      current.map((item) =>
-        item._id === appointmentId || item.id === appointmentId ? { ...item, ...updates } : item
-      )
-    );
-  };
+			const pendingPayload =
+				pendingResponse.data?.data?.appointments ||
+				pendingResponse.data?.appointments ||
+				pendingResponse.data?.data?.items ||
+				pendingResponse.data?.items ||
+				pendingResponse.data?.data ||
+				pendingResponse.data ||
+				[];
+			const schedulePayload =
+				scheduleResponse.data?.data?.appointments ||
+				scheduleResponse.data?.appointments ||
+				scheduleResponse.data?.data?.items ||
+				scheduleResponse.data?.items ||
+				scheduleResponse.data?.data ||
+				scheduleResponse.data ||
+				[];
 
-  const handleRespond = async (appointment, action) => {
-    const appointmentId = appointment?._id || appointment?.id;
+			const pendingItems = Array.isArray(pendingPayload)
+				? pendingPayload
+				: pendingPayload?.items || [];
+			const scheduleItems = Array.isArray(schedulePayload)
+				? schedulePayload
+				: schedulePayload?.items || [];
 
-    if (!appointmentId) {
-      setError("Missing appointment id.");
-      return;
-    }
+			setPendingCount(Array.isArray(pendingItems) ? pendingItems.length : 0);
+			setScheduleCount(Array.isArray(scheduleItems) ? scheduleItems.length : 0);
+		} catch (err) {
+			setError(getErrorMessage(err));
+		} finally {
+			setLoading(false);
+		}
+	}, []);
 
-    setActionId(appointmentId);
-    setActionMessage("");
+	useEffect(() => {
+		loadSummary();
+	}, [loadSummary]);
 
-    try {
-      const response = await respondDoctorAppointment(appointmentId, {
-        action: String(action).toUpperCase()
-      });
-      const updated =
-        response.data?.data?.appointment || response.data?.appointment || response.data?.data;
-      const nextStatus = action === "accept" ? "CONFIRMED" : "CANCELLED";
+	if (loading) {
+		return (
+			<div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-10">
+				<LoadingSpinner label="Loading overview..." />
+			</div>
+		);
+	}
 
-      if (updated && (updated._id || updated.id)) {
-        updateAppointment(updated._id || updated.id, updated);
-      } else {
-        updateAppointment(appointmentId, { status: nextStatus });
-      }
+	return (
+		<div className="space-y-6">
+			<div
+				className="rounded-2xl border p-6"
+				style={{ borderColor: "#30363d", background: "#161b22" }}
+			>
+				<div className="flex flex-wrap items-center justify-between gap-4">
+					<div>
+						<h2 className="text-xl font-semibold">Overview</h2>
+						<p className="text-sm" style={{ color: "#8b949e" }}>
+							Quick snapshot of pending requests and upcoming schedule
+						</p>
+					</div>
+					<button
+						type="button"
+						aria-label="Refresh overview"
+						onClick={loadSummary}
+						className="rounded-xl border px-4 py-2 text-sm font-semibold"
+						style={{ borderColor: "#00b4c8", color: "#00b4c8" }}
+					>
+						Refresh
+					</button>
+				</div>
+			</div>
 
-      setActionMessage(
-        action === "accept" ? "Appointment accepted successfully." : "Appointment rejected."
-      );
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setActionId("");
-    }
-  };
+			{error ? (
+				<div
+					className="rounded-xl border px-4 py-3 text-sm"
+					style={{ borderColor: "#f85149", color: "#f85149", background: "#3d1a1a" }}
+				>
+					{error}
+				</div>
+			) : null}
 
-  const handleJoinCall = async (appointment) => {
-    const appointmentId = appointment?._id || appointment?.id;
+			<div className="grid gap-4 lg:grid-cols-2">
+				<div
+					className="rounded-2xl border p-6"
+					style={{ borderColor: "#30363d", background: "#161b22" }}
+				>
+					<h3 className="text-lg font-semibold">Pending Requests</h3>
+					<p className="mt-2 text-3xl font-semibold" style={{ color: "#d29922" }}>
+						{pendingCount}
+					</p>
+					<button
+						type="button"
+						aria-label="View pending requests"
+						onClick={() => navigate("/doctor/pending")}
+						className="mt-4 rounded-lg border px-4 py-2 text-sm font-semibold"
+						style={{ borderColor: "#d29922", color: "#d29922" }}
+					>
+						View Pending
+					</button>
+				</div>
 
-    if (!appointmentId) {
-      setError("Missing appointment id.");
-      return;
-    }
-
-    setActionId(appointmentId);
-    setActionMessage("");
-
-    try {
-      const response = await fetchDoctorTelemedicineSession(appointmentId);
-      const payload = response.data?.data || response.data;
-      const roomUrl =
-        payload?.roomUrl ||
-        payload?.session?.roomUrl ||
-        payload?.session?.meetingLink ||
-        payload?.meetingLink;
-
-      if (!roomUrl) {
-        throw new Error("Room URL is not available for this session.");
-      }
-
-      window.open(roomUrl, "_blank", "noopener,noreferrer");
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setActionId("");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-10">
-        <LoadingSpinner label="Loading appointments..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <ErrorState description={error} onRetry={fetchAppointments} />;
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800/70 bg-slate-900/70 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-white">Appointments</h2>
-            <p className="text-sm text-slate-400">
-              Review upcoming visits and respond to booking requests.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={fetchAppointments}
-            className="rounded-xl border border-[#01696f]/40 bg-[#01696f]/10 px-4 py-2 text-sm font-semibold text-[#7be0e6] transition hover:bg-[#01696f]/20"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {actionMessage ? (
-        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-          {actionMessage}
-        </div>
-      ) : null}
-
-      {appointments.length === 0 ? (
-        <EmptyState
-          title="No appointments yet"
-          description="Once patients book a session, your upcoming appointments will appear here."
-        />
-      ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {appointments.map((appointment) => (
-            <AppointmentCard
-              key={appointment._id || appointment.id}
-              appointment={appointment}
-              onAccept={(item) => handleRespond(item, "accept")}
-              onReject={(item) => handleRespond(item, "reject")}
-              onJoinCall={handleJoinCall}
-              busy={actionId === (appointment._id || appointment.id)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+				<div
+					className="rounded-2xl border p-6"
+					style={{ borderColor: "#30363d", background: "#161b22" }}
+				>
+					<h3 className="text-lg font-semibold">Upcoming Schedule</h3>
+					<p className="mt-2 text-3xl font-semibold" style={{ color: "#3fb950" }}>
+						{scheduleCount}
+					</p>
+					<button
+						type="button"
+						aria-label="View schedule"
+						onClick={() => navigate("/doctor/schedule")}
+						className="mt-4 rounded-lg border px-4 py-2 text-sm font-semibold"
+						style={{ borderColor: "#3fb950", color: "#3fb950" }}
+					>
+						View Schedule
+					</button>
+				</div>
+			</div>
+		</div>
+	);
 };
 
 export default DoctorDashboard;

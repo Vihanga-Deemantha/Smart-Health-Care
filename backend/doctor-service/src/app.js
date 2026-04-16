@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "./config/env.js";
 import doctorRoutes from "./routes/doctor.routes.js";
+import availabilityRoutes from "./routes/availability.routes.js";
 import appointmentRoutes from "./routes/appointment.routes.js";
 import prescriptionRoutes from "./routes/prescription.routes.js";
 import internalRoutes from "./routes/internal.routes.js";
@@ -25,6 +26,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/doctors", doctorRoutes);
+app.use("/api/availability", availabilityRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/internal", internalRoutes);

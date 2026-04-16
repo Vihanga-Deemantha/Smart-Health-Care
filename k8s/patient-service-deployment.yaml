@@ -34,8 +34,8 @@ spec:
                   key: CLIENT_URL
             - name: MONGODB_URI
               valueFrom:
-                configMapKeyRef:
-                  name: smart-health-config
+                secretKeyRef:
+                  name: smart-health-secrets
                   key: PATIENT_MONGODB_URI
             - name: APPOINTMENT_SERVICE_URL
               valueFrom:

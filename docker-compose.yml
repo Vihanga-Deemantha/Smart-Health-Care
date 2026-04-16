@@ -3,6 +3,8 @@ services:
     build:
       context: ./backend/auth-service
     restart: unless-stopped
+    depends_on:
+      - rabbitmq
     ports:
       - "${AUTH_PORT:-5024}:5024"
     environment:
@@ -26,10 +28,15 @@ services:
       EMAIL_USER: ${EMAIL_USER:-change-me@example.com}
       EMAIL_PASS: ${EMAIL_PASS:-change-me}
       EMAIL_FROM: ${EMAIL_FROM:-change-me@example.com}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-smart_health.events}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
       CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-verification}
+      CLOUDINARY_ADMIN_PROFILE_PHOTOS_FOLDER: ${CLOUDINARY_ADMIN_PROFILE_PHOTOS_FOLDER:-smart-health/admin-profile-photos}
+      DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB: ${DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB:-10}
+      ADMIN_PROFILE_PHOTO_MAX_FILE_SIZE_MB: ${ADMIN_PROFILE_PHOTO_MAX_FILE_SIZE_MB:-5}
 
   admin-service:
     build:
@@ -37,6 +44,7 @@ services:
     restart: unless-stopped
     depends_on:
       - auth-service
+      - rabbitmq
     ports:
       - "${ADMIN_PORT:-5025}:5025"
     environment:
@@ -47,6 +55,8 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       AUTH_SERVICE_URL: http://auth-service:5024
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-smart_health.events}
 
   patient-service:
     build:
@@ -134,7 +144,7 @@ services:
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-change-me}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-change-me}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-change-me}
-      CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-qualification-docs}
+      CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER: ${CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER:-smart-health/doctor-verification}
       CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER: ${CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER:-smart-health/doctor-profile-photos}
       DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB: ${DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB:-10}
       DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB: ${DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB:-5}
@@ -158,6 +168,41 @@ services:
       RABBITMQ_URL: amqp://rabbitmq:5672
       RABBITMQ_EXCHANGE: smart_health.events
 
+  notification-service:
+    build:
+      context: ./backend/notification-service
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
+    ports:
+      - "5032:5032"
+    environment:
+      PORT: 5032
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      SERVICE_NAME: notification-service
+      MONGODB_URI: ${NOTIFICATION_MONGODB_URI:-mongodb+srv://username:password@cluster.mongodb.net/notification_db?retryWrites=true&w=majority}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_EXCHANGE: smart_health.events
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-notification.universal.queue}
+      RABBITMQ_BINDING_KEY: ${RABBITMQ_BINDING_KEY:-notification.#}
+      RABBITMQ_RETRY_MS: ${RABBITMQ_RETRY_MS:-5000}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-change-me@example.com}
+      EMAIL_PASS: ${EMAIL_PASS:-change-me}
+      EMAIL_FROM: ${EMAIL_FROM:-change-me@example.com}
+      NOTIFY_LK_API_URL: ${NOTIFY_LK_API_URL:-https://app.notify.lk/api/v1/send}
+      NOTIFY_LK_USER_ID: ${NOTIFY_LK_USER_ID:-}
+      NOTIFY_LK_API_KEY: ${NOTIFY_LK_API_KEY:-}
+      NOTIFY_LK_SENDER_ID: ${NOTIFY_LK_SENDER_ID:-BrightEdu}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_SMS_FROM: ${TWILIO_SMS_FROM:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
+
   ai-chatbot-service:
     build:
       context: ./backend/ai-chatbot-service
@@ -172,8 +217,8 @@ services:
       CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-change-me}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
-      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-1.5-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-2.5-flash}
       GEMINI_MAX_RETRIES: ${GEMINI_MAX_RETRIES:-2}
 
   api-gateway:

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Calendar, MapPin, User, AlertCircle } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout.jsx";
-import api from "../../services/axios.js";
+import { fetchPatientAppointments } from "../../api/patientApi.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 
 const PatientAppointmentsPage = () => {
@@ -16,7 +16,7 @@ const PatientAppointmentsPage = () => {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/appointments");
+      const response = await fetchPatientAppointments({ limit: 100 });
       setAppointments(response.data?.data?.items || []);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to fetch appointments"));

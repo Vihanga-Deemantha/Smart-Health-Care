@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { CheckCircle, Star, AlertCircle } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout.jsx";
-import api from "../../services/axios.js";
+import { fetchPatientAppointments } from "../../api/patientApi.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 
 const PatientBookingsPage = () => {
@@ -16,9 +16,7 @@ const PatientBookingsPage = () => {
   const fetchCompletedAppointments = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/appointments", {
-        params: { status: "COMPLETED" }
-      });
+      const response = await fetchPatientAppointments({ status: "COMPLETED", limit: 100 });
       setBookings(response.data?.data?.items || []);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to fetch completed appointments"));

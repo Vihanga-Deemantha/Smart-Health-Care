@@ -39,8 +39,8 @@ spec:
                   key: COOKIE_SECURE
             - name: MONGODB_URI
               valueFrom:
-                configMapKeyRef:
-                  name: smart-health-config
+                secretKeyRef:
+                  name: smart-health-secrets
                   key: AUTH_MONGODB_URI
             - name: JWT_ACCESS_EXPIRES
               valueFrom:
@@ -97,6 +97,26 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: RABBITMQ_EXCHANGE
+            - name: CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER
+            - name: CLOUDINARY_ADMIN_PROFILE_PHOTOS_FOLDER
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLOUDINARY_ADMIN_PROFILE_PHOTOS_FOLDER
+            - name: DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB
+            - name: ADMIN_PROFILE_PHOTO_MAX_FILE_SIZE_MB
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: ADMIN_PROFILE_PHOTO_MAX_FILE_SIZE_MB
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:
@@ -127,6 +147,21 @@ spec:
                 secretKeyRef:
                   name: smart-health-secrets
                   key: EMAIL_FROM
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_API_KEY
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_API_SECRET
           readinessProbe:
             httpGet:
               path: /health

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/axios.js";
+import { fetchDoctorAppointment } from "../../api/doctorApi.js";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 
 const emptyMedicine = {
@@ -29,7 +30,7 @@ const PrescriptionForm = () => {
       setError("");
 
       try {
-        const response = await api.get(`/api/appointments/${appointmentId}`);
+        const response = await fetchDoctorAppointment(appointmentId);
         const appointment =
           response.data?.data?.appointment || response.data?.appointment || response.data?.data;
         const nextPatientId =

@@ -13,6 +13,10 @@ resources:
   - ai-chatbot-service-service.yaml
   - api-gateway.yaml
   - appointment-deployment.yaml
+  - doctor-service.yaml
   - payment-deployment.yaml
+  - notification-service.yaml
+  - rabbitmq.yaml
+  - redis.yaml
   - frontend.yaml
   - ingress.yaml

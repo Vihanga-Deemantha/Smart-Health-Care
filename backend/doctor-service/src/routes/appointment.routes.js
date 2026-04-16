@@ -4,14 +4,25 @@ import allowRoles from "../middlewares/role.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
 import {
   handleRespondToAppointment,
-  handleGetTelemedicineSession
+  handleGetTelemedicineSession,
+  handleListDoctorAppointments
 } from "../controllers/doctor.controller.js";
 import {
+  listDoctorAppointmentsValidation,
   respondAppointmentValidation,
   appointmentIdValidation
 } from "../validations/appointment.validation.js";
 
 const router = express.Router();
+
+router.get(
+  "/doctor/:doctorId",
+  protect,
+  allowRoles("DOCTOR"),
+  listDoctorAppointmentsValidation,
+  validateRequest,
+  handleListDoctorAppointments
+);
 
 router.patch(
   "/:id/respond",

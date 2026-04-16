@@ -1,6 +1,7 @@
 import express from "express";
 import verifyInternalService from "../middlewares/internal.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
+import { handleGetAvailability } from "../controllers/availability.controller.js";
 import {
   handleGetInternalDoctor,
   handleListInternalDoctors
@@ -13,5 +14,6 @@ router.use(verifyInternalService);
 
 router.get("/doctors", handleListInternalDoctors);
 router.get("/doctors/:id", doctorIdValidation, validateRequest, handleGetInternalDoctor);
+router.get("/availability/:doctorId", handleGetAvailability);
 
 export default router;

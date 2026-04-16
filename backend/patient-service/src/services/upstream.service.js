@@ -13,40 +13,125 @@ const extractPayloadData = (payload) => {
   return payload;
 };
 
-export const fetchHistoryFromAppointmentService = async ({
-  authorization,
-  page = 1,
-  limit = 20,
-  status
-}) => {
+const getAppointmentServiceBaseUrl = () => {
   const baseUrl = process.env.APPOINTMENT_SERVICE_URL;
 
   if (!baseUrl) {
     throw new AppError("Appointment service URL is not configured", 500, "APPOINTMENT_SERVICE_NOT_CONFIGURED");
   }
 
+  return baseUrl;
+};
+
+const buildAuthHeaders = (authorization) => ({
+  Authorization: authorization
+});
+
+const forwardAppointmentRequest = async ({ method, path, authorization, params, data, errorMessage, errorCode }) => {
   try {
-    const response = await client.get(`${baseUrl}/api/appointments`, {
-      headers: {
-        Authorization: authorization
-      },
-      params: {
-        page,
-        limit,
-        to: new Date().toISOString(),
-        ...(status ? { status } : {})
-      }
+    const response = await client.request({
+      method,
+      url: `${getAppointmentServiceBaseUrl()}${path}`,
+      headers: buildAuthHeaders(authorization),
+      params,
+      data
     });
 
     return extractPayloadData(response.data);
   } catch (error) {
     throw new AppError(
-      error.response?.data?.message || "Unable to fetch appointment history",
+      error.response?.data?.message || errorMessage,
       error.response?.status || 503,
-      "APPOINTMENT_SERVICE_UNAVAILABLE",
+      errorCode,
       error.response?.data?.details || null
     );
   }
+};
+
+export const fetchAppointmentsFromAppointmentService = async ({ authorization, page = 1, limit = 20, status, from, to }) =>
+  forwardAppointmentRequest({
+    method: "get",
+    path: "/api/appointments",
+    authorization,
+    params: {
+      page,
+      limit,
+      ...(status ? { status } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {})
+    },
+    errorMessage: "Unable to fetch appointments",
+    errorCode: "APPOINTMENTS_UNAVAILABLE"
+  });
+
+export const fetchAppointmentByIdFromAppointmentService = async ({ appointmentId, authorization }) =>
+  forwardAppointmentRequest({
+    method: "get",
+    path: `/api/appointments/${appointmentId}`,
+    authorization,
+    errorMessage: "Unable to fetch appointment",
+    errorCode: "APPOINTMENT_UNAVAILABLE"
+  });
+
+export const cancelAppointmentInAppointmentService = async ({ appointmentId, authorization, reason, overridePolicy }) =>
+  forwardAppointmentRequest({
+    method: "patch",
+    path: `/api/appointments/${appointmentId}/cancel`,
+    authorization,
+    data: {
+      reason,
+      overridePolicy: Boolean(overridePolicy)
+    },
+    errorMessage: "Unable to cancel appointment",
+    errorCode: "APPOINTMENT_CANCEL_UNAVAILABLE"
+  });
+
+export const rescheduleAppointmentInAppointmentService = async ({
+  appointmentId,
+  authorization,
+  newStartTime,
+  newEndTime
+}) =>
+  forwardAppointmentRequest({
+    method: "patch",
+    path: `/api/appointments/${appointmentId}/reschedule`,
+    authorization,
+    data: {
+      newStartTime,
+      newEndTime
+    },
+    errorMessage: "Unable to reschedule appointment",
+    errorCode: "APPOINTMENT_RESCHEDULE_UNAVAILABLE"
+  });
+
+export const confirmAppointmentAttendanceInAppointmentService = async ({ appointmentId, authorization }) =>
+  forwardAppointmentRequest({
+    method: "patch",
+    path: `/api/appointments/${appointmentId}/confirm-attendance`,
+    authorization,
+    errorMessage: "Unable to confirm attendance",
+    errorCode: "APPOINTMENT_CONFIRM_UNAVAILABLE"
+  });
+
+export const fetchHistoryFromAppointmentService = async ({
+  authorization,
+  page = 1,
+  limit = 20,
+  status
+}) => {
+  return forwardAppointmentRequest({
+    method: "get",
+    path: "/api/appointments",
+    authorization,
+    params: {
+      page,
+      limit,
+      to: new Date().toISOString(),
+      ...(status ? { status } : {})
+    },
+    errorMessage: "Unable to fetch appointment history",
+    errorCode: "APPOINTMENT_SERVICE_UNAVAILABLE"
+  });
 };
 
 const normalizePrescriptionList = (payload) => {

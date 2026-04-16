@@ -8,6 +8,8 @@ const sessionSchema = new mongoose.Schema(
     provider: { type: String, default: "jitsi" },
     patientId: { type: String, required: true },
     doctorId: { type: String, required: true },
+    patientJoined: { type: Boolean, default: false },
+    doctorJoined: { type: Boolean, default: false },
     patientName: { type: String, default: null },
     doctorName: { type: String, default: null },
     specialty: { type: String, default: null },

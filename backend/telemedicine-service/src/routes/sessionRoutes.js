@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { body, validationResult } from "express-validator";
 import { protect, authorize } from "../middleware/auth.js";
 import {
   createSession,
@@ -13,6 +14,30 @@ import {
 } from "../controllers/sessionController.js";
 
 const router = Router();
+
+const validateCreateSession = [
+  body("appointmentId").isString().notEmpty().withMessage("appointmentId is required"),
+  body("patientId").isString().notEmpty().withMessage("patientId is required"),
+  body("doctorId").isString().notEmpty().withMessage("doctorId is required"),
+  body("scheduledAt")
+    .isISO8601()
+    .withMessage("scheduledAt must be a valid ISO8601 date string"),
+  body("patientName").optional().isString(),
+  body("doctorName").optional().isString(),
+  body("specialty").optional().isString(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array()
+      });
+    }
+
+    return next();
+  }
+];
 
 const verifyInternal = (req, res, next) => {
   const internalSecret = req.headers["x-internal-service-secret"];
@@ -50,6 +75,7 @@ router.post(
   "/api/sessions",
   protect,
   authorize("DOCTOR", "ADMIN"),
+  validateCreateSession,
   createSession
 );
 router.post(

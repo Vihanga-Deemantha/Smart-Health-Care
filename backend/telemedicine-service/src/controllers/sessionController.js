@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import Session from "../models/Session.js";
 import { publishEvent } from "../config/rabbitmq.js";
+import logger from "../utils/logger.js";
 
 const sendSuccess = (res, status, payload = {}) =>
   res.status(status).json({ success: true, ...payload });
@@ -18,6 +19,86 @@ const buildJitsiUrl = (channelName) => {
   const baseUrl = (process.env.JITSI_BASE_URL || "https://meet.jit.si").replace(/\/$/, "");
   return `${baseUrl}/${channelName}`;
 };
+
+const normalizeServiceUrl = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  return String(value).replace(/\/$/, "");
+};
+
+const fetchInternalPayload = async (url) => {
+  const secret = process.env.INTERNAL_SERVICE_SECRET;
+
+  if (!url || !secret) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "x-internal-service-secret": secret
+      }
+    });
+
+    if (!response.ok) {
+      logger.warn(`Internal service request failed (${response.status})`);
+      return null;
+    }
+
+    const payload = await response.json();
+    return payload?.data || null;
+  } catch (error) {
+    logger.warn(`Internal service request failed: ${error.message}`);
+    return null;
+  }
+};
+
+const fetchPatientProfile = async (patientId) => {
+  const baseUrl = normalizeServiceUrl(process.env.PATIENT_SERVICE_URL);
+  if (!baseUrl || !patientId) {
+    return null;
+  }
+
+  return fetchInternalPayload(`${baseUrl}/internal/patients/${patientId}`);
+};
+
+const fetchDoctorProfile = async (doctorId) => {
+  const baseUrl = normalizeServiceUrl(process.env.DOCTOR_SERVICE_URL);
+  if (!baseUrl || !doctorId) {
+    return null;
+  }
+
+  const payload = await fetchInternalPayload(
+    `${baseUrl}/internal/doctors?userId=${encodeURIComponent(doctorId)}`
+  );
+
+  if (Array.isArray(payload)) {
+    return payload[0] || null;
+  }
+
+  return payload || null;
+};
+
+const buildRecipient = (profile, fallback) => {
+  const recipient = {
+    userId: profile?.userId || profile?._id || fallback?.userId || null,
+    fullName: profile?.fullName || profile?.name || fallback?.fullName || null,
+    email: profile?.email || fallback?.email || null,
+    phone:
+      profile?.phone ||
+      profile?.contactNumber ||
+      fallback?.phone ||
+      fallback?.contactNumber ||
+      null
+  };
+
+  return recipient;
+};
+
+const canNotifyRecipient = (recipient) =>
+  Boolean(recipient?.email || recipient?.phone);
 
 const isParticipant = (session, user) => {
   if (!session || !user) {
@@ -101,8 +182,19 @@ export const joinSession = async (req, res) => {
       return sendError(res, 400, "Session is not active");
     }
 
-    if (!session.isJoinable) {
-      return sendError(res, 400, "Session is not joinable yet");
+    const isJoinable = Boolean(session.isJoinable);
+    const joinWarning = isJoinable
+      ? null
+      : session.scheduledAt
+        ? "Session is outside the scheduled join window"
+        : "Session schedule is not set";
+
+    const role = String(req.user?.role || "").toLowerCase();
+    if (role === "patient") {
+      session.patientJoined = true;
+    }
+    if (role === "doctor") {
+      session.doctorJoined = true;
     }
 
     if (session.status === "scheduled") {
@@ -113,7 +205,63 @@ export const joinSession = async (req, res) => {
       }
     }
 
+    let becameActive = false;
+    if (session.patientJoined && session.doctorJoined && session.status === "waiting") {
+      session.status = "active";
+      session.sessionStartedAt = new Date();
+      becameActive = true;
+    }
+
     await session.save();
+
+    if (becameActive) {
+      const [patientProfile, doctorProfile] = await Promise.all([
+        fetchPatientProfile(session.patientId),
+        fetchDoctorProfile(session.doctorId)
+      ]);
+
+      const patientRecipient = buildRecipient(patientProfile, {
+        userId: session.patientId,
+        fullName: session.patientName || "Patient"
+      });
+
+      const doctorRecipient = buildRecipient(doctorProfile, {
+        userId: session.doctorId,
+        fullName: session.doctorName || "Doctor"
+      });
+
+      const notificationPayload = {
+        sessionId: session._id.toString(),
+        appointmentId: session.appointmentId,
+        patientId: session.patientId,
+        doctorId: session.doctorId,
+        patientName: patientRecipient.fullName || session.patientName,
+        doctorName: doctorRecipient.fullName || session.doctorName,
+        jitsiRoomUrl: session.jitsiRoomUrl,
+        sessionStartedAt: session.sessionStartedAt,
+        scheduledAt: session.scheduledAt,
+        patient: patientRecipient,
+        doctor: doctorRecipient
+      };
+
+      if (canNotifyRecipient(patientRecipient)) {
+        await publishEvent("notification.telemedicine.session.started", {
+          ...notificationPayload,
+          recipientRole: "patient"
+        });
+      } else {
+        logger.warn("Skipping patient session-start notification; missing contact info.");
+      }
+
+      if (canNotifyRecipient(doctorRecipient)) {
+        await publishEvent("notification.telemedicine.session.started.doctor", {
+          ...notificationPayload,
+          recipientRole: "doctor"
+        });
+      } else {
+        logger.warn("Skipping doctor session-start notification; missing contact info.");
+      }
+    }
 
     return sendSuccess(res, 200, {
       sessionId: session._id.toString(),
@@ -121,6 +269,11 @@ export const joinSession = async (req, res) => {
       jitsiRoomUrl: session.jitsiRoomUrl,
       provider: "jitsi",
       status: session.status,
+      patientJoined: session.patientJoined,
+      doctorJoined: session.doctorJoined,
+      sessionStartedAt: session.sessionStartedAt,
+      joinable: isJoinable,
+      warning: joinWarning,
       scheduledAt: session.scheduledAt,
       patientName: session.patientName,
       doctorName: session.doctorName,

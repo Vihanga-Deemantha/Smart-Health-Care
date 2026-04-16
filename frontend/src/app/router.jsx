@@ -20,6 +20,7 @@ import PatientAiChatPage from "../pages/patient/PatientAiChatPage.jsx";
 import DoctorAvailability from "../pages/doctor/DoctorAvailability.jsx";
 import DoctorDashboard from "../pages/doctor/DoctorDashboard.jsx";
 import DoctorProfile from "../pages/doctor/DoctorProfile.jsx";
+import DoctorTelemedicineSessions from "../pages/doctor/DoctorTelemedicineSessions.jsx";
 import PrescriptionForm from "../pages/doctor/PrescriptionForm.jsx";
 import VideoConsultation from "../pages/doctor/VideoConsultation.jsx";
 import PendingAppointments from "../pages/PendingAppointments.jsx";
@@ -236,6 +237,7 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <DoctorDashboard /> },
       { path: "pending", element: <PendingAppointments /> },
       { path: "schedule", element: <ConfirmedSchedule /> },
+      { path: "sessions", element: <DoctorTelemedicineSessions /> },
       { path: "availability", element: <DoctorAvailability /> },
       { path: "profile", element: <DoctorProfile /> },
       { path: "verification/resubmit", element: <DoctorVerificationResubmitPage /> },

@@ -538,7 +538,10 @@ export const confirmAttendance = async ({ appointmentId, actor }) => {
     await publishEvent("appointment.confirmed", {
       appointmentId: appointment._id.toString(),
       doctorId: appointment.doctorId,
-      patientId: appointment.patientId
+      patientId: appointment.patientId,
+      startTime: appointment.startTime,
+      appointmentDate: appointment.appointmentDate,
+      mode: appointment.mode
     });
 
     await publishEvent(
@@ -721,7 +724,10 @@ export const respondToAppointment = async ({ appointmentId, action, reason, acto
   await publishEvent("appointment.confirmed", {
     appointmentId: appointment._id.toString(),
     doctorId: appointment.doctorId,
-    patientId: appointment.patientId
+    patientId: appointment.patientId,
+    startTime: appointment.startTime,
+    appointmentDate: appointment.appointmentDate,
+    mode: appointment.mode
   });
 
   const [doctorProfile, patientProfile] = await Promise.all([

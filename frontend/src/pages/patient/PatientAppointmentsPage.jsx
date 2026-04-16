@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Calendar, MapPin, User, AlertCircle, Clock, FileText } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout.jsx";
+import Toast from "../../components/common/Toast.jsx";
 import api from "../../services/axios.js";
 import {
   cancelPatientAppointment,
@@ -10,6 +11,9 @@ import {
   reschedulePatientAppointment
 } from "../../api/patientApi.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
+
+const unwrapSessionPayload = (payload) =>
+  payload?.data?.session || payload?.session || payload?.data || payload;
 
 const PatientAppointmentsPage = () => {
   const [appointments, setAppointments] = useState([]);
@@ -30,6 +34,7 @@ const PatientAppointmentsPage = () => {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState("");
   const [selectedSlotKey, setSelectedSlotKey] = useState("");
+  const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
     fetchAppointments();
@@ -79,6 +84,69 @@ const PatientAppointmentsPage = () => {
       setError(getApiErrorMessage(err, "Failed to fetch appointments"));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addToast = (message, type = "success") => {
+    setToasts((current) => [
+      ...current,
+      { id: `${Date.now()}-${Math.random()}`, message, type }
+    ]);
+  };
+
+  const removeToast = (id) => {
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  };
+
+  const handleJoinTelemedicine = async (appointment) => {
+    const appointmentId = appointment?._id || appointment?.id || appointment?.appointmentId;
+
+    if (!appointmentId) {
+      setActionError("Missing appointment id.");
+      return;
+    }
+
+    setActionError("");
+    setActionSuccess("");
+    setActionLoading("join");
+
+    try {
+      const sessionResponse = await api.get(`/sessions/appointment/${appointmentId}`);
+      const session = unwrapSessionPayload(sessionResponse.data);
+      const sessionId = session?._id || session?.id || session?.sessionId;
+
+      if (!sessionId) {
+        throw new Error("Telemedicine session is not available.");
+      }
+
+      const joinResponse = await api.post(`/sessions/${sessionId}/join`, {});
+      const joinPayload = joinResponse.data?.data || joinResponse.data;
+      if (joinPayload?.warning) {
+        addToast(joinPayload.warning, "error");
+      }
+      const roomUrl =
+        joinPayload?.jitsiRoomUrl ||
+        joinPayload?.roomUrl ||
+        joinPayload?.meetingLink ||
+        session?.jitsiRoomUrl ||
+        session?.roomUrl ||
+        appointment?.telemedicine?.meetingLink ||
+        "";
+
+      if (!roomUrl) {
+        throw new Error("Video session is not available.");
+      }
+
+      window.open(roomUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      if (appointment?.telemedicine?.meetingLink) {
+        window.open(appointment.telemedicine.meetingLink, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      setActionError(getApiErrorMessage(err, "Video session is not available."));
+    } finally {
+      setActionLoading("");
     }
   };
 
@@ -663,18 +731,18 @@ const PatientAppointmentsPage = () => {
                 </div>
               </div>
 
-              {selectedAppointment.telemedicine?.meetingLink && (
+              {selectedAppointment?.mode === "TELEMEDICINE" ? (
                 <div className="flex justify-end">
-                  <a
-                    href={selectedAppointment.telemedicine.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400"
+                  <button
+                    type="button"
+                    onClick={() => handleJoinTelemedicine(selectedAppointment)}
+                    disabled={actionLoading !== ""}
+                    className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Join Meeting
-                  </a>
+                  </button>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -861,6 +929,8 @@ const PatientAppointmentsPage = () => {
           </div>
         </div>
       )}
+
+      <Toast toasts={toasts} onRemove={removeToast} />
     </PatientLayout>
   );
 };

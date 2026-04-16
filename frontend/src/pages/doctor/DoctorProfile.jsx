@@ -15,6 +15,12 @@ const emptyQualification = {
 const getErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Something went wrong.";
 
+const storeDoctorId = (id) => {
+  if (id) {
+    localStorage.setItem("doctorId", id);
+  }
+};
+
 const DoctorProfile = () => {
   const [doctorId, setDoctorId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -40,15 +46,27 @@ const DoctorProfile = () => {
   const [qualifications, setQualifications] = useState([emptyQualification]);
 
   const resolveDoctorId = async () => {
+    const storedDoctorId = localStorage.getItem("doctorId");
+
+    if (storedDoctorId) {
+      return storedDoctorId;
+    }
+
     const storedUserId = localStorage.getItem("userId");
 
     if (!storedUserId) {
       return null;
     }
 
-    const response = await api.get("/api/doctors");
+    const response = await api.get("/api/doctors", {
+      params: { userId: storedUserId }
+    });
     const doctors = response.data?.data?.doctors || response.data?.doctors || [];
     const match = doctors.find((doctor) => String(doctor.userId) === String(storedUserId));
+
+    if (match?._id) {
+      storeDoctorId(match._id);
+    }
 
     return match?._id || null;
   };
@@ -57,6 +75,7 @@ const DoctorProfile = () => {
     const existingId = await resolveDoctorId();
 
     if (existingId) {
+      storeDoctorId(existingId);
       return existingId;
     }
 
@@ -71,11 +90,21 @@ const DoctorProfile = () => {
       userId: user.id,
       licenseNumber: user.medicalLicenseNumber,
       specialties: user.specialization ? [user.specialization] : [],
-      contactNumber: user.phone || null,
-      isAvailable: true,
-      yearsOfExperience: user.yearsOfExperience || 0,
-      bio: user.bio || null
+      isAvailable: true
     };
+
+    if (user.phone) {
+      createPayload.contactNumber = user.phone;
+    }
+
+    const yearsOfExperience = Number(user.yearsOfExperience);
+    if (Number.isFinite(yearsOfExperience)) {
+      createPayload.yearsOfExperience = yearsOfExperience;
+    }
+
+    if (typeof user.bio === "string" && user.bio.trim()) {
+      createPayload.bio = user.bio.trim();
+    }
 
     const created = await api.post("/api/doctors", createPayload);
     const doctor = created.data?.data?.doctor || created.data?.doctor;
@@ -84,6 +113,7 @@ const DoctorProfile = () => {
       throw new Error("Unable to create doctor profile. Please contact support.");
     }
 
+    storeDoctorId(doctor._id);
     return doctor._id;
   };
 
@@ -251,36 +281,71 @@ const DoctorProfile = () => {
     setSuccess("");
 
     try {
+      const toOptionalString = (value) => {
+        const trimmed = value?.trim();
+        return trimmed ? trimmed : undefined;
+      };
+
       const specialties = profile.specialtiesInput
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean);
 
+      const cleanedQualifications = qualifications
+        .map((qualification) => {
+          const title = qualification.title?.trim();
+          if (!title) {
+            return null;
+          }
+
+          const entry = { title };
+          const institution = qualification.institution?.trim();
+          if (institution) {
+            entry.institution = institution;
+          }
+
+          if (qualification.year) {
+            const yearValue = Number(qualification.year);
+            if (Number.isFinite(yearValue)) {
+              entry.year = yearValue;
+            }
+          }
+
+          const documentUrl = qualification.documentUrl?.trim();
+          if (documentUrl) {
+            entry.documentUrl = documentUrl;
+          }
+
+          const notes = qualification.notes?.trim();
+          if (notes) {
+            entry.notes = notes;
+          }
+
+          return entry;
+        })
+        .filter(Boolean);
+
       const payload = {
-        hospitalId: profile.hospitalId || null,
-        contactNumber: profile.contactNumber || null,
-        address: profile.address || null,
+        hospitalId: toOptionalString(profile.hospitalId),
+        contactNumber: toOptionalString(profile.contactNumber),
+        address: toOptionalString(profile.address),
         consultationFee:
-          profile.consultationFee === "" ? 0 : Number(profile.consultationFee),
+          profile.consultationFee === "" ? undefined : Number(profile.consultationFee),
         yearsOfExperience:
-          profile.yearsOfExperience === "" ? 0 : Number(profile.yearsOfExperience),
+          profile.yearsOfExperience === "" ? undefined : Number(profile.yearsOfExperience),
         specialties,
-        bio: profile.bio || null,
-        licenseNumber: profile.licenseNumber || null,
+        bio: toOptionalString(profile.bio),
+        licenseNumber: toOptionalString(profile.licenseNumber),
         isAvailable: Boolean(profile.isAvailable),
-        profilePhoto: profile.profilePhoto || null,
-        qualifications: qualifications
-          .map((qualification) => ({
-            title: qualification.title?.trim(),
-            institution: qualification.institution?.trim() || null,
-            year: qualification.year ? Number(qualification.year) : null,
-            documentUrl: qualification.documentUrl?.trim() || null,
-            notes: qualification.notes?.trim() || null
-          }))
-          .filter((qualification) => qualification.title)
+        profilePhoto: toOptionalString(profile.profilePhoto),
+        qualifications: cleanedQualifications
       };
 
-      const response = await api.patch(`/api/doctors/${doctorId}/profile`, payload);
+      const cleanedPayload = Object.fromEntries(
+        Object.entries(payload).filter(([, value]) => value !== undefined)
+      );
+
+      const response = await api.patch(`/api/doctors/${doctorId}/profile`, cleanedPayload);
       const doctor = response.data?.data?.doctor || response.data?.doctor;
 
       setSuccess("Profile updated successfully.");

@@ -27,6 +27,10 @@ const buildDoctorFilters = (filters = {}) => {
     }
   }
 
+  if (filters.userId || filters.user) {
+    query.userId = filters.userId || filters.user;
+  }
+
   return query;
 };
 
@@ -49,6 +53,12 @@ export const getInternalDoctor = async (doctorId) => {
 };
 
 export const createDoctor = async (payload) => {
+  const existingDoctor = await Doctor.findOne({ userId: payload.userId });
+
+  if (existingDoctor) {
+    return existingDoctor;
+  }
+
   const doctor = new Doctor(payload);
   return doctor.save();
 };

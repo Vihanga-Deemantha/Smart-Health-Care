@@ -12,7 +12,16 @@ import {
   uploadDoctorProfilePhoto,
   addDoctorQualificationDocument
 } from "../services/doctor.service.js";
-import { respondToAppointment, getTelemedicineSession } from "../services/appointment.service.js";
+import {
+  cancelDoctorAppointment,
+  confirmDoctorAttendance,
+  getDoctorAvailability,
+  getDoctorAppointmentById,
+  getTelemedicineSession,
+  listDoctorAppointments,
+  markDoctorNoShow,
+  respondToAppointment
+} from "../services/appointment.service.js";
 import { getPatientReportsForDoctor } from "../services/patientReport.service.js";
 import {
   createPrescription,
@@ -97,7 +106,7 @@ export const handleUploadQualificationDocument = asyncHandler(async (req, res) =
 
 export const handleRespondToAppointment = asyncHandler(async (req, res) => {
   const response = await respondToAppointment({
-    appointmentId: req.params.id,
+    appointmentId: req.params.id || req.params.appointmentId,
     action: req.body.action,
     reason: req.body.reason,
     authorization: req.headers.authorization
@@ -108,11 +117,73 @@ export const handleRespondToAppointment = asyncHandler(async (req, res) => {
 
 export const handleGetTelemedicineSession = asyncHandler(async (req, res) => {
   const session = await getTelemedicineSession({
-    appointmentId: req.params.id,
+    appointmentId: req.params.id || req.params.appointmentId,
     authorization: req.headers.authorization
   });
 
   sendResponse(res, 200, "Telemedicine session fetched", { session });
+});
+
+export const handleGetDoctorAvailability = asyncHandler(async (req, res) => {
+  const availability = await getDoctorAvailability({
+    doctorId: req.params.id,
+    date: req.query.date,
+    mode: req.query.mode
+  });
+
+  sendResponse(res, 200, "Doctor availability fetched", availability?.data || availability);
+});
+
+export const handleListDoctorAppointments = asyncHandler(async (req, res) => {
+  const appointments = await listDoctorAppointments({
+    authorization: req.headers.authorization,
+    status: req.query.status,
+    from: req.query.from,
+    to: req.query.to,
+    page: req.query.page,
+    limit: req.query.limit
+  });
+
+  sendResponse(res, 200, "Doctor appointments fetched", appointments?.data || appointments);
+});
+
+export const handleGetDoctorAppointment = asyncHandler(async (req, res) => {
+  const appointment = await getDoctorAppointmentById({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization
+  });
+
+  sendResponse(res, 200, "Doctor appointment fetched", appointment?.data || appointment);
+});
+
+export const handleCancelDoctorAppointment = asyncHandler(async (req, res) => {
+  const appointment = await cancelDoctorAppointment({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization,
+    reason: req.body.reason,
+    overridePolicy: req.body.overridePolicy
+  });
+
+  sendResponse(res, 200, "Doctor appointment cancelled", appointment?.data || appointment);
+});
+
+export const handleConfirmDoctorAttendance = asyncHandler(async (req, res) => {
+  const result = await confirmDoctorAttendance({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization
+  });
+
+  sendResponse(res, 200, "Doctor attendance confirmed", result?.data || result);
+});
+
+export const handleMarkDoctorNoShow = asyncHandler(async (req, res) => {
+  const result = await markDoctorNoShow({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization,
+    target: req.body.target || "PATIENT"
+  });
+
+  sendResponse(res, 200, "Doctor no-show marked", result?.data || result);
 });
 
 export const handleGetPatientReports = asyncHandler(async (req, res) => {

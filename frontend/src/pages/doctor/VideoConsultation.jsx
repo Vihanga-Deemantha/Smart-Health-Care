@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios.js";
+import {
+  fetchDoctorAppointment,
+  fetchDoctorTelemedicineSession
+} from "../../api/doctorApi.js";
 import ErrorState from "../../components/common/ErrorState.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 
@@ -37,8 +41,8 @@ const VideoConsultation = () => {
 
       try {
         const [sessionResponse, appointmentResponse] = await Promise.all([
-          api.get(`/api/appointments/${appointmentId}/telemedicine`),
-          api.get(`/api/appointments/${appointmentId}`)
+          fetchDoctorTelemedicineSession(appointmentId),
+          fetchDoctorAppointment(appointmentId)
         ]);
 
         const sessionPayload = sessionResponse.data?.data || sessionResponse.data;

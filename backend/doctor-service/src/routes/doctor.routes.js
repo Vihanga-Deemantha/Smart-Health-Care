@@ -5,7 +5,15 @@ import allowRoles from "../middlewares/role.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
 import AppError from "../utils/AppError.js";
 import {
+  handleCancelDoctorAppointment,
+  handleConfirmDoctorAttendance,
+  handleGetDoctorAvailability,
+  handleGetTelemedicineSession,
   handleListDoctors,
+  handleGetDoctorAppointment,
+  handleListDoctorAppointments,
+  handleMarkDoctorNoShow,
+  handleRespondToAppointment,
   handleGetDoctor,
   handleCreateDoctor,
   handleUpdateAvailability,
@@ -17,10 +25,19 @@ import {
 import {
   availabilityValidation,
   createDoctorValidation,
+  doctorAvailabilityLookupValidation,
   doctorIdValidation,
   patientReportValidation,
   updateDoctorProfileValidation
 } from "../validations/doctor.validation.js";
+import {
+  cancelAppointmentValidation,
+  confirmAttendanceValidation,
+  doctorAppointmentIdValidation,
+  listDoctorAppointmentsValidation,
+  noShowValidation,
+  respondAppointmentActionValidation
+} from "../validations/appointment.validation.js";
 
 const router = express.Router();
 
@@ -65,6 +82,63 @@ const profilePhotoUpload = multer({
 });
 
 router.get("/", handleListDoctors);
+router.get(
+  "/appointments",
+  protect,
+  allowRoles("DOCTOR"),
+  listDoctorAppointmentsValidation,
+  validateRequest,
+  handleListDoctorAppointments
+);
+router.get(
+  "/appointments/:appointmentId",
+  protect,
+  allowRoles("DOCTOR"),
+  doctorAppointmentIdValidation,
+  validateRequest,
+  handleGetDoctorAppointment
+);
+router.patch(
+  "/appointments/:appointmentId/respond",
+  protect,
+  allowRoles("DOCTOR"),
+  doctorAppointmentIdValidation,
+  respondAppointmentActionValidation,
+  validateRequest,
+  handleRespondToAppointment
+);
+router.get(
+  "/appointments/:appointmentId/telemedicine",
+  protect,
+  allowRoles("DOCTOR"),
+  doctorAppointmentIdValidation,
+  validateRequest,
+  handleGetTelemedicineSession
+);
+router.patch(
+  "/appointments/:appointmentId/cancel",
+  protect,
+  allowRoles("DOCTOR"),
+  cancelAppointmentValidation,
+  validateRequest,
+  handleCancelDoctorAppointment
+);
+router.patch(
+  "/appointments/:appointmentId/confirm-attendance",
+  protect,
+  allowRoles("DOCTOR"),
+  confirmAttendanceValidation,
+  validateRequest,
+  handleConfirmDoctorAttendance
+);
+router.patch(
+  "/appointments/:appointmentId/no-show",
+  protect,
+  allowRoles("DOCTOR"),
+  noShowValidation,
+  validateRequest,
+  handleMarkDoctorNoShow
+);
 router.patch(
   "/:id/profile",
   protect,
@@ -89,6 +163,12 @@ router.post(
   doctorIdValidation,
   qualificationUpload.single("file"),
   handleUploadQualificationDocument
+);
+router.get(
+  "/:id/availability",
+  doctorAvailabilityLookupValidation,
+  validateRequest,
+  handleGetDoctorAvailability
 );
 router.patch(
   "/:id/availability",

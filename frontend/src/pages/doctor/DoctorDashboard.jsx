@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import api from "../../api/axios.js";
+import {
+  fetchDoctorAppointments,
+  fetchDoctorTelemedicineSession,
+  respondDoctorAppointment
+} from "../../api/doctorApi.js";
 import AppointmentCard from "../../components/doctor/AppointmentCard.jsx";
 import EmptyState from "../../components/common/EmptyState.jsx";
 import ErrorState from "../../components/common/ErrorState.jsx";
@@ -20,7 +24,7 @@ const DoctorDashboard = () => {
     setError("");
 
     try {
-      const response = await api.get("/api/appointments");
+      const response = await fetchDoctorAppointments();
       const payload =
         response.data?.data?.appointments ||
         response.data?.appointments ||
@@ -59,7 +63,7 @@ const DoctorDashboard = () => {
     setActionMessage("");
 
     try {
-      const response = await api.patch(`/api/appointments/${appointmentId}/respond`, {
+      const response = await respondDoctorAppointment(appointmentId, {
         action: String(action).toUpperCase()
       });
       const updated =
@@ -94,7 +98,7 @@ const DoctorDashboard = () => {
     setActionMessage("");
 
     try {
-      const response = await api.get(`/api/appointments/${appointmentId}/telemedicine`);
+      const response = await fetchDoctorTelemedicineSession(appointmentId);
       const payload = response.data?.data || response.data;
       const roomUrl =
         payload?.roomUrl ||

@@ -26,7 +26,12 @@ export const NOTIFICATION_CONFIG = {
   },
   "notification.appointment.booked": {
     recipient: "patient",
-    channels: ["email", "sms", "whatsapp"],
+    channels: ["email", "sms"],
+    email: { subject: "Appointment booked" }
+  },
+  "notification.appointment.created": {
+    recipient: "patient",
+    channels: ["email", "sms"],
     email: { subject: "Appointment booked" }
   },
   "notification.appointment.confirmed": {
@@ -39,7 +44,22 @@ export const NOTIFICATION_CONFIG = {
     channels: ["email", "sms"],
     email: { subject: "Appointment cancelled" }
   },
+  "notification.appointment.reminder": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment reminder" }
+  },
+  "notification.waitlist.promoted": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Waitlist promoted" }
+  },
   "notification.payment.success": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Payment successful" }
+  },
+  "notification.payment.captured": {
     recipient: "patient",
     channels: ["email", "sms"],
     email: { subject: "Payment successful" }

@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 
 export const doctorIdValidation = [
   param("id").isMongoId().withMessage("Invalid doctor id")
@@ -122,4 +122,13 @@ export const availabilityValidation = [
 
 export const patientReportValidation = [
   param("patientId").isMongoId().withMessage("Invalid patient id")
+];
+
+export const doctorAvailabilityLookupValidation = [
+  param("id").isMongoId().withMessage("Invalid doctor id"),
+  query("date").isISO8601().withMessage("date must be a valid ISO date"),
+  query("mode")
+    .optional()
+    .isIn(["IN_PERSON", "TELEMEDICINE"])
+    .withMessage("mode must be IN_PERSON or TELEMEDICINE")
 ];

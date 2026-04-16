@@ -30,3 +30,29 @@ export const prescriptionsValidation = [
 export const internalPatientValidation = [
   param("patientId").trim().notEmpty().withMessage("patientId is required")
 ];
+
+export const patientAppointmentListValidation = [
+  query("status").optional().isString(),
+  query("from").optional().isISO8601().withMessage("from must be a valid date"),
+  query("to").optional().isISO8601().withMessage("to must be a valid date"),
+  query("page").optional().isInt({ min: 1 }).withMessage("page must be >= 1"),
+  query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("limit must be between 1 and 100")
+];
+
+export const patientAppointmentIdValidation = [
+  param("appointmentId").isMongoId().withMessage("Invalid appointment id")
+];
+
+export const patientAppointmentCancelValidation = [
+  ...patientAppointmentIdValidation,
+  body("reason").trim().notEmpty().withMessage("reason is required"),
+  body("overridePolicy").optional().isBoolean().withMessage("overridePolicy must be boolean")
+];
+
+export const patientAppointmentRescheduleValidation = [
+  ...patientAppointmentIdValidation,
+  body("newStartTime").isISO8601().withMessage("newStartTime must be a valid date"),
+  body("newEndTime").isISO8601().withMessage("newEndTime must be a valid date")
+];
+
+export const patientAppointmentConfirmValidation = [...patientAppointmentIdValidation];

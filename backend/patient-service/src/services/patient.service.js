@@ -2,8 +2,14 @@ import Patient from "../models/Patient.js";
 import AppError from "../utils/AppError.js";
 import { deleteReportByPublicId, uploadReportBuffer } from "./storage.service.js";
 import {
+  cancelAppointmentInAppointmentService,
+  confirmAppointmentAttendanceInAppointmentService,
   fetchHistoryFromAppointmentService,
+  fetchAppointmentByIdFromAppointmentService,
+  fetchAppointmentsFromAppointmentService,
   fetchPrescriptionsFromUpstream
+  ,
+  rescheduleAppointmentInAppointmentService
 } from "./upstream.service.js";
 
 const profileProjection = {
@@ -199,6 +205,49 @@ export const getPatientPrescriptions = async ({ user, authorization, query }) =>
     patientId: user.userId,
     authorization,
     limit: query.limit
+  });
+};
+
+export const getPatientAppointments = async ({ authorization, query }) => {
+  return await fetchAppointmentsFromAppointmentService({
+    authorization,
+    page: query.page,
+    limit: query.limit,
+    status: query.status,
+    from: query.from,
+    to: query.to
+  });
+};
+
+export const getPatientAppointmentById = async ({ appointmentId, authorization }) => {
+  return await fetchAppointmentByIdFromAppointmentService({
+    appointmentId,
+    authorization
+  });
+};
+
+export const cancelPatientAppointment = async ({ appointmentId, authorization, reason, overridePolicy }) => {
+  return await cancelAppointmentInAppointmentService({
+    appointmentId,
+    authorization,
+    reason,
+    overridePolicy
+  });
+};
+
+export const reschedulePatientAppointment = async ({ appointmentId, authorization, newStartTime, newEndTime }) => {
+  return await rescheduleAppointmentInAppointmentService({
+    appointmentId,
+    authorization,
+    newStartTime,
+    newEndTime
+  });
+};
+
+export const confirmPatientAppointmentAttendance = async ({ appointmentId, authorization }) => {
+  return await confirmAppointmentAttendanceInAppointmentService({
+    appointmentId,
+    authorization
   });
 };
 

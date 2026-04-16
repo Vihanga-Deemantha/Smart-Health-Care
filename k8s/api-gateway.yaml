@@ -57,6 +57,11 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: APPOINTMENT_SERVICE_URL
+            - name: DOCTOR_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: DOCTOR_SERVICE_URL
             - name: PAYMENT_SERVICE_URL
               valueFrom:
                 configMapKeyRef:

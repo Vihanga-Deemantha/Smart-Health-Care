@@ -5,6 +5,7 @@ import { connectRabbitMQ } from "./src/config/rabbitmq.js";
 import { initQueues } from "./src/config/redis.js";
 import { initWorkers } from "./src/jobs/workers.js";
 import logger from "./src/utils/logger.js";
+import { initPaymentEventConsumer } from "./src/events/consumers/payment.consumer.js";
 
 const PORT = Number(process.env.PORT) || 5027;
 
@@ -12,6 +13,7 @@ const startServer = async () => {
   try {
     await connectDB();
     await connectRabbitMQ();
+    await initPaymentEventConsumer();
     await initQueues();
     initWorkers();
 

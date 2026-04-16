@@ -13,18 +13,38 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 2
   }).format(Number(value || 0));
 
+const FIXED_APPOINTMENT_AMOUNT = 50;
+
+const toFriendlyReference = (prefix, value) => {
+  if (!value) {
+    return "Not available";
+  }
+
+  const normalized = String(value).trim();
+  const compact = normalized.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  const shortCode = (compact.slice(-6) || "000000").padStart(6, "0");
+
+  return `${prefix}-${shortCode}`;
+};
+
 const Checkout = () => {
   const [params] = useSearchParams();
   const appointmentId = params.get("appointmentId");
   const doctorId = params.get("doctorId");
 
-  const [amount, setAmount] = useState(50);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
+  const amount = FIXED_APPOINTMENT_AMOUNT;
+
+  const appointmentReference = useMemo(
+    () => toFriendlyReference("APT", appointmentId),
+    [appointmentId]
+  );
+  const doctorReference = useMemo(() => toFriendlyReference("DR", doctorId), [doctorId]);
 
   const canPay = useMemo(() => {
-    return Boolean(appointmentId && doctorId && Number(amount) > 0);
-  }, [amount, appointmentId, doctorId]);
+    return Boolean(appointmentId && doctorId);
+  }, [appointmentId, doctorId]);
 
   const pay = async () => {
     setProcessing(true);
@@ -33,7 +53,7 @@ const Checkout = () => {
       const checkoutResponse = await api.post("/payments/checkout", {
         appointmentId,
         doctorId,
-        amount,
+        amount: FIXED_APPOINTMENT_AMOUNT,
         currency: "USD"
       });
 
@@ -77,8 +97,8 @@ const Checkout = () => {
               <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                 Appointment ID
               </p>
-              <p className="mt-2 break-all text-sm font-semibold text-white">
-                {appointmentId || "Not available"}
+              <p className="mt-2 text-sm font-semibold text-white" title={appointmentId || ""}>
+                {appointmentReference}
               </p>
             </div>
 
@@ -86,8 +106,8 @@ const Checkout = () => {
               <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                 Doctor Reference
               </p>
-              <p className="mt-2 break-all text-sm font-semibold text-white">
-                {doctorId || "Not available"}
+              <p className="mt-2 text-sm font-semibold text-white" title={doctorId || ""}>
+                {doctorReference}
               </p>
             </div>
           </div>
@@ -97,13 +117,10 @@ const Checkout = () => {
               <BadgeDollarSign size={14} />
               Amount (USD)
             </span>
-            <input
-              type="number"
-              min={1}
-              value={amount}
-              onChange={(event) => setAmount(Number(event.target.value))}
-              className="w-full rounded-xl border border-white/15 bg-slate-900/60 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-400/20"
-            />
+            <div className="flex w-full items-center justify-between rounded-xl border border-white/15 bg-slate-900/60 px-3 py-2.5 text-sm text-white">
+              <span className="font-semibold text-white">{formatCurrency(FIXED_APPOINTMENT_AMOUNT)}</span>
+              <span className="text-xs font-medium text-cyan-200">Fixed consultation fee</span>
+            </div>
           </label>
 
           {error ? (

@@ -1,4 +1,5 @@
 import Payment from "../models/Payment.js";
+import { randomUUID } from "crypto";
 import AppError from "../utils/AppError.js";
 import { publishEvent } from "../events/publishers/eventPublisher.js";
 import { getStripeClient } from "../integrations/stripe.client.js";
@@ -6,6 +7,25 @@ import { getStripeClient } from "../integrations/stripe.client.js";
 const resolveClientUrl = () => process.env.CLIENT_URL || "http://localhost:8080";
 
 const normalizeCurrency = (currency = "USD") => String(currency).trim().toUpperCase();
+
+const buildPatientSummary = (source, patientId) => ({
+  userId: source?.userId || source?._id || source?.id || patientId || null,
+  fullName: source?.fullName || source?.name || "Patient",
+  email: source?.email || null,
+  phone: source?.phone || source?.contactNumber || null
+});
+
+const buildPaymentNotificationPayload = (payment, patientProfile) => ({
+  eventId: randomUUID(),
+  occurredAt: new Date().toISOString(),
+  paymentId: payment._id.toString(),
+  appointmentId: payment.appointmentId,
+  patientId: payment.patientId,
+  doctorId: payment.doctorId,
+  amount: payment.amount,
+  currency: payment.currency,
+  patient: buildPatientSummary(patientProfile, payment.patientId)
+});
 
 const validateCheckoutPayload = ({ appointmentId, patientId, doctorId, amount, currency }) => {
   if (!appointmentId || !patientId || !doctorId) {
@@ -28,6 +48,8 @@ const validateCheckoutPayload = ({ appointmentId, patientId, doctorId, amount, c
 };
 
 const publishCapturedEvents = async (payment) => {
+  const patientProfile = payment?.metadata?.patient || null;
+
   await publishEvent("payment.captured", {
     paymentId: payment._id.toString(),
     appointmentId: payment.appointmentId,
@@ -37,13 +59,7 @@ const publishCapturedEvents = async (payment) => {
     currency: payment.currency
   });
 
-  await publishEvent("notification.payment.captured", {
-    paymentId: payment._id.toString(),
-    appointmentId: payment.appointmentId,
-    patientId: payment.patientId,
-    amount: payment.amount,
-    currency: payment.currency
-  });
+  await publishEvent("notification.payment.captured", buildPaymentNotificationPayload(payment, patientProfile));
 };
 
 const wasWebhookProcessed = (payment, eventId) => {
@@ -144,7 +160,14 @@ const findPaymentForStripeEvent = async (payload) => {
   return null;
 };
 
-export const createCheckoutSession = async ({ appointmentId, patientId, doctorId, amount, currency }) => {
+export const createCheckoutSession = async ({
+  appointmentId,
+  patientId,
+  doctorId,
+  amount,
+  currency,
+  actor
+}) => {
   const validated = validateCheckoutPayload({ appointmentId, patientId, doctorId, amount, currency });
 
   const existingCaptured = await Payment.findOne({
@@ -163,7 +186,10 @@ export const createCheckoutSession = async ({ appointmentId, patientId, doctorId
     amount: validated.amount,
     currency: validated.currency,
     status: "PENDING",
-    provider: "STRIPE"
+    provider: "STRIPE",
+    metadata: {
+      patient: buildPatientSummary(actor, validated.patientId)
+    }
   });
 
   const stripe = getStripeClient();

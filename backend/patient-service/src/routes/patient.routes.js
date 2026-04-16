@@ -8,6 +8,7 @@ import {
   handleCancelAppointment,
   handleConfirmAppointmentAttendance,
   handleDeleteReport,
+  handleDownloadReport,
   handleGetAppointment,
   handleGetAppointments,
   handleGetHistory,
@@ -61,6 +62,7 @@ router.get("/profile", handleGetProfile);
 router.put("/profile", updateProfileValidation, validateRequest, handleUpdateProfile);
 router.post("/reports", upload.single("file"), handleUploadReport);
 router.get("/reports", handleGetReports);
+router.get("/reports/download", handleDownloadReport);
 router.delete("/reports", handleDeleteReport);
 router.get("/history", historyValidation, validateRequest, handleGetHistory);
 router.get("/prescriptions", prescriptionsValidation, validateRequest, handleGetPrescriptions);

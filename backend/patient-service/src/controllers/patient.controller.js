@@ -12,6 +12,7 @@ import {
   getPatientPrescriptions,
   getPatientProfile,
   getPatientReports,
+  getPatientReportDownload,
   reschedulePatientAppointment,
   updatePatientProfile
 } from "../services/patient.service.js";
@@ -34,6 +35,31 @@ export const handleUploadReport = asyncHandler(async (req, res) => {
 export const handleGetReports = asyncHandler(async (req, res) => {
   const reports = await getPatientReports(req.user);
   return sendResponse(res, 200, "Patient reports fetched", reports);
+});
+
+export const handleDownloadReport = asyncHandler(async (req, res) => {
+  const { report, upstreamResponse } = await getPatientReportDownload(req.user, {
+    publicId: req.query?.publicId,
+    url: req.query?.url
+  });
+
+  const contentType = upstreamResponse.headers.get("content-type") || report.mimeType || "application/octet-stream";
+  const contentLength = upstreamResponse.headers.get("content-length");
+  const safeFilename = (report.filename || "report").replace(/"/g, "'");
+
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
+
+  if (contentLength) {
+    res.setHeader("Content-Length", contentLength);
+  }
+
+  if (upstreamResponse.headers.get("accept-ranges")) {
+    res.setHeader("Accept-Ranges", upstreamResponse.headers.get("accept-ranges"));
+  }
+
+  const { Readable } = await import("node:stream");
+  Readable.fromWeb(upstreamResponse.body).pipe(res);
 });
 
 export const handleDeleteReport = asyncHandler(async (req, res) => {

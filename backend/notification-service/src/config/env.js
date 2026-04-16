@@ -15,6 +15,12 @@ const env = {
   rabbitmqQueue: process.env.RABBITMQ_QUEUE || "notification.universal.queue",
   rabbitmqBindingKey: process.env.RABBITMQ_BINDING_KEY || "notification.#",
   rabbitmqRetryMs: Number.parseInt(process.env.RABBITMQ_RETRY_MS || "5000", 10),
+  rabbitmqMaxDeliveryAttempts: Number.parseInt(
+    process.env.RABBITMQ_MAX_DELIVERY_ATTEMPTS || "3",
+    10
+  ),
+  rabbitmqDlqQueue: process.env.RABBITMQ_DLQ_QUEUE || "notification.deadletter.queue",
+  rabbitmqDlqRoutingKey: process.env.RABBITMQ_DLQ_ROUTING_KEY || "deadletter.notification",
   emailHost: process.env.EMAIL_HOST || "smtp.gmail.com",
   emailPort: Number.parseInt(process.env.EMAIL_PORT || "587", 10),
   emailUser: process.env.EMAIL_USER || "",

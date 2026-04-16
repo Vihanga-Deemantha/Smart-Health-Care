@@ -12,10 +12,13 @@ import {
   normalizeVerificationLinks,
   mapVerificationDocumentsToLegacyList
 } from "../utils/doctorVerification.js";
+import { normalizeSriLankanPhone } from "../utils/phone.js";
 
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
 const normalizeIdentityType = (identityType = "") =>
   identityType.trim().toUpperCase();
+const normalizePhone = (phone = "") =>
+  normalizeSriLankanPhone(phone) || phone.trim();
 
 const normalizePatientIdentity = (payload = {}) => {
   const identityType = normalizeIdentityType(payload.identityType || "");
@@ -116,8 +119,9 @@ const resolveAccountStatus = (user) => {
 };
 
 export const registerPatient = async (payload, req) => {
-  const { fullName, phone, password } = payload;
+  const { fullName, password } = payload;
   const email = normalizeEmail(payload.email);
+  const phone = normalizePhone(payload.phone);
   const identity = normalizePatientIdentity(payload);
 
   const existingUser = await User.findOne({ email });
@@ -223,7 +227,7 @@ export const registerDoctor = async (payload, files, req) => {
     user = await User.create({
       fullName,
       email: normalizedEmail,
-      phone,
+      phone: normalizePhone(phone),
       passwordHash,
       role: "DOCTOR",
       accountStatus: "PENDING",

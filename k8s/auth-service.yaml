@@ -87,6 +87,16 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: EMAIL_PORT
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_URL
+            - name: RABBITMQ_EXCHANGE
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_EXCHANGE
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:

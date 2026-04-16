@@ -23,6 +23,14 @@ const getRoleHomePath = (role) => {
   return "/";
 };
 
+const getDoctorHomePath = (user) => {
+  if (["PENDING", "CHANGES_REQUESTED", "REJECTED"].includes(user?.doctorVerificationStatus)) {
+    return "/doctor/verification/resubmit";
+  }
+
+  return "/doctor/dashboard";
+};
+
 const isPathAllowedForRole = (role, path) => {
   if (!path) {
     return false;
@@ -75,7 +83,8 @@ const LoginPage = () => {
         });
       }
 
-      const roleHomePath = getRoleHomePath(user?.role);
+      const roleHomePath =
+        user?.role === "DOCTOR" ? getDoctorHomePath(user) : getRoleHomePath(user?.role);
       const requestedPath = location.state?.from?.pathname;
 
       const nextPath =

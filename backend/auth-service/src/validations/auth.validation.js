@@ -1,6 +1,8 @@
 import { body } from "express-validator";
+import { normalizeSriLankanPhone } from "../utils/phone.js";
 
 const nicPattern = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+const sanitizePhone = (value) => normalizeSriLankanPhone(value) || String(value || "").trim();
 
 const baseRegisterValidation = [
   body("fullName")
@@ -19,11 +21,16 @@ const baseRegisterValidation = [
     .normalizeEmail(),
 
   body("phone")
-    .trim()
+    .customSanitizer((value) => sanitizePhone(value))
     .notEmpty()
     .withMessage("Phone number is required")
-    .isLength({ min: 10, max: 15 })
-    .withMessage("Phone number must be between 10 and 15 characters"),
+    .custom((value) => {
+      if (!normalizeSriLankanPhone(value)) {
+        throw new Error("Phone number must be a valid Sri Lankan mobile number");
+      }
+
+      return true;
+    }),
 
   body("password")
     .notEmpty()

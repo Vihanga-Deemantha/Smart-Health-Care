@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import AppError from "../utils/AppError.js";
 
-const getJwtSecret = () => process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+const getJwtSecret = () => process.env.JWT_ACCESS_SECRET;
 
 const protect = (req, res, next) => {
   const authHeader = req.headers.authorization || "";
@@ -13,7 +13,7 @@ const protect = (req, res, next) => {
 
   const secret = getJwtSecret();
   if (!secret) {
-    return next(new AppError("JWT secret is not configured", 500, "JWT_SECRET_MISSING"));
+    return next(new AppError("JWT secret is not configured", 500, "JWT_ACCESS_SECRET_MISSING"));
   }
 
   try {

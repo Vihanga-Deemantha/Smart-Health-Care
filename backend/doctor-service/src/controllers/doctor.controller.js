@@ -109,7 +109,8 @@ export const handleRespondToAppointment = asyncHandler(async (req, res) => {
     appointmentId: req.params.id || req.params.appointmentId,
     action: req.body.action,
     reason: req.body.reason,
-    authorization: req.headers.authorization
+    authorization: req.headers.authorization,
+    actor: req.user
   });
 
   sendResponse(res, 200, "Appointment response recorded", response?.data || response);
@@ -118,7 +119,8 @@ export const handleRespondToAppointment = asyncHandler(async (req, res) => {
 export const handleGetTelemedicineSession = asyncHandler(async (req, res) => {
   const session = await getTelemedicineSession({
     appointmentId: req.params.id || req.params.appointmentId,
-    authorization: req.headers.authorization
+    authorization: req.headers.authorization,
+    actor: req.user
   });
 
   sendResponse(res, 200, "Telemedicine session fetched", { session });
@@ -141,7 +143,8 @@ export const handleListDoctorAppointments = asyncHandler(async (req, res) => {
     from: req.query.from,
     to: req.query.to,
     page: req.query.page,
-    limit: req.query.limit
+    limit: req.query.limit,
+    actor: req.user
   });
 
   sendResponse(res, 200, "Doctor appointments fetched", appointments?.data || appointments);
@@ -150,7 +153,8 @@ export const handleListDoctorAppointments = asyncHandler(async (req, res) => {
 export const handleGetDoctorAppointment = asyncHandler(async (req, res) => {
   const appointment = await getDoctorAppointmentById({
     appointmentId: req.params.appointmentId,
-    authorization: req.headers.authorization
+    authorization: req.headers.authorization,
+    actor: req.user
   });
 
   sendResponse(res, 200, "Doctor appointment fetched", appointment?.data || appointment);
@@ -161,7 +165,8 @@ export const handleCancelDoctorAppointment = asyncHandler(async (req, res) => {
     appointmentId: req.params.appointmentId,
     authorization: req.headers.authorization,
     reason: req.body.reason,
-    overridePolicy: req.body.overridePolicy
+    overridePolicy: req.body.overridePolicy,
+    actor: req.user
   });
 
   sendResponse(res, 200, "Doctor appointment cancelled", appointment?.data || appointment);
@@ -170,7 +175,8 @@ export const handleCancelDoctorAppointment = asyncHandler(async (req, res) => {
 export const handleConfirmDoctorAttendance = asyncHandler(async (req, res) => {
   const result = await confirmDoctorAttendance({
     appointmentId: req.params.appointmentId,
-    authorization: req.headers.authorization
+    authorization: req.headers.authorization,
+    actor: req.user
   });
 
   sendResponse(res, 200, "Doctor attendance confirmed", result?.data || result);
@@ -180,7 +186,8 @@ export const handleMarkDoctorNoShow = asyncHandler(async (req, res) => {
   const result = await markDoctorNoShow({
     appointmentId: req.params.appointmentId,
     authorization: req.headers.authorization,
-    target: req.body.target || "PATIENT"
+    target: req.body.target || "PATIENT",
+    actor: req.user
   });
 
   sendResponse(res, 200, "Doctor no-show marked", result?.data || result);

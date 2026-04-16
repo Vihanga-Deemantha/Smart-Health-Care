@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Search, Clock, CheckCircle, Wrench, LogOut, X } from "lucide-react";
+import { Calendar, Search, Clock, CheckCircle, LogOut, X } from "lucide-react";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 
 const menuItems = [
@@ -7,7 +7,6 @@ const menuItems = [
   { icon: Search,       label: "Find Doctor",        path: "/patient/find-doctor" },
   { icon: Clock,        label: "My Appointments",    path: "/patient/appointments" },
   { icon: CheckCircle,  label: "Completed Bookings", path: "/patient/bookings" },
-  { icon: Wrench,       label: "Service Tools",      path: "/patient/tools" },
 ];
 
 const PatientSidebar = ({ onLogout, mobileOpen = false, onMobileClose }) => {

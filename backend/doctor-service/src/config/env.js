@@ -8,4 +8,4 @@ const serviceRoot = path.resolve(__dirname, "../..");
 const workspaceRoot = path.resolve(serviceRoot, "../..");
 
 dotenv.config({ path: path.join(workspaceRoot, ".env") });
-dotenv.config({ path: path.join(serviceRoot, ".env"), override: true });
+dotenv.config({ path: path.join(serviceRoot, ".env") });

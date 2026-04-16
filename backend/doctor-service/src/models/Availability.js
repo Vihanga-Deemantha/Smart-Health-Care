@@ -62,9 +62,9 @@ const buildValidationError = (message) => {
   return error;
 };
 
-availabilitySchema.pre("save", function (next) {
+availabilitySchema.pre("save", function () {
   if (!Array.isArray(this.weeklySchedule) || this.weeklySchedule.length === 0) {
-    return next();
+    return;
   }
 
   const slotsByDay = new Map();
@@ -78,11 +78,11 @@ availabilitySchema.pre("save", function (next) {
     const end = toMinutes(slot.endTime);
 
     if (Number.isNaN(start) || Number.isNaN(end)) {
-      return next(buildValidationError(`Invalid time format on ${slot.weekday}. Use HH:MM.`));
+      throw buildValidationError(`Invalid time format on ${slot.weekday}. Use HH:MM.`);
     }
 
     if (end <= start) {
-      return next(buildValidationError("Slot end time must be after start time"));
+      throw buildValidationError("Slot end time must be after start time");
     }
 
     if (!slotsByDay.has(slot.weekday)) {
@@ -104,18 +104,15 @@ availabilitySchema.pre("save", function (next) {
         const second = slots[j];
 
         if (first.start < second.end && first.end > second.start) {
-          return next(
-            buildValidationError(
-              `Overlapping slots on ${weekday}: ${first.startTime}-${first.endTime} ` +
-                `conflicts with ${second.startTime}-${second.endTime}`
-            )
+          throw buildValidationError(
+            `Overlapping slots on ${weekday}: ${first.startTime}-${first.endTime} ` +
+              `conflicts with ${second.startTime}-${second.endTime}`
           );
         }
       }
     }
   }
-
-  return next();
+  return;
 });
 
 const Availability = mongoose.model("Availability", availabilitySchema);

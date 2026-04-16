@@ -22,6 +22,8 @@ import DoctorDashboard from "../pages/doctor/DoctorDashboard.jsx";
 import DoctorProfile from "../pages/doctor/DoctorProfile.jsx";
 import PrescriptionForm from "../pages/doctor/PrescriptionForm.jsx";
 import VideoConsultation from "../pages/doctor/VideoConsultation.jsx";
+import PendingAppointments from "../pages/PendingAppointments.jsx";
+import ConfirmedSchedule from "../pages/ConfirmedSchedule.jsx";
 import PatientAppointmentsPage from "../pages/patient/PatientAppointmentsPage.jsx";
 import PatientFindDoctorPage from "../pages/patient/PatientFindDoctorPage.jsx";
 import PatientBookingsPage from "../pages/patient/PatientBookingsPage.jsx";
@@ -232,6 +234,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/doctor/dashboard" replace /> },
       { path: "dashboard", element: <DoctorDashboard /> },
+      { path: "pending", element: <PendingAppointments /> },
+      { path: "schedule", element: <ConfirmedSchedule /> },
       { path: "availability", element: <DoctorAvailability /> },
       { path: "profile", element: <DoctorProfile /> },
       { path: "verification/resubmit", element: <DoctorVerificationResubmitPage /> },

@@ -1,0 +1,608 @@
+{
+  "info": {
+    "_postman_id": "9b1f3f9e-5b7b-4d2c-8d4d-9b71b2fb9b5b",
+    "name": "Smart Health - Doctor Appointment Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const getVar = (key) => pm.environment.get(key) || pm.collectionVariables.get(key);",
+          "console.log(\"--- Request starting ---\");",
+          "console.log(\"patient_id:\", getVar(\"patient_id\"));",
+          "console.log(\"doctor_id:\", getVar(\"doctor_id\"));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "BASE_AUTH", "value": "http://localhost:5024", "type": "string" },
+    { "key": "BASE_PATIENT", "value": "http://localhost:5028", "type": "string" },
+    { "key": "BASE_DOCTOR", "value": "http://localhost:5029", "type": "string" },
+    { "key": "BASE_APPT", "value": "http://localhost:5027", "type": "string" },
+    { "key": "patient_email", "value": "testpatient@gmail.com", "type": "string" },
+    { "key": "patient_password", "value": "Test@1234", "type": "string" },
+    { "key": "doctor_email", "value": "shaveen@gmail.com", "type": "string" },
+    { "key": "doctor_password", "value": "Test@1234", "type": "string" },
+    { "key": "patient_token", "value": "", "type": "string" },
+    { "key": "patient_id", "value": "", "type": "string" },
+    { "key": "doctor_token", "value": "", "type": "string" },
+    { "key": "doctor_user_id", "value": "", "type": "string" },
+    { "key": "doctor_id", "value": "", "type": "string" },
+    { "key": "appointment_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth: Get Tokens",
+      "item": [
+        {
+          "name": "Login as Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{patient_email}}\",\n  \"password\": \"{{patient_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_AUTH}}/api/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || res;",
+                  "const token = res.token || res.accessToken || data.accessToken || \"\";",
+                  "const user = res.user || data.user || (data.data ? data.data.user : null);",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"patient_token\", token || \"\");",
+                  "setVar(\"patient_id\", (user && (user.id || user._id)) || res.userId || \"\");",
+                  "pm.test(\"Patient login success\", () => pm.response.to.have.status(200));",
+                  "console.log(\"Patient ID:\", pm.collectionVariables.get(\"patient_id\") || pm.environment.get(\"patient_id\"));",
+                  "console.log(\"Patient Token:\", pm.collectionVariables.get(\"patient_token\") || pm.environment.get(\"patient_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{doctor_email}}\",\n  \"password\": \"{{doctor_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_AUTH}}/api/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || res;",
+                  "const token = res.token || res.accessToken || data.accessToken || \"\";",
+                  "const user = res.user || data.user || (data.data ? data.data.user : null);",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"doctor_token\", token || \"\");",
+                  "setVar(\"doctor_user_id\", (user && (user.id || user._id)) || res.userId || \"\");",
+                  "pm.test(\"Doctor login success\", () => pm.response.to.have.status(200));",
+                  "console.log(\"Doctor User ID:\", pm.collectionVariables.get(\"doctor_user_id\") || pm.environment.get(\"doctor_user_id\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Doctor Profile (resolve doctor_id)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": "{{BASE_DOCTOR}}/api/doctors"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || res;",
+                  "const doctors = data.doctors || data.items || data;",
+                  "const getVar = (key) => pm.environment.get(key) || pm.collectionVariables.get(key);",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "const doctorUserId = getVar(\"doctor_user_id\");",
+                  "let doctor = null;",
+                  "if (Array.isArray(doctors)) {",
+                  "  doctor = doctors.find((item) => String(item.userId) === String(doctorUserId));",
+                  "  if (!doctor && doctors.length) { doctor = doctors[0]; }",
+                  "} else if (data.doctor) {",
+                  "  doctor = data.doctor;",
+                  "}",
+                  "const doctorId = (doctor && (doctor._id || doctor.id)) || doctorUserId || \"\";",
+                  "setVar(\"doctor_id\", doctorId);",
+                  "pm.test(\"Got doctor profile\", () => pm.response.to.have.status(200));",
+                  "console.log(\"Doctor Profile ID:\", doctorId);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctor: Get Availability",
+      "item": [
+        {
+          "name": "Get Doctor Availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": "{{BASE_DOCTOR}}/api/availability/{{doctor_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const availability = (res.data && res.data.availability) || res.availability || res.data || {};",
+                  "pm.test(\"Got availability\", () => pm.response.to.have.status(200));",
+                  "console.log(\"Weekly Schedule:\", JSON.stringify(availability.weeklySchedule || [], null, 2));",
+                  "console.log(\"Off Days:\", availability.offDays);",
+                  "console.log(\"Blocked Dates:\", availability.blockedDates);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set Doctor Availability",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weeklySchedule\": [\n    {\n      \"weekday\": \"Thursday\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"duration\": 30,\n      \"mode\": \"TELEMEDICINE\",\n      \"isActive\": true\n    },\n    {\n      \"weekday\": \"Friday\",\n      \"startTime\": \"10:00\",\n      \"endTime\": \"16:00\",\n      \"duration\": 30,\n      \"mode\": \"IN_PERSON\",\n      \"isActive\": true\n    }\n  ],\n  \"offDays\": [\"Saturday\", \"Sunday\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_DOCTOR}}/api/availability/{{doctor_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Availability saved\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Test Appointments",
+      "item": [
+        {
+          "name": "Hold Slot - Pending (Today 09:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{doctor_id}}\",\n  \"startTime\": \"2026-04-17T09:00:00.000Z\",\n  \"endTime\": \"2026-04-17T09:30:00.000Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments/hold"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const hold = res.data || res;",
+                  "const holdId = hold._id || hold.id || \"\";",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"hold_id_pending_1\", holdId);",
+                  "pm.test(\"Hold created\", () => pm.response.to.have.status(201));",
+                  "console.log(\"Hold ID (pending 1):\", holdId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Book Appointment - Pending (Today 09:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holdId\": \"{{hold_id_pending_1}}\",\n  \"doctorId\": \"{{doctor_id}}\",\n  \"mode\": \"TELEMEDICINE\",\n  \"reason\": \"Chest pain and shortness of breath\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const appointment = res.data || res.appointment || res;",
+                  "const appointmentId = appointment._id || appointment.id || \"\";",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"appointment_id\", appointmentId);",
+                  "pm.test(\"Appointment created\", () => pm.response.to.have.status(201));",
+                  "console.log(\"Appointment ID:\", appointmentId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hold Slot - Pending (Today 11:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{doctor_id}}\",\n  \"startTime\": \"2026-04-17T11:00:00.000Z\",\n  \"endTime\": \"2026-04-17T11:30:00.000Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments/hold"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const hold = res.data || res;",
+                  "const holdId = hold._id || hold.id || \"\";",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"hold_id_pending_2\", holdId);",
+                  "pm.test(\"Hold created\", () => pm.response.to.have.status(201));",
+                  "console.log(\"Hold ID (pending 2):\", holdId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Book Appointment - Pending (Today 11:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holdId\": \"{{hold_id_pending_2}}\",\n  \"doctorId\": \"{{doctor_id}}\",\n  \"mode\": \"IN_PERSON\",\n  \"reason\": \"Regular follow-up visit\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Second appointment created\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hold Slot - Confirmed (2026-04-18 10:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{doctor_id}}\",\n  \"startTime\": \"2026-04-18T10:00:00.000Z\",\n  \"endTime\": \"2026-04-18T10:30:00.000Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments/hold"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const hold = res.data || res;",
+                  "const holdId = hold._id || hold.id || \"\";",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"hold_id_confirmed_1\", holdId);",
+                  "pm.test(\"Hold created\", () => pm.response.to.have.status(201));",
+                  "console.log(\"Hold ID (confirmed 1):\", holdId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Book Appointment - Confirmed (2026-04-18 10:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holdId\": \"{{hold_id_confirmed_1}}\",\n  \"doctorId\": \"{{doctor_id}}\",\n  \"mode\": \"TELEMEDICINE\",\n  \"reason\": \"Routine checkup and blood test review\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const appointment = res.data || res.appointment || res;",
+                  "const appointmentId = appointment._id || appointment.id || \"\";",
+                  "const getVar = (key) => pm.environment.get(key) || pm.collectionVariables.get(key);",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"appointment_id_confirmed_1\", appointmentId);",
+                  "pm.test(\"Confirmed appointment created\", () => pm.response.to.have.status(201));",
+                  "if (appointmentId) {",
+                  "  pm.sendRequest({",
+                  "    url: getVar(\"BASE_APPT\") + \"/api/appointments/\" + appointmentId + \"/respond\",",
+                  "    method: \"PATCH\",",
+                  "    header: { Authorization: \"Bearer \" + getVar(\"doctor_token\"), \"Content-Type\": \"application/json\" },",
+                  "    body: { mode: \"raw\", raw: JSON.stringify({ action: \"ACCEPT\", status: \"CONFIRMED\" }) }",
+                  "  }, function (err) {",
+                  "    if (err) { console.log(\"Confirm error:\", err); }",
+                  "  });",
+                  "}",
+                  "console.log(\"Confirmed appointment ID:\", appointmentId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hold Slot - Confirmed Future (2026-04-21 08:30)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{doctor_id}}\",\n  \"startTime\": \"2026-04-21T08:30:00.000Z\",\n  \"endTime\": \"2026-04-21T09:00:00.000Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments/hold"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const hold = res.data || res;",
+                  "const holdId = hold._id || hold.id || \"\";",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"hold_id_confirmed_2\", holdId);",
+                  "pm.test(\"Hold created\", () => pm.response.to.have.status(201));",
+                  "console.log(\"Hold ID (confirmed 2):\", holdId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Book Appointment - Confirmed Future (2026-04-21 08:30)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holdId\": \"{{hold_id_confirmed_2}}\",\n  \"doctorId\": \"{{doctor_id}}\",\n  \"mode\": \"IN_PERSON\",\n  \"reason\": \"Blood pressure monitoring\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const appointment = res.data || res.appointment || res;",
+                  "const appointmentId = appointment._id || appointment.id || \"\";",
+                  "const getVar = (key) => pm.environment.get(key) || pm.collectionVariables.get(key);",
+                  "const setVar = (key, value) => { pm.environment.set(key, value); pm.collectionVariables.set(key, value); };",
+                  "setVar(\"appointment_id_confirmed_2\", appointmentId);",
+                  "pm.test(\"Future appointment created\", () => pm.response.to.have.status(201));",
+                  "if (appointmentId) {",
+                  "  pm.sendRequest({",
+                  "    url: getVar(\"BASE_APPT\") + \"/api/appointments/\" + appointmentId + \"/respond\",",
+                  "    method: \"PATCH\",",
+                  "    header: { Authorization: \"Bearer \" + getVar(\"doctor_token\"), \"Content-Type\": \"application/json\" },",
+                  "    body: { mode: \"raw\", raw: JSON.stringify({ action: \"ACCEPT\", status: \"CONFIRMED\" }) }",
+                  "  }, function (err) {",
+                  "    if (err) { console.log(\"Confirm error:\", err); }",
+                  "  });",
+                  "}",
+                  "console.log(\"Future confirmed appointment ID:\", appointmentId);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctor: Verify Appointments",
+      "item": [
+        {
+          "name": "Get All Doctor Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": "{{BASE_APPT}}/api/appointments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || res;",
+                  "const items = data.items || data.appointments || data;",
+                  "const list = Array.isArray(items) ? items : (items.items || []);",
+                  "pm.test(\"Got appointments\", () => pm.response.to.have.status(200));",
+                  "const booked = list.filter((item) => item.status === \"BOOKED\");",
+                  "const confirmed = list.filter((item) => item.status === \"CONFIRMED\");",
+                  "console.log(\"BOOKED (Pending):\", booked.length);",
+                  "console.log(\"CONFIRMED (Schedule):\", confirmed.length);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Pending Only",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": "{{BASE_APPT}}/api/appointments?status=BOOKED"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || res;",
+                  "const items = data.items || data.appointments || data;",
+                  "const list = Array.isArray(items) ? items : (items.items || []);",
+                  "pm.test(\"Got pending\", () => pm.response.to.have.status(200));",
+                  "console.log(\"Pending count:\", list.length);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accept an Appointment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMED\",\n  \"action\": \"ACCEPT\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments/{{appointment_id}}/respond"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Appointment accepted\", () => pm.response.to.have.status(200));",
+                  "console.log(\"Appointment is now CONFIRMED\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject an Appointment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REJECTED\",\n  \"action\": \"REJECT\",\n  \"reason\": \"Doctor unavailable at this time slot\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{BASE_APPT}}/api/appointments/{{appointment_id}}/respond"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Appointment rejected\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

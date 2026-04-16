@@ -17,6 +17,9 @@ import logger from "./utils/logger.js";
 
 const app = express();
 
+// Requests are proxied through the API gateway.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(
   cors({

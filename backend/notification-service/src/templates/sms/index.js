@@ -62,6 +62,38 @@ const templates = {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment confirmed for ${date}. ID ${shortId(payload?.appointmentId)}.`;
   },
+  "notification.telemedicine.session.started": (payload) => {
+    const recipientRole = String(payload?.recipientRole || "").toLowerCase();
+    const recipientName =
+      recipientRole === "doctor"
+        ? firstName(payload?.doctor?.fullName)
+        : firstName(payload?.patient?.fullName);
+    const startedAt =
+      payload?.sessionStartedAt ||
+      payload?.scheduledAt ||
+      payload?.appointmentDate ||
+      payload?.startTime;
+    const date = formatDate(startedAt);
+    const link = payload?.jitsiRoomUrl || payload?.roomUrl || payload?.meetingLink || "";
+    const when = date ? ` on ${date}` : "";
+    return `Smart Health: ${recipientName}, your video session is live${when}. Join: ${link}`;
+  },
+  "notification.telemedicine.session.started.doctor": (payload) => {
+    const recipientRole = String(payload?.recipientRole || "").toLowerCase();
+    const recipientName =
+      recipientRole === "doctor"
+        ? firstName(payload?.doctor?.fullName)
+        : firstName(payload?.patient?.fullName);
+    const startedAt =
+      payload?.sessionStartedAt ||
+      payload?.scheduledAt ||
+      payload?.appointmentDate ||
+      payload?.startTime;
+    const date = formatDate(startedAt);
+    const link = payload?.jitsiRoomUrl || payload?.roomUrl || payload?.meetingLink || "";
+    const when = date ? ` on ${date}` : "";
+    return `Smart Health: ${recipientName}, your video session is live${when}. Join: ${link}`;
+  },
   "notification.appointment.rejected": (payload) => {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     const reason = payload?.reason ? ` Reason: ${payload.reason}.` : "";

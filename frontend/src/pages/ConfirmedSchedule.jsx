@@ -9,6 +9,7 @@ const DOCTOR_SERVICE_URL =
   import.meta.env.VITE_DOCTOR_SERVICE_URL || "http://localhost:5029";
 const PATIENT_SERVICE_URL =
   import.meta.env.VITE_PATIENT_SERVICE_URL || "http://localhost:5028";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5026/api";
 
 const getToken = () =>
   localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
@@ -47,6 +48,9 @@ const resolveDoctorId = () => {
 const getErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Something went wrong.";
 
+const unwrapSessionPayload = (payload) =>
+  payload?.data?.session || payload?.session || payload?.data || payload;
+
 const buildFallbackPatient = (patientId, fallback = {}) => ({
   id: fallback?.id || patientId || "",
   fullName: fallback?.fullName || "Patient",
@@ -84,6 +88,10 @@ const ConfirmedSchedule = () => {
   );
   const patientApi = useMemo(
     () => axios.create({ baseURL: PATIENT_SERVICE_URL }),
+    []
+  );
+  const telemedicineApi = useMemo(
+    () => axios.create({ baseURL: API_BASE_URL }),
     []
   );
 
@@ -196,13 +204,56 @@ const ConfirmedSchedule = () => {
 
   const groups = useMemo(() => groupAppointmentsByDate(appointments), [appointments]);
 
-  const handleJoinCall = (appointment) => {
-    if (!appointment?.videoUrl) {
-      addToast("Video session is not available.", "error");
+  const handleJoinCall = async (appointment) => {
+    const appointmentId = appointment?._id || appointment?.id;
+    if (!appointmentId) {
+      addToast("Missing appointment id.", "error");
       return;
     }
 
-    window.open(appointment.videoUrl, "_blank", "noopener,noreferrer");
+    try {
+      const sessionResponse = await telemedicineApi.get(
+        `/sessions/appointment/${appointmentId}`,
+        { headers: getAuthHeaders() }
+      );
+      const session = unwrapSessionPayload(sessionResponse.data);
+      const sessionId = session?._id || session?.id || session?.sessionId;
+
+      if (!sessionId) {
+        throw new Error("Telemedicine session is not available.");
+      }
+
+      const joinResponse = await telemedicineApi.post(
+        `/sessions/${sessionId}/join`,
+        {},
+        { headers: getAuthHeaders() }
+      );
+      const joinPayload = joinResponse.data?.data || joinResponse.data;
+      if (joinPayload?.warning) {
+        addToast(joinPayload.warning, "error");
+      }
+      const roomUrl =
+        joinPayload?.jitsiRoomUrl ||
+        joinPayload?.roomUrl ||
+        joinPayload?.meetingLink ||
+        session?.jitsiRoomUrl ||
+        session?.roomUrl ||
+        appointment?.videoUrl ||
+        "";
+
+      if (!roomUrl) {
+        throw new Error("Video session is not available.");
+      }
+
+      window.open(roomUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      if (appointment?.videoUrl) {
+        window.open(appointment.videoUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      addToast(getErrorMessage(err), "error");
+    }
   };
 
   const canJoinCall = (appointment) => {
@@ -314,7 +365,7 @@ const ConfirmedSchedule = () => {
                       key={appointmentId}
                       appointment={appointment}
                       isToday={isTodayGroup(group.dateKey)}
-                      showJoin={canJoinCall(appointment) && Boolean(appointment.videoUrl)}
+                      showJoin={canJoinCall(appointment)}
                       onJoinCall={handleJoinCall}
                       onViewDetails={() => setSelectedAppointment(appointment)}
                     />

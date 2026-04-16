@@ -39,6 +39,16 @@ export const NOTIFICATION_CONFIG = {
     channels: ["email", "sms"],
     email: { subject: "Appointment confirmed" }
   },
+  "notification.telemedicine.session.started": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Telemedicine session started" }
+  },
+  "notification.telemedicine.session.started.doctor": {
+    recipient: "doctor",
+    channels: ["sms"],
+    email: { subject: "Telemedicine session started" }
+  },
   "notification.appointment.rejected": {
     recipient: "patient",
     channels: ["email", "sms"],

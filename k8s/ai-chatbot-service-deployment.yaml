@@ -38,9 +38,15 @@ spec:
                   name: smart-health-config
                   key: GEMINI_MODEL
             - name: GEMINI_FALLBACK_MODELS
-              value: gemini-1.5-flash
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: GEMINI_FALLBACK_MODELS
             - name: GEMINI_MAX_RETRIES
-              value: "2"
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: GEMINI_MAX_RETRIES
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:

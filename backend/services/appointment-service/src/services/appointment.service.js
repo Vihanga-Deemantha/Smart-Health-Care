@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { randomUUID } from "crypto";
 import { addMinutes, differenceInHours } from "date-fns";
 import Appointment from "../models/Appointment.js";
 import SlotHold from "../models/SlotHold.js";
@@ -20,6 +21,102 @@ const maxActiveHolds = Number(process.env.MAX_ACTIVE_HOLDS_PER_PATIENT || 3);
 const cancellationCutoffHours = Number(process.env.CANCELLATION_CUTOFF_HOURS || 12);
 
 const dateOnly = (value) => new Date(value).toISOString().slice(0, 10);
+
+const buildPatientSummary = (profile, patientId) => {
+  if (!profile && !patientId) {
+    return null;
+  }
+
+  return {
+    userId: profile?.userId || profile?._id || profile?.id || patientId || null,
+    fullName: profile?.fullName || profile?.name || "Patient",
+    email: profile?.email || null,
+    phone: profile?.contactNumber || profile?.phone || null
+  };
+};
+
+const buildDoctorSummary = (profile, doctorId) => {
+  if (!profile && !doctorId) {
+    return null;
+  }
+
+  return {
+    userId: profile?.userId || profile?._id || profile?.id || doctorId || null,
+    fullName: profile?.fullName || profile?.name || "Doctor",
+    email: profile?.email || null,
+    phone: profile?.contactNumber || profile?.phone || null
+  };
+};
+
+const buildNotificationEnvelope = ({
+  appointment,
+  patient,
+  doctor,
+  overrides = {}
+}) => ({
+  eventId: randomUUID(),
+  occurredAt: new Date().toISOString(),
+  appointmentId: appointment?._id?.toString?.() || appointment?.id || null,
+  doctorId: appointment?.doctorId || null,
+  patientId: appointment?.patientId || null,
+  appointmentDate: appointment?.appointmentDate || null,
+  mode: appointment?.mode || null,
+  startTime: appointment?.startTime || null,
+  endTime: appointment?.endTime || null,
+  patient: buildPatientSummary(patient, appointment?.patientId),
+  doctor: buildDoctorSummary(doctor, appointment?.doctorId),
+  ...overrides
+});
+
+const enrichAppointmentsWithPatients = async (appointments, role) => {
+  const canSeePatient = [
+    USER_ROLES.DOCTOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.STAFF
+  ].includes(role);
+
+  if (!canSeePatient || !appointments?.length) {
+    return appointments;
+  }
+
+  const patientIds = Array.from(
+    new Set(appointments.map((appointment) => appointment.patientId).filter(Boolean))
+  );
+
+  if (!patientIds.length) {
+    return appointments;
+  }
+
+  const patientProfiles = await Promise.all(patientIds.map((id) => getPatientProfile(id)));
+  const patientMap = new Map();
+
+  patientIds.forEach((id, index) => {
+    patientMap.set(id, buildPatientSummary(patientProfiles[index], id));
+  });
+
+  return appointments.map((appointment) => {
+    if (appointment?.patient && typeof appointment.patient === "object") {
+      const hasDetails =
+        appointment.patient.fullName ||
+        appointment.patient.name ||
+        appointment.patient.email ||
+        appointment.patient.phone ||
+        appointment.patient.contactNumber;
+      if (hasDetails) {
+        return appointment;
+      }
+    }
+
+    const summary = patientMap.get(appointment.patientId);
+    if (!summary) {
+      return appointment;
+    }
+
+    return { ...appointment, patient: summary };
+  });
+};
+
 
 export const createSlotHold = async ({ patientId, doctorId, startTime, endTime, actor }) => {
   const activeHolds = await SlotHold.countDocuments({
@@ -217,15 +314,17 @@ export const bookAppointment = async ({ holdId, patientId, doctorId, mode, hospi
       endTime: hold.endTime
     });
 
-    await publishEvent("notification.appointment.created", {
-      appointmentId: appointment[0]._id.toString(),
-      doctorId,
-      patientId,
-      mode,
-      startTime: hold.startTime,
-      endTime: hold.endTime,
-      meetingLink: appointment[0].telemedicine?.meetingLink || null
-    });
+    await publishEvent(
+      "notification.appointment.created",
+      buildNotificationEnvelope({
+        appointment: appointment[0],
+        patient: patientProfile,
+        doctor: doctorProfile,
+        overrides: {
+          meetingLink: appointment[0].telemedicine?.meetingLink || null
+        }
+      })
+    );
 
     await publishEvent("payment.appointment.booking_created", {
       appointmentId: appointment[0]._id.toString(),
@@ -271,6 +370,11 @@ export const cancelAppointment = async ({ appointmentId, actor, reason, override
     throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
   }
 
+  const [doctorProfile, patientProfile] = await Promise.all([
+    getDoctorProfile(appointment.doctorId),
+    getPatientProfile(appointment.patientId)
+  ]);
+
   const hoursLeft = differenceInHours(appointment.startTime, new Date());
   const isAdmin = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF].includes(
     actor.role
@@ -312,13 +416,15 @@ export const cancelAppointment = async ({ appointmentId, actor, reason, override
     reason
   });
 
-  await publishEvent("notification.appointment.cancelled", {
-    appointmentId: appointment._id.toString(),
-    doctorId: appointment.doctorId,
-    patientId: appointment.patientId,
-    startTime: appointment.startTime,
-    reason
-  });
+  await publishEvent(
+    "notification.appointment.cancelled",
+    buildNotificationEnvelope({
+      appointment,
+      patient: patientProfile,
+      doctor: doctorProfile,
+      overrides: { reason }
+    })
+  );
 
   if (waitlistQueue) {
     await waitlistQueue.add(
@@ -424,11 +530,25 @@ export const confirmAttendance = async ({ appointmentId, actor }) => {
     appointment.statusTimestamps.confirmedAt = new Date();
     await appointment.save();
 
+    const [doctorProfile, patientProfile] = await Promise.all([
+      getDoctorProfile(appointment.doctorId),
+      getPatientProfile(appointment.patientId)
+    ]);
+
     await publishEvent("appointment.confirmed", {
       appointmentId: appointment._id.toString(),
       doctorId: appointment.doctorId,
       patientId: appointment.patientId
     });
+
+    await publishEvent(
+      "notification.appointment.confirmed",
+      buildNotificationEnvelope({
+        appointment,
+        patient: patientProfile,
+        doctor: doctorProfile
+      })
+    );
   }
 
   return { appointment, attendance };
@@ -493,8 +613,10 @@ export const listAppointments = async ({ userId, role, status, from, to, page = 
     Appointment.countDocuments(query)
   ]);
 
+  const enrichedItems = await enrichAppointmentsWithPatients(items, role);
+
   return {
-    items,
+    items: enrichedItems,
     pagination: {
       total,
       page: Number(page),
@@ -602,6 +724,20 @@ export const respondToAppointment = async ({ appointmentId, action, reason, acto
     patientId: appointment.patientId
   });
 
+  const [doctorProfile, patientProfile] = await Promise.all([
+    getDoctorProfile(appointment.doctorId),
+    getPatientProfile(appointment.patientId)
+  ]);
+
+  await publishEvent(
+    "notification.appointment.confirmed",
+    buildNotificationEnvelope({
+      appointment,
+      patient: patientProfile,
+      doctor: doctorProfile
+    })
+  );
+
   return appointment;
 };
 
@@ -641,6 +777,11 @@ export const promoteWaitlistForSlot = async ({ doctorId, mode, startTime, endTim
   candidate.status = "PROMOTED";
   await candidate.save();
 
+  const [doctorProfile, patientProfile] = await Promise.all([
+    getDoctorProfile(candidate.doctorId),
+    getPatientProfile(candidate.patientId)
+  ]);
+
   await publishEvent("waitlist.promoted", {
     waitlistId: candidate._id.toString(),
     doctorId: candidate.doctorId,
@@ -650,11 +791,16 @@ export const promoteWaitlistForSlot = async ({ doctorId, mode, startTime, endTim
   });
 
   await publishEvent("notification.waitlist.promoted", {
+    eventId: randomUUID(),
+    occurredAt: new Date().toISOString(),
     waitlistId: candidate._id.toString(),
     doctorId: candidate.doctorId,
     patientId: candidate.patientId,
+    mode,
     startTime,
-    endTime
+    endTime,
+    patient: buildPatientSummary(patientProfile, candidate.patientId),
+    doctor: buildDoctorSummary(doctorProfile, candidate.doctorId)
   });
 
   return candidate;

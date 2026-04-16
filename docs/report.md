@@ -1,32 +1,32 @@
-# Smart Healthcare Platform - Backend Microservices Documentation
+# Smart Health Care - Backend Microservices Documentation
 
-## Project Overview
-- Project name: Smart Healthcare Platform
-- Tech stack: Node.js, Express, MongoDB (Mongoose), JWT, RabbitMQ (amqplib), Redis (BullMQ/ioredis), Cloudinary, Nodemailer, Google APIs, Twilio, Swagger/OpenAPI, Docker, Kubernetes
-- Architecture type: Microservices (REST + event-driven, background jobs via Redis/BullMQ)
-- Services and ports:
-  - api-gateway: 5026
-  - auth-service: 5024
-  - admin-service: 5025
-  - ai-chatbot-service: 5031
-  - patient-service: 5028
-  - appointment-service: 5027
-  - payment-service: 5034
-  - doctor-service: 5003
-  - notification-service: 5032 (referenced in appointment-service .env.example/configmap; no source files under backend/notification-service)
-  - telemedicine-service: 5033 (referenced in appointment-service .env.example/configmap; no source files under backend/telemedicine-service)
-  - room-service: 5030 (referenced in appointment-service .env.example)
-- Communication: API Gateway proxies REST calls; internal REST calls use x-internal-service-secret; RabbitMQ events published by appointment-service and payment-service.
-- Scope note: node_modules, coverage, dist, and package-lock.json files excluded as generated/dependencies per request.
+## Overview
+- Architecture: Node.js and Express microservices, MongoDB (Mongoose), REST via API gateway, RabbitMQ events, Redis/BullMQ jobs, and external integrations (Cloudinary, SMTP, Google Calendar, Notify.lk, Twilio).
+- Scope: backend folder only; node_modules, coverage, dist, and package-lock.json excluded.
+- Internal auth: x-internal-service-secret header for internal service calls.
+- External services referenced but not in this repo: room-service (5030). The telemedicine-service directory exists but is empty.
 
----
+## Service Inventory
+| Service | Path | Port | Notes |
+| --- | --- | --- | --- |
+| api-gateway | backend/api-gateway | 5026 | Reverse proxy and rate limiting |
+| auth-service | backend/auth-service | 5024 | Auth and internal admin APIs |
+| admin-service | backend/admin-service | 5025 | Admin workflows and dashboard |
+| ai-chatbot-service | backend/ai-chatbot-service | 5031 | Gemini based chat |
+| patient-service | backend/patient-service | 5028 | Patient profile and reports |
+| doctor-service | backend/doctor-service | 5029 | Doctor profiles, availability, prescriptions |
+| notification-service | backend/notification-service | 5032 | RabbitMQ consumer with email/SMS/WhatsApp |
+| appointment-service | backend/services/appointment-service | 5027 | Appointments, waitlist, feedback, emergency |
+| payment-service | backend/services/payment-service | 5034 | Payments |
+| telemedicine-service | backend/telemedicine-service | 5033 | Directory empty |
 
-## Service 1: admin-service
+## admin-service
 ### Purpose
-Handles admin-facing operations such as managing admin profiles, approving/rejecting doctors, updating user status, and serving dashboard/security analytics. It stores admin actions locally and delegates user/admin data operations to auth-service.
+Admin workflows, user status updates, doctor approvals, security activity, and dashboard stats. Delegates user/admin data to auth-service.
 
-### Tech Stack
+### Packages
 Dependencies:
+- amqplib@^0.10.9
 - axios@^1.14.0
 - cors@^2.8.6
 - dotenv@^17.4.1
@@ -40,98 +40,62 @@ Dependencies:
 Dev dependencies:
 - nodemon@^3.1.14
 
-### Database
-- Database name: admin_db
-- Models:
-  - AdminAction
-    - adminUserId: String (required)
-    - targetUserId: String (required)
-    - action: String (enum: DOCTOR_APPROVED, DOCTOR_REJECTED, DOCTOR_CHANGES_REQUESTED, ADMIN_CREATED, ADMIN_DELETED, USER_SUSPENDED, USER_ACTIVATED)
-    - reason: String (default null)
-    - timestamps: createdAt, updatedAt
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| GET | /api/admin/profile | Get current admin profile | Yes (ADMIN/SUPER_ADMIN) |
-| PATCH | /api/admin/profile | Update current admin profile | Yes (ADMIN/SUPER_ADMIN) |
-| POST | /api/admin/profile/photo | Upload admin profile photo | Yes (ADMIN/SUPER_ADMIN) |
-| DELETE | /api/admin/profile/photo | Remove admin profile photo | Yes (ADMIN/SUPER_ADMIN) |
-| PATCH | /api/admin/profile/password | Change admin password | Yes (ADMIN/SUPER_ADMIN) |
-| GET | /api/admin/admins | List admins | Yes (SUPER_ADMIN) |
-| POST | /api/admin/admins | Create admin | Yes (SUPER_ADMIN) |
-| DELETE | /api/admin/admins/:id | Delete admin | Yes (SUPER_ADMIN) |
-| GET | /api/admin/users | List users | Yes (ADMIN/SUPER_ADMIN) |
-| GET | /api/admin/doctors/pending | List pending doctors | Yes (ADMIN/SUPER_ADMIN) |
-| PATCH | /api/admin/doctors/:id/approve | Approve doctor | Yes (ADMIN/SUPER_ADMIN) |
-| PATCH | /api/admin/doctors/:id/reject | Reject doctor | Yes (ADMIN/SUPER_ADMIN) |
-| PATCH | /api/admin/users/:id/status | Update user status | Yes (ADMIN/SUPER_ADMIN) |
-| GET | /api/admin/security/activity | Security activity feed | Yes (ADMIN/SUPER_ADMIN) |
-| GET | /api/admin/actions | Admin actions list | Yes (ADMIN/SUPER_ADMIN) |
-| GET | /api/admin/dashboard/stats | Dashboard stats | Yes (ADMIN/SUPER_ADMIN) |
-
-### Environment Variables
-```env
-PORT=5025
-NODE_ENV=development
-CLIENT_URL=http://localhost:8080
-
-MONGODB_URI=mongodb+srv://admin:123@cluster0.9pl6rst.mongodb.net/admin_db?retryWrites=true&w=majority&appName=Cluster0
-
-JWT_ACCESS_SECRET=sasuke
-AUTH_SERVICE_URL=http://localhost:5024
-INTERNAL_SERVICE_SECRET=super_internal_secret
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+MONGODB_URI
+JWT_ACCESS_SECRET
+AUTH_SERVICE_URL
+INTERNAL_SERVICE_SECRET
+RABBITMQ_URL
+RABBITMQ_EXCHANGE
 ```
 
-### Folder Structure
-```text
-admin-service/
-  .dockerignore
-  .env
-  app.js
-  Dockerfile
-  package.json
-  server.js
-  src/
-    config/
-      env.js
-    controllers/
-      admin.controller.js
-      dashboard.controller.js
-    middlewares/
-      auth.middleware.js
-      error.middleware.js
-      role.middleware.js
-      validate.middleware.js
-    models/
-      AdminAction.js
-    routes/
-      admin.routes.js
-      dashboard.routes.js
-    services/
-      admin.service.js
-      authClient.service.js
-      dashboard.service.js
-    utils/
-      apiResponse.js
-      AppError.js
-      asyncHandler.js
-      dashboardAnalytics.js
-      dashboardAnalytics.test.js
-      securityActivity.js
-      securityActivity.test.js
-    validations/
-      admin.validation.js
-```
+### MongoDB schemas
+- AdminAction
+  - adminUserId: String (required)
+  - targetUserId: String (required)
+  - action: String (enum: DOCTOR_APPROVED, DOCTOR_REJECTED, DOCTOR_CHANGES_REQUESTED, ADMIN_CREATED, ADMIN_DELETED, USER_SUSPENDED, USER_ACTIVATED)
+  - reason: String (optional)
+  - timestamps
+
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| GET | /api/admin/profile | JWT (ADMIN, SUPER_ADMIN) | Get current admin profile |
+| PATCH | /api/admin/profile | JWT (ADMIN, SUPER_ADMIN) | Update current admin profile |
+| POST | /api/admin/profile/photo | JWT (ADMIN, SUPER_ADMIN) | Upload admin profile photo |
+| DELETE | /api/admin/profile/photo | JWT (ADMIN, SUPER_ADMIN) | Remove admin profile photo |
+| PATCH | /api/admin/profile/password | JWT (ADMIN, SUPER_ADMIN) | Change admin password |
+| GET | /api/admin/admins | JWT (SUPER_ADMIN) | List admins |
+| POST | /api/admin/admins | JWT (SUPER_ADMIN) | Create admin |
+| DELETE | /api/admin/admins/:id | JWT (SUPER_ADMIN) | Delete admin |
+| GET | /api/admin/users | JWT (ADMIN, SUPER_ADMIN) | List users |
+| GET | /api/admin/doctors/pending | JWT (ADMIN, SUPER_ADMIN) | List pending doctors |
+| PATCH | /api/admin/doctors/:id/approve | JWT (ADMIN, SUPER_ADMIN) | Approve doctor |
+| PATCH | /api/admin/doctors/:id/reject | JWT (ADMIN, SUPER_ADMIN) | Reject doctor |
+| PATCH | /api/admin/users/:id/status | JWT (ADMIN, SUPER_ADMIN) | Update user status |
+| GET | /api/admin/security/activity | JWT (ADMIN, SUPER_ADMIN) | Security activity feed |
+| GET | /api/admin/actions | JWT (ADMIN, SUPER_ADMIN) | Admin actions feed |
+| GET | /api/admin/dashboard/stats | JWT (ADMIN, SUPER_ADMIN) | Dashboard stats |
+
+### Events
+- Publishes: generic RabbitMQ publisher available (no hardcoded routing keys in admin-service).
+- Consumes: none.
+
+### Inter-service calls
+- Calls auth-service internal endpoints via AUTH_SERVICE_URL and x-internal-service-secret.
 
 ---
 
-## Service 2: ai-chatbot-service
+## ai-chatbot-service
 ### Purpose
-Provides AI chat responses for patients using the Gemini API. Conversations are stored in memory for short context windows.
+Generates AI chat responses using the Gemini API. Conversation context is kept in memory.
 
-### Tech Stack
+### Packages
 Dependencies:
 - @google/generative-ai@^0.24.1
 - cors@^2.8.6
@@ -145,66 +109,34 @@ Dependencies:
 Dev dependencies:
 - nodemon@^3.1.14
 
-### Database
-- Database name: None
-- Models: None (conversation context stored in memory)
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| POST | /api/ai/chat | Generate AI reply | Yes (PATIENT) |
-
-### Environment Variables
-```env
-PORT=5031
-NODE_ENV=development
-CLIENT_URL=http://localhost:8080
-JWT_ACCESS_SECRET=sasuke
-GEMINI_API_KEY=replace-with-new-gemini-api-key
-GEMINI_MODEL=gemini-1.5-flash
-GEMINI_FALLBACK_MODELS=gemini-1.5-flash
-GEMINI_MAX_RETRIES=2
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+JWT_ACCESS_SECRET
+GEMINI_API_KEY
+GEMINI_MODEL
+GEMINI_FALLBACK_MODELS
+GEMINI_MAX_RETRIES
 ```
 
-### Folder Structure
-```text
-ai-chatbot-service/
-  .env.example
-  .gitignore
-  app.js
-  Dockerfile
-  package.json
-  server.js
-  src/
-    config/
-      env.js
-    constants/
-      specialties.js
-    controllers/
-      chat.controller.js
-    middlewares/
-      auth.middleware.js
-      error.middleware.js
-      validate.middleware.js
-    routes/
-      chat.routes.js
-    services/
-      chat.service.js
-      history.service.js
-    utils/
-      apiResponse.js
-      AppError.js
-      asyncHandler.js
-```
+### MongoDB schemas
+- None
+
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| POST | /api/ai/chat | JWT | Generate AI response |
 
 ---
 
-## Service 3: api-gateway
+## api-gateway
 ### Purpose
-Routes external HTTP traffic to backend services, applies global rate limiting, and validates JWTs for protected upstreams.
+Reverse proxy for backend services with global rate limiting and JWT validation for protected routes.
 
-### Tech Stack
+### Packages
 Dependencies:
 - cors@^2.8.6
 - dotenv@^17.4.1
@@ -218,73 +150,52 @@ Dependencies:
 Dev dependencies:
 - nodemon@^3.1.14
 
-### Database
-- Database name: None
-- Models: None
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| ALL | /api/auth/* | Proxy to auth-service | No |
-| ALL | /api/admin/* | Proxy to admin-service | Yes (JWT) |
-| ALL | /api/patients/* | Proxy to patient-service | Yes (JWT) |
-| ALL | /api/ai/* | Proxy to ai-chatbot-service | Yes (JWT) |
-| ALL | /api/doctors/* | Proxy to appointment-service | No |
-| ALL | /api/feedback/doctors/* | Proxy to appointment-service | No |
-| ALL | /api/emergency-resources/* | Proxy to appointment-service | No |
-| ALL | /api/appointments/* | Proxy to appointment-service | Yes (JWT) |
-| ALL | /api/feedback/* | Proxy to appointment-service | Yes (JWT) |
-| ALL | /api/waitlist/* | Proxy to appointment-service | Yes (JWT) |
-| ALL | /api/emergency-alerts/* | Proxy to appointment-service | Yes (JWT) |
-| ALL | /api/notifications/* | Proxy to appointment-service | Yes (JWT) |
-| ALL | /api/payments/* | Proxy to payment-service | Yes (JWT) |
-
-### Environment Variables
-```env
-PORT=5026
-NODE_ENV=development
-CLIENT_URL=http://localhost:8080
-
-JWT_ACCESS_SECRET=sasuke
-AUTH_SERVICE_URL=http://localhost:5024
-ADMIN_SERVICE_URL=http://localhost:5025
+### Environment variables (names only)
 ```
-Note: app.js also references PATIENT_SERVICE_URL, AI_CHATBOT_SERVICE_URL, APPOINTMENT_SERVICE_URL, PAYMENT_SERVICE_URL.
-
-### Folder Structure
-```text
-api-gateway/
-  .dockerignore
-  .env
-  app.js
-  Dockerfile
-  package.json
-  server.js
-  src/
-    config/
-      env.js
-    middlewares/
-      auth.middleware.js
-      error.middleware.js
-      optionalAuth.middleware.js
-      rateLimit.middleware.js
-    routes/
-      gateway.routes.js
-    services/
-      proxy.service.js
-    utils/
-      AppError.js
+PORT
+NODE_ENV
+CLIENT_URL
+JWT_ACCESS_SECRET
+AUTH_SERVICE_URL
+ADMIN_SERVICE_URL
+PATIENT_SERVICE_URL
+AI_CHATBOT_SERVICE_URL
+DOCTOR_SERVICE_URL
+APPOINTMENT_SERVICE_URL
+PAYMENT_SERVICE_URL
 ```
+
+### MongoDB schemas
+- None
+
+### Routes (proxy)
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| ALL | /api/auth/* | No | Proxy to auth-service |
+| ALL | /api/admin/* | JWT | Proxy to admin-service |
+| ALL | /api/patients/* | JWT | Proxy to patient-service |
+| ALL | /api/ai/* | JWT | Proxy to ai-chatbot-service |
+| ALL | /api/doctors/* | No | Proxy to doctor-service |
+| ALL | /api/prescriptions/* | JWT | Proxy to doctor-service |
+| ALL | /api/feedback/doctors/* | No | Proxy to appointment-service |
+| ALL | /api/emergency-resources/* | No | Proxy to appointment-service |
+| ALL | /api/appointments/* | JWT | Proxy to appointment-service |
+| ALL | /api/feedback/* | JWT | Proxy to appointment-service |
+| ALL | /api/waitlist/* | JWT | Proxy to appointment-service |
+| ALL | /api/emergency-alerts/* | JWT | Proxy to appointment-service |
+| ALL | /api/notifications/* | JWT | Proxy to appointment-service |
+| ALL | /api/payments/* | JWT | Proxy to payment-service |
 
 ---
 
-## Service 4: auth-service
+## auth-service
 ### Purpose
-Manages user registration, authentication, JWT issuance and rotation, OTP-based email verification and password resets, and internal admin operations for other services.
+User registration/login, JWT issuance, OTP verification, password reset, and internal admin APIs for admin-service.
 
-### Tech Stack
+### Packages
 Dependencies:
+- amqplib@^0.10.9
 - bcryptjs@^3.0.3
 - cloudinary@^2.9.0
 - cookie-parser@^1.4.7
@@ -302,187 +213,141 @@ Dependencies:
 Dev dependencies:
 - nodemon@^3.1.14
 
-### Database
-- Database name: auth_db
-- Models:
-  - User
-    - fullName: String (required)
-    - email: String (required, unique)
-    - phone: String (required)
-    - jobTitle: String (default null)
-    - profilePhoto: { url: String, publicId: String, uploadedAt: Date } or null
-    - passwordHash: String (required)
-    - role: String (enum: PATIENT, DOCTOR, ADMIN, SUPER_ADMIN)
-    - isEmailVerified: Boolean (default false)
-    - accountStatus: String (enum: PENDING, ACTIVE, SUSPENDED, LOCKED)
-    - identityType: String (enum: NIC, PASSPORT, null)
-    - nic: String (unique, sparse)
-    - passportNumber: String (unique, sparse)
-    - nationality: String
-    - doctorVerificationStatus: String (enum: NOT_REQUIRED, PENDING, APPROVED, CHANGES_REQUESTED, REJECTED)
-    - medicalLicenseNumber: String
-    - specialization: String
-    - yearsOfExperience: Number (default 0)
-    - qualificationDocuments: [String]
-    - verificationDocuments: [ { filename, url, publicId, mimeType, size, uploadedAt } ]
-    - verificationLinks: [String]
-    - doctorReviewedBy: ObjectId
-    - doctorReviewedAt: Date
-    - doctorRejectionReason: String
-    - accountStatusChangedBy: ObjectId
-    - accountStatusChangedAt: Date
-    - accountStatusReason: String
-    - failedLoginAttempts: Number (default 0)
-    - lockUntil: Date
-    - lastLoginAt: Date
-    - timestamps: createdAt, updatedAt
-  - Otp
-    - email: String (required)
-    - purpose: String (enum: EMAIL_VERIFY, PASSWORD_RESET)
-    - otpCode: String (required)
-    - failedAttempts: Number
-    - blockedUntil: Date
-    - expiresAt: Date
-    - used: Boolean
-    - timestamps
-  - RefreshToken
-    - userId: ObjectId (ref User)
-    - tokenHash: String
-    - expiresAt: Date
-    - revoked: Boolean
-    - timestamps
-  - AuthLog
-    - userId: ObjectId (ref User, nullable)
-    - email: String
-    - action: String (enum: REGISTERED, LOGIN_SUCCESS, LOGIN_FAILED, PROFILE_VIEWED, OTP_SENT, OTP_VERIFIED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_SUCCESS, DOCTOR_VERIFICATION_RESUBMITTED, DOCTOR_APPROVED, DOCTOR_CHANGES_REQUESTED, ADMIN_CREATED, ADMIN_DELETED, ADMIN_PROFILE_UPDATED, ADMIN_PROFILE_PHOTO_UPDATED, ADMIN_PROFILE_PHOTO_REMOVED, ADMIN_PASSWORD_CHANGED, ACCOUNT_SUSPENDED, ACCOUNT_ACTIVATED)
-    - ipAddress: String
-    - userAgent: String
-    - metadata: Object
-    - timestamps
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| POST | /api/auth/register/patient | Register patient | No |
-| POST | /api/auth/register/doctor | Register doctor | No |
-| POST | /api/auth/doctor/verification/resubmit | Resubmit doctor verification | Yes (DOCTOR) |
-| POST | /api/auth/login | Login | No |
-| GET | /api/auth/me | Get current user | Yes (JWT) |
-| POST | /api/auth/verify-email-otp | Verify email OTP | No |
-| POST | /api/auth/resend-email-otp | Resend OTP | No |
-| POST | /api/auth/forgot-password | Request password reset OTP | No |
-| POST | /api/auth/reset-password | Reset password | No |
-| POST | /api/auth/refresh-token | Rotate refresh token | No (refresh token cookie required) |
-| POST | /api/auth/logout | Logout | No (refresh token cookie required) |
-| GET | /internal/admin/admins/me | Get current admin profile (internal) | Internal (x-internal-service-secret) |
-| PATCH | /internal/admin/admins/me | Update current admin profile (internal) | Internal (x-internal-service-secret) |
-| POST | /internal/admin/admins/me/photo | Upload admin profile photo (internal) | Internal (x-internal-service-secret) |
-| DELETE | /internal/admin/admins/me/photo | Remove admin profile photo (internal) | Internal (x-internal-service-secret) |
-| PATCH | /internal/admin/admins/me/password | Change admin password (internal) | Internal (x-internal-service-secret) |
-| GET | /internal/admin/admins | List admins (internal) | Internal (x-internal-service-secret) |
-| POST | /internal/admin/admins | Create admin (internal) | Internal (x-internal-service-secret) |
-| DELETE | /internal/admin/admins/:id | Delete admin (internal) | Internal (x-internal-service-secret) |
-| GET | /internal/admin/users | List users (internal) | Internal (x-internal-service-secret) |
-| GET | /internal/admin/auth-logs | List auth logs (internal) | Internal (x-internal-service-secret) |
-| GET | /internal/admin/doctors/pending | List pending doctors (internal) | Internal (x-internal-service-secret) |
-| PATCH | /internal/admin/doctors/:id/approve | Approve doctor (internal) | Internal (x-internal-service-secret) |
-| PATCH | /internal/admin/doctors/:id/reject | Reject doctor (internal) | Internal (x-internal-service-secret) |
-| PATCH | /internal/admin/users/:id/status | Update user status (internal) | Internal (x-internal-service-secret) |
-| GET | /internal/admin/dashboard/counts | Dashboard counts (internal) | Internal (x-internal-service-secret) |
-
-### Environment Variables
-```env
-PORT=5024
-NODE_ENV=development
-CLIENT_URL=http://localhost:8080
-COOKIE_SECURE=false
-
-MONGODB_URI=mongodb+srv://admin:123@cluster0.9pl6rst.mongodb.net/auth_db?retryWrites=true&w=majority&appName=Cluster0
-
-JWT_ACCESS_SECRET=sasuke
-JWT_ACCESS_EXPIRES=15m
-JWT_REFRESH_SECRET=supersecretrefreshkey
-JWT_REFRESH_EXPIRES=7d
-
-INTERNAL_SERVICE_SECRET=super_internal_secret
-
-OTP_RESEND_COOLDOWN_SECONDS=60
-OTP_RATE_LIMIT_WINDOW_MINUTES=15
-OTP_RATE_LIMIT_MAX=5
-OTP_MAX_VERIFY_ATTEMPTS=5
-OTP_ATTEMPT_BLOCK_MINUTES=15
-
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=leonxx356@gmail.com
-EMAIL_PASS=vcvg aypl mtys vfee
-EMAIL_FROM=leonxx356@gmail.com
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+COOKIE_SECURE
+MONGODB_URI
+JWT_ACCESS_SECRET
+JWT_ACCESS_EXPIRES
+JWT_REFRESH_SECRET
+JWT_REFRESH_EXPIRES
+INTERNAL_SERVICE_SECRET
+OTP_RESEND_COOLDOWN_SECONDS
+OTP_RATE_LIMIT_WINDOW_MINUTES
+OTP_RATE_LIMIT_MAX
+OTP_MAX_VERIFY_ATTEMPTS
+OTP_ATTEMPT_BLOCK_MINUTES
+EMAIL_HOST
+EMAIL_PORT
+EMAIL_USER
+EMAIL_PASS
+EMAIL_FROM
+RABBITMQ_URL
+RABBITMQ_EXCHANGE
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER
+CLOUDINARY_ADMIN_PROFILE_PHOTOS_FOLDER
+DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB
+ADMIN_PROFILE_PHOTO_MAX_FILE_SIZE_MB
 ```
 
-### Folder Structure
-```text
-auth-service/
-  .dockerignore
-  .env
-  app.js
-  Dockerfile
-  package.json
-  server.js
-  src/
-    config/
-      db.js
-      env.js
-    controllers/
-      auth.controller.js
-      internalAdmin.controller.js
-    middlewares/
-      auth.middleware.js
-      error.middleware.js
-      internal.middleware.js
-      role.middleware.js
-      validate.middleware.js
-    models/
-      AuthLog.js
-      Otp.js
-      RefreshToken.js
-      User.js
-    routes/
-      auth.routes.js
-      internalAdmin.routes.js
-    seeds/
-      admin.seed.js
-    services/
-      audit.service.js
-      auth.service.js
-      email.service.js
-      internalAdmin.service.js
-      otp.service.js
-      storage.service.js
-      token.service.js
-    utils/
-      apiResponse.js
-      AppError.js
-      asyncHandler.js
-      cookies.js
-      dashboardAnalytics.js
-      dashboardAnalytics.test.js
-      doctorVerification.js
-      doctorVerification.test.js
-      hash.js
-      jwt.js
-    validations/
-      auth.validation.js
-      internalAdmin.validation.js
-```
+### MongoDB schemas
+- User
+  - fullName: String
+  - email: String (unique)
+  - phone: String
+  - jobTitle: String
+  - profilePhoto: { url: String, publicId: String, uploadedAt: Date } or null
+  - passwordHash: String
+  - role: String (enum: PATIENT, DOCTOR, ADMIN, SUPER_ADMIN)
+  - isEmailVerified: Boolean
+  - accountStatus: String (enum: PENDING, ACTIVE, SUSPENDED, LOCKED)
+  - identityType: String (enum: NIC, PASSPORT, null)
+  - nic: String (unique, sparse)
+  - passportNumber: String (unique, sparse)
+  - nationality: String
+  - doctorVerificationStatus: String (enum: NOT_REQUIRED, PENDING, APPROVED, CHANGES_REQUESTED, REJECTED)
+  - medicalLicenseNumber: String
+  - specialization: String
+  - yearsOfExperience: Number
+  - qualificationDocuments: [String]
+  - verificationDocuments: [ { filename, url, publicId, mimeType, size, uploadedAt } ]
+  - verificationLinks: [String]
+  - doctorReviewedBy: ObjectId
+  - doctorReviewedAt: Date
+  - doctorRejectionReason: String
+  - accountStatusChangedBy: ObjectId
+  - accountStatusChangedAt: Date
+  - accountStatusReason: String
+  - failedLoginAttempts: Number
+  - lockUntil: Date
+  - lastLoginAt: Date
+  - timestamps
+- Otp
+  - email: String
+  - purpose: String (enum: EMAIL_VERIFY, PASSWORD_RESET)
+  - otpCode: String
+  - failedAttempts: Number
+  - blockedUntil: Date
+  - expiresAt: Date
+  - used: Boolean
+  - timestamps
+- RefreshToken
+  - userId: ObjectId (ref User)
+  - tokenHash: String
+  - expiresAt: Date
+  - revoked: Boolean
+  - timestamps
+- AuthLog
+  - userId: ObjectId (ref User, nullable)
+  - email: String
+  - action: String (enum: REGISTERED, LOGIN_SUCCESS, LOGIN_FAILED, PROFILE_VIEWED, OTP_SENT, OTP_VERIFIED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_SUCCESS, DOCTOR_VERIFICATION_RESUBMITTED, DOCTOR_APPROVED, DOCTOR_CHANGES_REQUESTED, ADMIN_CREATED, ADMIN_DELETED, ADMIN_PROFILE_UPDATED, ADMIN_PROFILE_PHOTO_UPDATED, ADMIN_PROFILE_PHOTO_REMOVED, ADMIN_PASSWORD_CHANGED, ACCOUNT_SUSPENDED, ACCOUNT_ACTIVATED)
+  - ipAddress: String
+  - userAgent: String
+  - metadata: Object
+  - timestamps
+
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| POST | /api/auth/register/patient | No | Register patient |
+| POST | /api/auth/register/doctor | No | Register doctor + verification docs |
+| POST | /api/auth/doctor/verification/resubmit | JWT (DOCTOR) | Resubmit doctor verification |
+| POST | /api/auth/login | No | Login |
+| GET | /api/auth/me | JWT | Get current user |
+| POST | /api/auth/verify-email-otp | No | Verify email OTP |
+| POST | /api/auth/resend-email-otp | No | Resend OTP |
+| POST | /api/auth/forgot-password | No | Request password reset OTP |
+| POST | /api/auth/reset-password | No | Reset password |
+| POST | /api/auth/refresh-token | No (refresh cookie) | Rotate refresh token |
+| POST | /api/auth/logout | No (refresh cookie) | Logout |
+| GET | /internal/admin/admins/me | Internal | Get current admin profile |
+| PATCH | /internal/admin/admins/me | Internal | Update admin profile |
+| POST | /internal/admin/admins/me/photo | Internal | Upload admin profile photo |
+| DELETE | /internal/admin/admins/me/photo | Internal | Remove admin profile photo |
+| PATCH | /internal/admin/admins/me/password | Internal | Change admin password |
+| GET | /internal/admin/admins | Internal | List admins |
+| POST | /internal/admin/admins | Internal | Create admin |
+| DELETE | /internal/admin/admins/:id | Internal | Delete admin |
+| GET | /internal/admin/users | Internal | List users |
+| GET | /internal/admin/auth-logs | Internal | Auth logs |
+| GET | /internal/admin/doctors/pending | Internal | Pending doctors |
+| PATCH | /internal/admin/doctors/:id/approve | Internal | Approve doctor |
+| PATCH | /internal/admin/doctors/:id/reject | Internal | Reject doctor |
+| PATCH | /internal/admin/users/:id/status | Internal | Update user status |
+| GET | /internal/admin/dashboard/counts | Internal | Dashboard counts |
+
+### Events
+- Publishes (RabbitMQ):
+  - notification.user.registered
+  - notification.doctor.approved
+  - notification.doctor.rejected
+  - notification.account.suspended
+  - notification.account.reactivated
 
 ---
 
-## Service 5: patient-service
+## patient-service
 ### Purpose
-Manages patient profiles and reports, and fetches appointment history and prescription data from upstream services.
+Patient profile management, report uploads, appointment history, and prescription lookup.
 
-### Tech Stack
+### Packages
 Dependencies:
 - axios@^1.15.0
 - cloudinary@^2.8.0
@@ -499,96 +364,243 @@ Dependencies:
 Dev dependencies:
 - nodemon@^3.1.14
 
-### Database
-- Database name: value comes from MONGODB_URI (example shows mongodb+srv: without a database name)
-- Models:
-  - Patient
-    - userId: String (required, unique)
-    - email: String
-    - fullName: String (default "Patient")
-    - dateOfBirth: Date
-    - bloodGroup: String (enum: A+, A-, B+, B-, AB+, AB-, O+, O-)
-    - contactNumber: String
-    - address: String
-    - allergies: [String]
-    - reports: [ { filename, url, publicId, resourceType, mimeType, size, uploadDate } ]
-    - medicalNotes: String
-    - timestamps
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| GET | /api/patients/profile | Get patient profile | Yes (PATIENT) |
-| PUT | /api/patients/profile | Update patient profile | Yes (PATIENT) |
-| POST | /api/patients/reports | Upload report | Yes (PATIENT) |
-| GET | /api/patients/reports | List reports | Yes (PATIENT) |
-| DELETE | /api/patients/reports | Delete report | Yes (PATIENT) |
-| GET | /api/patients/history | Appointment history | Yes (PATIENT) |
-| GET | /api/patients/prescriptions | Prescriptions | Yes (PATIENT) |
-| GET | /internal/patients/:patientId | Internal patient profile | Internal (x-internal-service-secret) |
-
-### Environment Variables
-```env
-PORT=5028
-NODE_ENV=development
-CLIENT_URL=http://localhost:8080
-MONGODB_URI=mongodb+srv:
-JWT_ACCESS_SECRET=sasuke
-INTERNAL_SERVICE_SECRET=super_internal_secret
-APPOINTMENT_SERVICE_URL=http://localhost:5027
-DOCTOR_SERVICE_URL=http://localhost:5029
-REPORT_MAX_FILE_SIZE_MB=10
-CLOUDINARY_CLOUD_NAME=dbcuhn1bi
-CLOUDINARY_API_KEY=353337125652862
-CLOUDINARY_API_SECRET=r1vBj2s5-r0YPMsy1Bj5LtRUPgU
-CLOUDINARY_REPORTS_FOLDER=smart-health/patient-reports
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+MONGODB_URI
+JWT_ACCESS_SECRET
+INTERNAL_SERVICE_SECRET
+APPOINTMENT_SERVICE_URL
+DOCTOR_SERVICE_URL
+REPORT_MAX_FILE_SIZE_MB
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+CLOUDINARY_REPORTS_FOLDER
 ```
 
-### Folder Structure
-```text
-patient-service/
-  .env.example
-  .gitignore
-  app.js
-  Dockerfile
-  package.json
-  server.js
-  src/
-    config/
-      env.js
-    controllers/
-      patient.controller.js
-    middlewares/
-      auth.middleware.js
-      error.middleware.js
-      internal.middleware.js
-      role.middleware.js
-      validate.middleware.js
-    models/
-      Patient.js
-    routes/
-      internal.routes.js
-      patient.routes.js
-    services/
-      patient.service.js
-      storage.service.js
-      upstream.service.js
-    utils/
-      apiResponse.js
-      AppError.js
-      asyncHandler.js
-    validations/
-      patient.validation.js
-```
+### MongoDB schemas
+- Patient
+  - userId: String (unique)
+  - email: String
+  - fullName: String
+  - dateOfBirth: Date
+  - bloodGroup: String (enum: A+, A-, B+, B-, AB+, AB-, O+, O-)
+  - contactNumber: String
+  - address: String
+  - allergies: [String]
+  - reports: [ { filename, url, publicId, resourceType, mimeType, size, uploadDate } ]
+  - medicalNotes: String
+  - timestamps
+
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| GET | /api/patients/profile | JWT (PATIENT) | Get patient profile |
+| PUT | /api/patients/profile | JWT (PATIENT) | Update profile |
+| POST | /api/patients/reports | JWT (PATIENT) | Upload report |
+| GET | /api/patients/reports | JWT (PATIENT) | List reports |
+| DELETE | /api/patients/reports | JWT (PATIENT) | Delete report |
+| GET | /api/patients/history | JWT (PATIENT) | Appointment history |
+| GET | /api/patients/prescriptions | JWT (PATIENT) | Prescriptions |
+| GET | /internal/patients/:patientId | Internal | Internal patient profile |
+
+### Inter-service calls
+- Appointment history: APPOINTMENT_SERVICE_URL /api/appointments
+- Prescriptions: DOCTOR_SERVICE_URL /api/prescriptions (falls back to appointment metadata)
 
 ---
 
-## Service 6: appointment-service (services/appointment-service)
+## doctor-service
 ### Purpose
-Manages appointment lifecycle, slot holds, waitlists, feedback, emergency alerts, notifications, and admin analytics. Integrates with doctor, patient, telemedicine, room, and notification systems and publishes events to RabbitMQ.
+Doctor profiles, availability, appointment responses, patient report access, and prescriptions.
 
-### Tech Stack
+### Packages
+Dependencies:
+- cloudinary@^2.9.0
+- cors@^2.8.6
+- dotenv@^17.4.2
+- express@^5.2.1
+- express-validator@^7.3.2
+- jsonwebtoken@^9.0.3
+- mongoose@^9.4.1
+- multer@^2.1.1
+
+Dev dependencies:
+- nodemon@^3.1.14
+
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+MONGODB_URI
+MONGO_URI
+JWT_ACCESS_SECRET
+JWT_SECRET
+INTERNAL_SERVICE_SECRET
+PATIENT_SERVICE_URL
+APPOINTMENT_SERVICE_URL
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER
+CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER
+DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB
+DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB
+```
+
+### MongoDB schemas
+- Doctor
+  - userId: ObjectId (ref User)
+  - hospitalId: String
+  - licenseNumber: String
+  - specialties: [String]
+  - availability: [ { weekday: Number, startHour: Number, endHour: Number, slotDurationMinutes: Number, mode: String, bufferMinutes: Number, timezone: String, active: Boolean } ]
+  - contactNumber: String
+  - address: String
+  - consultationFee: Number
+  - yearsOfExperience: Number
+  - qualifications: [ { title, institution, year, documentUrl, notes } ]
+  - bio: String
+  - profilePhoto: String
+  - isVerified: Boolean
+  - isAvailable: Boolean
+  - timestamps
+- Availability
+  - doctorId: ObjectId (ref Doctor, unique)
+  - weeklySchedule: [ { weekday, startTime, endTime, duration, mode, isActive } ]
+  - offDays: [String]
+  - blockedDates: [ { date, reason } ]
+  - timestamps
+- DoctorPatientReport
+  - doctorId: String
+  - patientId: String
+  - reportUrl: String
+  - timestamps
+- Prescription
+  - doctorId: String
+  - patientId: String
+  - appointmentId: String
+  - medicines: [ { name, dose, frequency, duration, notes } ]
+  - issuedAt: Date
+  - timestamps
+
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| GET | /api/doctors | No | List doctors |
+| POST | /api/doctors | No | Create doctor |
+| GET | /api/doctors/:id | No | Get doctor |
+| PATCH | /api/doctors/:id/profile | JWT (DOCTOR) | Update doctor profile |
+| POST | /api/doctors/:id/profile/photo | JWT (DOCTOR) | Upload profile photo |
+| POST | /api/doctors/:id/qualifications/upload | JWT (DOCTOR) | Upload qualification document |
+| PATCH | /api/doctors/:id/availability | JWT (DOCTOR) | Update availability rules |
+| GET | /api/doctors/:id/patient-reports/:patientId | JWT (DOCTOR) | Get patient reports |
+| GET | /api/availability/:doctorId | JWT | Get availability |
+| PUT | /api/availability/:doctorId | JWT | Update weekly availability |
+| GET | /api/availability/:doctorId/is-available | JWT | Check date availability |
+| GET | /api/availability/:doctorId/blocked-dates | JWT | List blocked dates |
+| POST | /api/availability/:doctorId/blocked-dates | JWT | Add blocked date |
+| DELETE | /api/availability/:doctorId/blocked-dates/:dateString | JWT | Remove blocked date |
+| PATCH | /api/appointments/:id/respond | JWT (DOCTOR) | Respond to appointment |
+| GET | /api/appointments/:id/telemedicine | JWT (DOCTOR) | Get telemedicine session info |
+| POST | /api/prescriptions | JWT (DOCTOR) | Issue prescription |
+| GET | /api/prescriptions | JWT (PATIENT) | List prescriptions for current patient |
+| GET | /api/prescriptions/patient/:patientId | Internal | List prescriptions for patient |
+| GET | /internal/doctors | Internal | List doctors |
+| GET | /internal/doctors/:id | Internal | Get doctor |
+
+### Inter-service calls
+- Appointment service: respond and telemedicine session lookup.
+- Patient service: internal patient profile for report access.
+
+---
+
+## notification-service
+### Purpose
+Consumes RabbitMQ notification events and delivers them via email, SMS (Notify.lk), or WhatsApp (Twilio). Stores delivery logs in MongoDB.
+
+### Packages
+Dependencies:
+- amqplib@^1.0.3
+- dotenv@^17.4.2
+- express@^5.2.1
+- mongoose@^9.4.1
+- nodemailer@^8.0.5
+- twilio@^5.13.1
+
+Dev dependencies:
+- nodemon@^3.1.14
+
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+SERVICE_NAME
+MONGODB_URI
+JWT_ACCESS_SECRET
+INTERNAL_SERVICE_SECRET
+RABBITMQ_URL
+RABBITMQ_EXCHANGE
+RABBITMQ_QUEUE
+RABBITMQ_BINDING_KEY
+RABBITMQ_RETRY_MS
+EMAIL_HOST
+EMAIL_PORT
+EMAIL_USER
+EMAIL_PASS
+EMAIL_FROM
+NOTIFY_LK_API_URL
+NOTIFY_LK_USER_ID
+NOTIFY_LK_API_KEY
+NOTIFY_LK_SENDER_ID
+TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN
+TWILIO_SMS_FROM
+TWILIO_WHATSAPP_FROM
+```
+
+### MongoDB schemas
+- NotificationLog
+  - event: String
+  - routingKey: String
+  - recipientId: String
+  - channels: [ { channel, status, error } ]
+  - payload: Mixed
+  - timestamps
+
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+
+### Events
+- Consumes: bound to exchange smart_health.events with binding key notification.#
+- Handles notification events:
+  - notification.user.registered
+  - notification.doctor.approved
+  - notification.doctor.rejected
+  - notification.account.suspended
+  - notification.account.reactivated
+  - notification.appointment.booked
+  - notification.appointment.confirmed
+  - notification.appointment.cancelled
+  - notification.payment.success
+  - notification.prescription.issued
+
+---
+
+## appointment-service
+### Purpose
+Appointment lifecycle, slot holds, waitlist promotions, feedback, emergency alerts, and notification preferences. Integrates with doctor, patient, telemedicine, and room services.
+
+### Packages
 Dependencies:
 - amqplib@^1.0.3
 - axios@^1.15.0
@@ -617,522 +629,196 @@ Dev dependencies:
 - nodemon@^3.1.14
 - supertest@^7.1.4
 
-### Database
-- Database name: appointment_db
-- Models:
-  - Appointment
-    - doctorId: String
-    - patientId: String
-    - hospitalId: String
-    - appointmentDate: String
-    - startTime: Date
-    - endTime: Date
-    - mode: String (enum: IN_PERSON, TELEMEDICINE)
-    - status: String (enum: HOLD, BOOKED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW, RESCHEDULED)
-    - reason: String
-    - telemedicine: { meetingLink, provider, calendarEventId }
-    - inPerson: { roomId, roomName, floor }
-    - statusTimestamps: { holdAt, bookedAt, confirmedAt, completedAt, cancelledAt, noShowAt, rescheduledAt }
-    - cancellation: { cancelledBy, cancelledByRole, reason, policyOverride }
-    - metadata: Mixed
-    - timestamps
-  - AvailabilityRule
-    - doctorId: String
-    - hospitalId: String
-    - weekday: Number
-    - startHour: Number
-    - endHour: Number
-    - slotDurationMinutes: Number
-    - bufferMinutes: Number
-    - mode: String (enum: IN_PERSON, TELEMEDICINE)
-    - timezone: String
-    - active: Boolean
-    - timestamps
-  - SlotHold
-    - doctorId: String
-    - patientId: String
-    - startTime: Date
-    - endTime: Date
-    - status: String (enum: ACTIVE, RELEASED, CONVERTED, EXPIRED)
-    - expiresAt: Date
-    - releasedAt: Date
-    - releaseReason: String
-    - timestamps
-  - Attendance
-    - appointmentId: ObjectId (ref Appointment)
-    - patientConfirmedAt: Date
-    - doctorConfirmedAt: Date
-    - patientConfirmedBy: String
-    - doctorConfirmedBy: String
-    - status: String (enum: PENDING, PARTIAL, CONFIRMED)
-    - timestamps
-  - TimeOff
-    - doctorId: String
-    - startTime: Date
-    - endTime: Date
-    - reason: String
-    - approvedBy: String
-    - active: Boolean
-    - timestamps
-  - Waitlist
-    - doctorId: String
-    - patientId: String
-    - mode: String (enum: IN_PERSON, TELEMEDICINE)
-    - preferredFrom: Date
-    - preferredTo: Date
-    - status: String (enum: ACTIVE, PROMOTED, EXPIRED, CANCELLED)
-    - promotedAppointmentId: ObjectId (ref Appointment)
-    - priority: Number
-    - timestamps
-  - EmergencyAlert
-    - appointmentId: ObjectId (ref Appointment)
-    - raisedBy: String
-    - raisedByRole: String
-    - severity: String (enum: LOW, MEDIUM, HIGH, CRITICAL)
-    - note: String
-    - status: String (enum: OPEN, ACKNOWLEDGED, RESOLVED)
-    - timestamps
-  - EmergencyResource
-    - category: String (enum: HOSPITAL, AMBULANCE, HELPLINE, POLICE, FIRE)
-    - name: String
-    - phone: String
-    - address: String
-    - city: String
-    - country: String
-    - active: Boolean
-    - timestamps
-  - Feedback
-    - appointmentId: ObjectId (ref Appointment)
-    - doctorId: String
-    - patientId: String
-    - rating: Number
-    - review: String
-    - isAnonymous: Boolean
-    - moderationStatus: String (enum: VISIBLE, HIDDEN, FLAGGED, DELETED)
-    - moderatedBy: String
-    - moderatedAt: Date
-    - timestamps
-  - NotificationLog
-    - notificationId: String
-    - appointmentId: ObjectId (ref Appointment)
-    - userId: String
-    - channel: String (enum: SMS, WHATSAPP, EMAIL)
-    - eventType: String
-    - deliveryStatus: String (enum: SENT, DELIVERED, FAILED)
-    - providerMessageId: String
-    - errorMessage: String
-    - metadata: Mixed
-    - timestamps
-  - NotificationPreference
-    - userId: String
-    - smsEnabled: Boolean
-    - whatsappEnabled: Boolean
-    - emailEnabled: Boolean
-    - timezone: String
-    - locale: String
-    - timestamps
-  - AuditLog
-    - appointmentId: ObjectId (ref Appointment)
-    - entityType: String
-    - entityId: String
-    - action: String
-    - actorId: String
-    - actorRole: String
-    - oldValue: Mixed
-    - newValue: Mixed
-    - metadata: Mixed
-    - timestamps
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| GET | /api/docs | Swagger UI | No |
-| GET | /api/doctors | Search doctors | No |
-| GET | /api/doctors/:id/availability | Doctor availability | No |
-| GET | /api/appointments | List appointments | Yes (PATIENT/DOCTOR/ADMIN/SUPER_ADMIN/STAFF) |
-| POST | /api/appointments/hold | Create slot hold | Yes (PATIENT) |
-| POST | /api/appointments | Book appointment | Yes (PATIENT) |
-| PATCH | /api/appointments/:id/cancel | Cancel appointment | Yes (PATIENT/DOCTOR/ADMIN/SUPER_ADMIN/STAFF) |
-| PATCH | /api/appointments/:id/reschedule | Reschedule appointment | Yes (PATIENT/ADMIN/SUPER_ADMIN/STAFF) |
-| PATCH | /api/appointments/:id/confirm-attendance | Confirm attendance | Yes (PATIENT/DOCTOR) |
-| PATCH | /api/appointments/:id/no-show | Mark no-show | Yes (DOCTOR/ADMIN/SUPER_ADMIN/STAFF) |
-| POST | /api/feedback | Submit feedback | Yes (PATIENT) |
-| GET | /api/feedback/doctors/:id/reviews | Public doctor reviews | No |
-| PATCH | /api/feedback/:id/moderate | Moderate feedback | Yes (ADMIN/SUPER_ADMIN/STAFF) |
-| POST | /api/waitlist | Join waitlist | Yes (PATIENT) |
-| POST | /api/emergency-alerts | Create emergency alert | Yes (DOCTOR/STAFF/ADMIN/SUPER_ADMIN) |
-| GET | /api/emergency-resources | List emergency resources | No |
-| GET | /api/notifications/preferences | Get notification preferences | Yes (JWT) |
-| PATCH | /api/notifications/preferences | Update notification preferences | Yes (JWT) |
-| GET | /api/admin/analytics | Admin analytics | Yes (ADMIN/SUPER_ADMIN/STAFF) |
-
-### Environment Variables
-```env
-PORT=5027
-NODE_ENV=development
-CLIENT_URL=http://localhost:8080
-MONGODB_URI=mongodb://localhost:27017/appointment_db
-JWT_ACCESS_SECRET=change_me
-JWT_ACCESS_EXPIRES=15m
-INTERNAL_SERVICE_SECRET=change_internal_secret
-AUTH_SERVICE_URL=http://auth-service:5024
-PATIENT_SERVICE_URL=http://patient-service:5028
-DOCTOR_SERVICE_URL=http://doctor-service:5029
-TELEMEDICINE_SERVICE_URL=http://telemedicine-service:5033
-PAYMENT_SERVICE_URL=http://payment-service:5034
-ROOM_SERVICE_URL=http://room-service:5030
-NOTIFICATION_SERVICE_URL=http://notification-service:5032
-RABBITMQ_URL=amqp://localhost:5672
-RABBITMQ_EXCHANGE=smart_health.events
-REDIS_URL=redis://localhost:6379
-SLOT_HOLD_TTL_MINUTES=10
-MAX_ACTIVE_HOLDS_PER_PATIENT=3
-CANCELLATION_CUTOFF_HOURS=12
-REMINDER_24H_ENABLED=true
-REMINDER_1H_ENABLED=true
-GOOGLE_CLIENT_ID=change_me
-GOOGLE_CLIENT_SECRET=change_me
-GOOGLE_REDIRECT_URI=http://localhost:5027/api/appointments/google/callback
-GOOGLE_CALENDAR_ID=primary
-GOOGLE_ENCRYPTION_KEY=change_32_chars_minimum_key
-TWILIO_ACCOUNT_SID=change_me
-TWILIO_AUTH_TOKEN=change_me
-TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-TWILIO_SMS_FROM=+10000000000
-SWAGGER_SERVER_URL=http://localhost:5027
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+MONGODB_URI
+JWT_ACCESS_SECRET
+JWT_ACCESS_EXPIRES
+INTERNAL_SERVICE_SECRET
+AUTH_SERVICE_URL
+PATIENT_SERVICE_URL
+DOCTOR_SERVICE_URL
+TELEMEDICINE_SERVICE_URL
+PAYMENT_SERVICE_URL
+ROOM_SERVICE_URL
+NOTIFICATION_SERVICE_URL
+RABBITMQ_URL
+RABBITMQ_EXCHANGE
+REDIS_URL
+SLOT_HOLD_TTL_MINUTES
+MAX_ACTIVE_HOLDS_PER_PATIENT
+CANCELLATION_CUTOFF_HOURS
+REMINDER_24H_ENABLED
+REMINDER_1H_ENABLED
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI
+GOOGLE_CALENDAR_ID
+GOOGLE_REFRESH_TOKEN
+GOOGLE_ENCRYPTION_KEY
+TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN
+TWILIO_WHATSAPP_FROM
+TWILIO_SMS_FROM
+SWAGGER_SERVER_URL
 ```
 
-### Folder Structure
-```text
-services/appointment-service/
-  .dockerignore
-  .env.example
-  .gitignore
-  app.js
-  Dockerfile
-  package.json
-  server.js
-  src/
-    config/
-      db.js
-      env.js
-      rabbitmq.js
-      redis.js
-      swagger.js
-    controllers/
-      admin.controller.js
-      appointment.controller.js
-      doctor.controller.js
-      emergency.controller.js
-      feedback.controller.js
-      notification.controller.js
-      waitlist.controller.js
-    docs/
-      openapi.yaml
-    events/
-      consumers/
-        notificationStatus.consumer.js
-      publishers/
-        eventPublisher.js
-    integrations/
-      doctorService.client.js
-      googleCalendar.client.js
-      patientService.client.js
-      roomService.client.js
-      telemedicineService.client.js
-      twilio.provider.js
-    jobs/
-      workers.js
-    middlewares/
-      auth.middleware.js
-      error.middleware.js
-      rateLimit.middleware.js
-      requestId.middleware.js
-      role.middleware.js
-      validate.middleware.js
-    models/
-      Appointment.js
-      Attendance.js
-      AuditLog.js
-      AvailabilityRule.js
-      EmergencyAlert.js
-      EmergencyResource.js
-      Feedback.js
-      NotificationLog.js
-      NotificationPreference.js
-      SlotHold.js
-      TimeOff.js
-      Waitlist.js
-    repositories/
-      appointment.repository.js
-    routes/
-      admin.routes.js
-      appointment.routes.js
-      docs.routes.js
-      doctor.routes.js
-      emergency.routes.js
-      emergencyResource.routes.js
-      feedback.routes.js
-      notification.routes.js
-      waitlist.routes.js
-    services/
-      admin.service.js
-      appointment.service.js
-      audit.service.js
-      doctor.service.js
-      emergency.service.js
-      feedback.service.js
-      notification.service.js
-      waitlist.service.js
-    utils/
-      apiResponse.js
-      AppError.js
-      asyncHandler.js
-      constants.js
-      dateTime.js
-      logger.js
-    validations/
-      admin.validation.js
-      appointment.validation.js
-      doctor.validation.js
-      emergency.validation.js
-      feedback.validation.js
-      notification.validation.js
-      waitlist.validation.js
-  tests/
-    integration/
-      health.test.js
-    unit/
-      dateTime.test.js
-```
+### MongoDB schemas
+- Appointment
+  - doctorId: String
+  - patientId: String
+  - hospitalId: String
+  - appointmentDate: String
+  - startTime: Date
+  - endTime: Date
+  - mode: String (enum: IN_PERSON, TELEMEDICINE)
+  - status: String (enum: HOLD, BOOKED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW, RESCHEDULED)
+  - reason: String
+  - telemedicine: { meetingLink, provider, calendarEventId }
+  - inPerson: { roomId, roomName, floor }
+  - statusTimestamps: { holdAt, bookedAt, confirmedAt, completedAt, cancelledAt, noShowAt, rescheduledAt }
+  - cancellation: { cancelledBy, cancelledByRole, reason, policyOverride }
+  - metadata: Mixed
+  - timestamps
+- AvailabilityRule
+  - doctorId: String
+  - hospitalId: String
+  - weekday: Number
+  - startHour: Number
+  - endHour: Number
+  - slotDurationMinutes: Number
+  - bufferMinutes: Number
+  - mode: String (enum: IN_PERSON, TELEMEDICINE)
+  - timezone: String
+  - active: Boolean
+  - timestamps
+- SlotHold
+  - doctorId: String
+  - patientId: String
+  - startTime: Date
+  - endTime: Date
+  - status: String (enum: ACTIVE, RELEASED, CONVERTED, EXPIRED)
+  - expiresAt: Date
+  - releasedAt: Date
+  - releaseReason: String
+  - timestamps
+- Attendance
+  - appointmentId: ObjectId (ref Appointment)
+  - patientConfirmedAt: Date
+  - doctorConfirmedAt: Date
+  - patientConfirmedBy: String
+  - doctorConfirmedBy: String
+  - status: String (enum: PENDING, PARTIAL, CONFIRMED)
+  - timestamps
+- TimeOff
+  - doctorId: String
+  - startTime: Date
+  - endTime: Date
+  - reason: String
+  - approvedBy: String
+  - active: Boolean
+  - timestamps
+- Waitlist
+  - doctorId: String
+  - patientId: String
+  - mode: String (enum: IN_PERSON, TELEMEDICINE)
+  - preferredFrom: Date
+  - preferredTo: Date
+  - status: String (enum: ACTIVE, PROMOTED, EXPIRED, CANCELLED)
+  - promotedAppointmentId: ObjectId (ref Appointment)
+  - priority: Number
+  - timestamps
+- EmergencyAlert
+  - appointmentId: ObjectId (ref Appointment)
+  - raisedBy: String
+  - raisedByRole: String
+  - severity: String (enum: LOW, MEDIUM, HIGH, CRITICAL)
+  - note: String
+  - status: String (enum: OPEN, ACKNOWLEDGED, RESOLVED)
+  - timestamps
+- EmergencyResource
+  - category: String (enum: HOSPITAL, AMBULANCE, HELPLINE, POLICE, FIRE)
+  - name: String
+  - phone: String
+  - address: String
+  - city: String
+  - country: String
+  - active: Boolean
+  - timestamps
+- Feedback
+  - appointmentId: ObjectId (ref Appointment)
+  - doctorId: String
+  - patientId: String
+  - rating: Number
+  - review: String
+  - isAnonymous: Boolean
+  - moderationStatus: String (enum: VISIBLE, HIDDEN, FLAGGED, DELETED)
+  - moderatedBy: String
+  - moderatedAt: Date
+  - timestamps
+- NotificationLog
+  - notificationId: String
+  - appointmentId: ObjectId (ref Appointment)
+  - userId: String
+  - channel: String (enum: SMS, WHATSAPP, EMAIL)
+  - eventType: String
+  - deliveryStatus: String (enum: SENT, DELIVERED, FAILED)
+  - providerMessageId: String
+  - errorMessage: String
+  - metadata: Mixed
+  - timestamps
+- NotificationPreference
+  - userId: String
+  - smsEnabled: Boolean
+  - whatsappEnabled: Boolean
+  - emailEnabled: Boolean
+  - timezone: String
+  - locale: String
+  - timestamps
+- AuditLog
+  - appointmentId: ObjectId (ref Appointment)
+  - entityType: String
+  - entityId: String
+  - action: String
+  - actorId: String
+  - actorRole: String
+  - oldValue: Mixed
+  - newValue: Mixed
+  - metadata: Mixed
+  - timestamps
 
----
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| GET | /api/docs | No | Swagger UI |
+| GET | /api/doctors | No | Search doctors |
+| GET | /api/doctors/:id/availability | No | Doctor availability |
+| GET | /api/appointments | JWT (PATIENT, DOCTOR, ADMIN, SUPER_ADMIN, STAFF) | List appointments |
+| GET | /api/appointments/:id | JWT (PATIENT, DOCTOR, ADMIN, SUPER_ADMIN, STAFF) | Get appointment |
+| POST | /api/appointments/hold | JWT (PATIENT) | Create slot hold |
+| POST | /api/appointments | JWT (PATIENT) | Book appointment |
+| PATCH | /api/appointments/:id/cancel | JWT (PATIENT, DOCTOR, ADMIN, SUPER_ADMIN, STAFF) | Cancel appointment |
+| PATCH | /api/appointments/:id/reschedule | JWT (PATIENT, ADMIN, SUPER_ADMIN, STAFF) | Reschedule appointment |
+| PATCH | /api/appointments/:id/confirm-attendance | JWT (PATIENT, DOCTOR) | Confirm attendance |
+| PATCH | /api/appointments/:id/no-show | JWT (DOCTOR, ADMIN, SUPER_ADMIN, STAFF) | Mark no show |
+| PATCH | /api/appointments/:id/respond | JWT (DOCTOR) | Respond to appointment |
+| GET | /api/appointments/:id/telemedicine | JWT (DOCTOR, PATIENT) | Telemedicine session info |
+| POST | /api/feedback | JWT (PATIENT) | Submit feedback |
+| GET | /api/feedback/doctors/:id/reviews | No | Public doctor reviews |
+| PATCH | /api/feedback/:id/moderate | JWT (ADMIN, SUPER_ADMIN, STAFF) | Moderate feedback |
+| POST | /api/waitlist | JWT (PATIENT) | Join waitlist |
+| POST | /api/emergency-alerts | JWT (DOCTOR, STAFF, ADMIN, SUPER_ADMIN) | Create emergency alert |
+| GET | /api/emergency-resources | No | List emergency resources |
+| GET | /api/notifications/preferences | JWT | Get notification preferences |
+| PATCH | /api/notifications/preferences | JWT | Update notification preferences |
+| GET | /api/admin/analytics | JWT (ADMIN, SUPER_ADMIN, STAFF) | Admin analytics |
 
-## Service 7: payment-service (services/payment-service)
-### Purpose
-Manages appointment payment records and publishes payment lifecycle events.
-
-### Tech Stack
-Dependencies:
-- amqplib@^0.10.9
-- cors@^2.8.5
-- dotenv@^17.2.3
-- express@^5.1.0
-- helmet@^8.1.0
-- jsonwebtoken@^9.0.2
-- mongoose@^8.19.1
-- morgan@^1.10.0
-- uuid@^13.0.0
-
-Dev dependencies:
-- nodemon@^3.1.10
-
-### Database
-- Database name: payment_db
-- Models:
-  - Payment
-    - appointmentId: String
-    - patientId: String
-    - doctorId: String
-    - amount: Number
-    - currency: String
-    - status: String (enum: PENDING, AUTHORIZED, CAPTURED, FAILED, REFUNDED)
-    - provider: String
-    - providerPaymentId: String
-    - metadata: Mixed
-    - timestamps
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| POST | /api/payments/checkout | Create checkout session | Yes (JWT) |
-| PATCH | /api/payments/:id/capture | Capture payment | Yes (JWT) |
-| PATCH | /api/payments/:id/fail | Mark payment failed | Yes (JWT) |
-| GET | /api/payments/appointment/:appointmentId | Get payment by appointment | Yes (JWT) |
-
-### Environment Variables
-```env
-PORT=5034
-NODE_ENV=development
-CLIENT_URL=http://localhost:8080
-MONGODB_URI=mongodb://localhost:27017/payment_db
-JWT_ACCESS_SECRET=change_me
-RABBITMQ_URL=amqp://localhost:5672
-RABBITMQ_EXCHANGE=smart_health.events
-INTERNAL_SERVICE_SECRET=change_me
-```
-
-### Folder Structure
-```text
-services/payment-service/
-  .dockerignore
-  .env.example
-  .gitignore
-  app.js
-  Dockerfile
-  package.json
-  server.js
-  src/
-    config/
-      db.js
-      env.js
-    controllers/
-      payment.controller.js
-    events/
-      publishers/
-        eventPublisher.js
-    middlewares/
-      auth.middleware.js
-      error.middleware.js
-    models/
-      Payment.js
-    routes/
-      payment.routes.js
-    services/
-      payment.service.js
-    utils/
-      apiResponse.js
-      AppError.js
-      asyncHandler.js
-```
-
----
-
-## Service 8: doctor-service
-### Purpose
-Provides a minimal doctor directory with basic create and read endpoints.
-
-### Tech Stack
-Dependencies:
-- cors@^2.8.6
-- dotenv@^17.4.2
-- express@^5.2.1
-- express-validator@^7.3.2
-- jsonwebtoken@^9.0.3
-- mongoose@^9.4.1
-
-Dev dependencies:
-- nodemon@^3.1.14
-
-### Database
-- Database name: doctor-db
-- Models:
-  - Doctor
-    - userId: ObjectId (ref User)
-    - licenseNumber: String
-    - specialties: [String]
-    - bio: String
-    - isVerified: Boolean
-    - timestamps
-
-### API Endpoints
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | /health | Health check | No |
-| GET | /api/doctors | List doctors | No |
-| GET | /api/doctors/:id | Get doctor by id | No |
-| POST | /api/doctors | Create doctor | No |
-
-### Environment Variables
-```env
-PORT=5003
-MONGO_URI=mongodb://localhost:27017/doctor-db
-JWT_SECRET=your_jwt_secret_here
-```
-
-### Folder Structure
-```text
-doctor-service/
-  .env
-  .gitignore
-  package.json
-  src/
-    app.js
-    server.js
-    config/
-      env.js
-    controllers/
-      doctor.controller.js
-    middlewares/
-      error.middleware.js
-      validate.middleware.js
-    models/
-      doctor.model.js
-    routes/
-      doctor.routes.js
-    services/
-      doctor.service.js
-    utils/
-      apiResponse.js
-      asyncHandler.js
-    validations/
-      doctor.validation.js
-```
-
----
-
-## Service 9: notification-service
-### Purpose
-No source files were found in backend/notification-service (node_modules excluded). This service cannot be documented further from the backend folder.
-
-### Tech Stack
-Not available in backend/notification-service.
-
-### Database
-Not available.
-
-### API Endpoints
-No routes found.
-
-### Environment Variables
-No .env or .env.example found in backend/notification-service.
-
-### Folder Structure
-```text
-notification-service/
-  (no source files; node_modules excluded)
-```
-
----
-
-## Service 10: telemedicine-service
-### Purpose
-No source files were found in backend/telemedicine-service. This service cannot be documented further from the backend folder.
-
-### Tech Stack
-Not available in backend/telemedicine-service.
-
-### Database
-Not available.
-
-### API Endpoints
-No routes found.
-
-### Environment Variables
-No .env or .env.example found in backend/telemedicine-service.
-
-### Folder Structure
-```text
-telemedicine-service/
-  (empty)
-```
-
----
-
-## Inter-Service Communication
-- api-gateway proxies external REST calls to auth-service, admin-service, patient-service, ai-chatbot-service, appointment-service, and payment-service; it applies JWT validation for protected proxy routes.
-- admin-service calls auth-service internal endpoints via AUTH_SERVICE_URL with x-internal-service-secret to manage admins, users, and doctor approvals.
-- patient-service calls appointment-service /api/appointments for history, and doctor-service /api/prescriptions for prescriptions when DOCTOR_SERVICE_URL is configured; it falls back to appointment-service metadata if doctor-service is unavailable.
-- appointment-service calls doctor-service internal endpoints (/internal/doctors and /internal/doctors/:id), patient-service internal endpoints (/internal/patients/:id), telemedicine-service internal sessions (/internal/sessions), and room-service internal room assignment (/internal/rooms/assign) using x-internal-service-secret.
-- appointment-service integrates with Google Calendar (googleapis) for telemedicine meetings and can initialize Twilio for notifications.
-- ai-chatbot-service calls the Gemini API via @google/generative-ai.
-- auth-service integrates with Cloudinary for document/photo storage and SMTP via Nodemailer.
-
-### RabbitMQ Events
-Published:
-- appointment-service
+### Events
+- Publishes (RabbitMQ):
   - appointment.hold.created
   - telemedicine.appointment.scheduled
   - appointment.booked
@@ -1149,24 +835,104 @@ Published:
   - emergency.alert.created
   - slot.released
   - notification.appointment.reminder
-- payment-service
+- Consumes:
+  - consumer file exists for notification delivery updates (not wired in runtime)
+
+### Inter-service calls
+- doctor-service internal APIs for doctor profiles
+- patient-service internal APIs for patient profiles
+- telemedicine-service internal sessions
+- room-service internal room assignment
+- Google Calendar for telemedicine meetings
+
+---
+
+## payment-service
+### Purpose
+Stores appointment payment records and publishes payment events.
+
+### Packages
+Dependencies:
+- amqplib@^0.10.9
+- cors@^2.8.5
+- dotenv@^17.2.3
+- express@^5.1.0
+- helmet@^8.1.0
+- jsonwebtoken@^9.0.2
+- mongoose@^8.19.1
+- morgan@^1.10.0
+- uuid@^13.0.0
+
+Dev dependencies:
+- nodemon@^3.1.10
+
+### Environment variables (names only)
+```
+PORT
+NODE_ENV
+CLIENT_URL
+MONGODB_URI
+JWT_ACCESS_SECRET
+RABBITMQ_URL
+RABBITMQ_EXCHANGE
+INTERNAL_SERVICE_SECRET
+```
+
+### MongoDB schemas
+- Payment
+  - appointmentId: String
+  - patientId: String
+  - doctorId: String
+  - amount: Number
+  - currency: String
+  - status: String (enum: PENDING, AUTHORIZED, CAPTURED, FAILED, REFUNDED)
+  - provider: String
+  - providerPaymentId: String
+  - metadata: Mixed
+  - timestamps
+
+### Routes
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | /health | No | Health check |
+| POST | /api/payments/checkout | JWT | Create checkout session |
+| PATCH | /api/payments/:id/capture | JWT | Capture payment |
+| PATCH | /api/payments/:id/fail | JWT | Mark payment failed |
+| GET | /api/payments/appointment/:appointmentId | JWT | Get payment by appointment |
+
+### Events
+- Publishes (RabbitMQ):
   - payment.checkout.created
   - payment.captured
   - notification.payment.captured
   - payment.failed
 
-Consumed:
-- appointment-service defines handleNotificationDeliveryUpdate (updates NotificationLog using notificationId, deliveryStatus, providerMessageId, errorMessage). Wiring to a queue/consumer is not shown in code.
+---
 
-## Authentication & Security
-- auth-service issues JWT access tokens (userId, role, email, fullName, phone) and refresh tokens. Refresh tokens are hashed and stored in MongoDB, and set as httpOnly cookies; cookie security is controlled by COOKIE_SECURE or NODE_ENV.
-- JWT access validation is enforced by protect middlewares in admin-service, api-gateway, ai-chatbot-service, patient-service, appointment-service, and payment-service.
-- Role-based access control is implemented via allowRoles in admin-service, auth-service, patient-service, and appointment-service. Roles defined across services include PATIENT, DOCTOR, ADMIN, SUPER_ADMIN, and STAFF (appointment-service).
-- Internal service communication is protected by x-internal-service-secret in auth-service and patient-service internal routes. Appointment-service uses this header when calling internal endpoints in other services.
+## telemedicine-service
+### Purpose
+Directory exists but is empty. No source code to document.
 
-## Docker & Kubernetes
-### Dockerfiles
-#### admin-service
+---
+
+## Inter-service communication summary
+- api-gateway proxies external traffic to auth-service, admin-service, patient-service, ai-chatbot-service, doctor-service, appointment-service, and payment-service.
+- admin-service uses auth-service internal endpoints with x-internal-service-secret.
+- auth-service publishes notification.* events to RabbitMQ.
+- patient-service calls appointment-service for history and doctor-service for prescriptions (falls back to appointment metadata).
+- doctor-service calls appointment-service for appointment responses and telemedicine lookups, and patient-service internal profile for reports.
+- appointment-service calls doctor-service and patient-service internal endpoints, telemedicine-service internal sessions, and room-service internal room assignment.
+- notification-service consumes notification.* routing keys and delivers messages to email/SMS/WhatsApp.
+
+## Authentication and security
+- JWT access tokens validated in admin-service, api-gateway, ai-chatbot-service, patient-service, doctor-service, appointment-service, and payment-service.
+- Role based access enforced where applicable (ADMIN, SUPER_ADMIN, STAFF, DOCTOR, PATIENT).
+- Internal endpoints require x-internal-service-secret.
+
+---
+
+## Dockerfiles
+### backend/admin-service/Dockerfile
 ```Dockerfile
 FROM node:22-alpine
 
@@ -1182,7 +948,7 @@ EXPOSE 5025
 CMD ["npm", "start"]
 ```
 
-#### ai-chatbot-service
+### backend/ai-chatbot-service/Dockerfile
 ```Dockerfile
 FROM node:22-alpine AS deps
 
@@ -1204,7 +970,7 @@ EXPOSE 5031
 CMD ["npm", "start"]
 ```
 
-#### api-gateway
+### backend/api-gateway/Dockerfile
 ```Dockerfile
 FROM node:22-alpine
 
@@ -1220,7 +986,7 @@ EXPOSE 5026
 CMD ["npm", "start"]
 ```
 
-#### auth-service
+### backend/auth-service/Dockerfile
 ```Dockerfile
 FROM node:22-alpine
 
@@ -1236,7 +1002,7 @@ EXPOSE 5024
 CMD ["npm", "start"]
 ```
 
-#### patient-service
+### backend/patient-service/Dockerfile
 ```Dockerfile
 FROM node:22-alpine AS deps
 
@@ -1258,7 +1024,34 @@ EXPOSE 5028
 CMD ["npm", "start"]
 ```
 
-#### appointment-service
+### backend/doctor-service/Dockerfile
+```Dockerfile
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY . .
+
+EXPOSE 5029
+
+CMD ["npm", "start"]
+```
+
+### backend/notification-service/Dockerfile
+```Dockerfile
+FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+EXPOSE 5032
+CMD ["node", "src/server.js"]
+```
+
+### backend/services/appointment-service/Dockerfile
 ```Dockerfile
 FROM node:22-alpine
 
@@ -1274,7 +1067,7 @@ EXPOSE 5027
 CMD ["npm", "start"]
 ```
 
-#### payment-service
+### backend/services/payment-service/Dockerfile
 ```Dockerfile
 FROM node:22-alpine
 
@@ -1290,11 +1083,10 @@ EXPOSE 5034
 CMD ["npm", "start"]
 ```
 
-#### doctor-service
-No Dockerfile found in backend/doctor-service.
+---
 
-### Kubernetes Manifests (k8s/)
-#### admin-mongo.yaml
+## Kubernetes manifests (k8s/)
+### admin-mongo.yaml
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -1359,7 +1151,7 @@ spec:
       targetPort: 27017
 ```
 
-#### admin-service.yaml
+### admin-service.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -1405,6 +1197,16 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: AUTH_SERVICE_URL
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_URL
+            - name: RABBITMQ_EXCHANGE
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_EXCHANGE
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:
@@ -1441,7 +1243,7 @@ spec:
       targetPort: 5025
 ```
 
-#### ai-chatbot-service-deployment.yaml
+### ai-chatbot-service-deployment.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -1482,6 +1284,10 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: GEMINI_MODEL
+            - name: GEMINI_FALLBACK_MODELS
+              value: gemini-1.5-flash
+            - name: GEMINI_MAX_RETRIES
+              value: "2"
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:
@@ -1513,7 +1319,7 @@ spec:
             periodSeconds: 20
 ```
 
-#### ai-chatbot-service-service.yaml
+### ai-chatbot-service-service.yaml
 ```yaml
 apiVersion: v1
 kind: Service
@@ -1528,7 +1334,7 @@ spec:
       targetPort: 5031
 ```
 
-#### api-gateway.yaml
+### api-gateway.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -1625,7 +1431,7 @@ spec:
       targetPort: 5026
 ```
 
-#### appointment-deployment.yaml
+### appointment-deployment.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -1742,7 +1548,7 @@ spec:
       targetPort: 5027
 ```
 
-#### auth-mongo.yaml
+### auth-mongo.yaml
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -1807,7 +1613,7 @@ spec:
       targetPort: 27017
 ```
 
-#### auth-service.yaml
+### auth-service.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -1898,6 +1704,16 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: EMAIL_PORT
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_URL
+            - name: RABBITMQ_EXCHANGE
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_EXCHANGE
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:
@@ -1954,7 +1770,152 @@ spec:
       targetPort: 5024
 ```
 
-#### patient-service-deployment.yaml
+### configmap.yaml
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smart-health-config
+  namespace: smart-health
+data:
+  AUTH_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/auth_db?retryWrites=true&w=majority
+  ADMIN_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/admin_db?retryWrites=true&w=majority
+  APPOINTMENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/appointment_db?retryWrites=true&w=majority
+  PAYMENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/payment_db?retryWrites=true&w=majority
+  PATIENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/patient_db?retryWrites=true&w=majority
+  AUTH_SERVICE_URL: http://auth-service:5024
+  ADMIN_SERVICE_URL: http://admin-service:5025
+  PATIENT_SERVICE_URL: http://patient-service:5028
+  AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
+  APPOINTMENT_SERVICE_URL: http://appointment-service:5027
+  DOCTOR_SERVICE_URL: http://doctor-service:5029
+  PAYMENT_SERVICE_URL: http://payment-service:5034
+  TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5033
+  NOTIFICATION_SERVICE_URL: http://notification-service:5032
+  RABBITMQ_URL: amqp://rabbitmq:5672
+  RABBITMQ_EXCHANGE: smart_health.events
+  REDIS_URL: redis://redis:6379
+  CLIENT_URL: http://smart-health.local
+  NODE_ENV: production
+  COOKIE_SECURE: "false"
+  REPORT_MAX_FILE_SIZE_MB: "10"
+  CLOUDINARY_REPORTS_FOLDER: smart-health/patient-reports
+  GEMINI_MODEL: gemini-1.5-flash
+  JWT_ACCESS_EXPIRES: 15m
+  JWT_REFRESH_EXPIRES: 7d
+  OTP_RESEND_COOLDOWN_SECONDS: "60"
+  OTP_RATE_LIMIT_WINDOW_MINUTES: "15"
+  OTP_RATE_LIMIT_MAX: "5"
+  OTP_MAX_VERIFY_ATTEMPTS: "5"
+  OTP_ATTEMPT_BLOCK_MINUTES: "15"
+  EMAIL_HOST: smtp.gmail.com
+  EMAIL_PORT: "587"
+```
+
+### frontend.yaml
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: smart-health
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: smart-health-care-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: smart-health
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+```
+
+### ingress.yaml
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smart-health-ingress
+  namespace: smart-health
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: smart-health.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+```
+
+### kustomization.yaml
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - auth-service.yaml
+  - admin-service.yaml
+  - patient-service-deployment.yaml
+  - patient-service-service.yaml
+  - ai-chatbot-service-deployment.yaml
+  - ai-chatbot-service-service.yaml
+  - api-gateway.yaml
+  - appointment-deployment.yaml
+  - payment-deployment.yaml
+  - frontend.yaml
+  - ingress.yaml
+```
+
+### namespace.yaml
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smart-health
+```
+
+### patient-service-deployment.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -2061,7 +2022,7 @@ spec:
             periodSeconds: 20
 ```
 
-#### patient-service-service.yaml
+### patient-service-service.yaml
 ```yaml
 apiVersion: v1
 kind: Service
@@ -2076,7 +2037,7 @@ spec:
       targetPort: 5028
 ```
 
-#### payment-deployment.yaml
+### payment-deployment.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -2158,149 +2119,10 @@ spec:
       targetPort: 5034
 ```
 
-#### configmap.yaml
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: smart-health-config
-  namespace: smart-health
-data:
-  AUTH_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/auth_db?retryWrites=true&w=majority
-  ADMIN_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/admin_db?retryWrites=true&w=majority
-  APPOINTMENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/appointment_db?retryWrites=true&w=majority
-  PAYMENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/payment_db?retryWrites=true&w=majority
-  PATIENT_MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/patient_db?retryWrites=true&w=majority
-  AUTH_SERVICE_URL: http://auth-service:5024
-  ADMIN_SERVICE_URL: http://admin-service:5025
-  PATIENT_SERVICE_URL: http://patient-service:5028
-  AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
-  APPOINTMENT_SERVICE_URL: http://appointment-service:5027
-  DOCTOR_SERVICE_URL: http://doctor-service:5029
-  PAYMENT_SERVICE_URL: http://payment-service:5034
-  TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5033
-  NOTIFICATION_SERVICE_URL: http://notification-service:5032
-  RABBITMQ_URL: amqp://rabbitmq:5672
-  REDIS_URL: redis://redis:6379
-  CLIENT_URL: http://smart-health.local
-  NODE_ENV: production
-  COOKIE_SECURE: "false"
-  REPORT_MAX_FILE_SIZE_MB: "10"
-  CLOUDINARY_REPORTS_FOLDER: smart-health/patient-reports
-  GEMINI_MODEL: gemini-1.5-flash
-  JWT_ACCESS_EXPIRES: 15m
-  JWT_REFRESH_EXPIRES: 7d
-  OTP_RESEND_COOLDOWN_SECONDS: "60"
-  OTP_RATE_LIMIT_WINDOW_MINUTES: "15"
-  OTP_RATE_LIMIT_MAX: "5"
-  OTP_MAX_VERIFY_ATTEMPTS: "5"
-  OTP_ATTEMPT_BLOCK_MINUTES: "15"
-  EMAIL_HOST: smtp.gmail.com
-  EMAIL_PORT: "587"
-```
-
-#### frontend.yaml
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend
-  namespace: smart-health
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-        - name: frontend
-          image: smart-health-care-frontend:latest
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 80
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 15
-            periodSeconds: 20
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend
-  namespace: smart-health
-spec:
-  selector:
-    app: frontend
-  ports:
-    - port: 80
-      targetPort: 80
-```
 
-#### ingress.yaml
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: smart-health-ingress
-  namespace: smart-health
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: smart-health.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
-```
-
-#### kustomization.yaml
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - namespace.yaml
-  - configmap.yaml
-  - secret.yaml
-  - auth-service.yaml
-  - admin-service.yaml
-  - patient-service-deployment.yaml
-  - patient-service-service.yaml
-  - ai-chatbot-service-deployment.yaml
-  - ai-chatbot-service-service.yaml
-  - api-gateway.yaml
-<<<<<<< Updated upstream
-=======
-  - appointment-deployment.yaml
-  - payment-deployment.yaml
->>>>>>> Stashed changes
-  - frontend.yaml
-  - ingress.yaml
-```
-
-#### namespace.yaml
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: smart-health
-```
+## Notable inconsistencies and gaps
+- doctor-service server.js expects MONGO_URI but .env defines MONGODB_URI.
+- notification-service listens for notification.payment.success and notification.appointment.booked/confirmed, while payment-service and appointment-service publish notification.payment.captured and notification.appointment.created.
+- kustomization.yaml references secret.yaml, but that file is not present in k8s/.
+- payment-service .env appears to contain patient-service variables (paths and values do not match payment-service).

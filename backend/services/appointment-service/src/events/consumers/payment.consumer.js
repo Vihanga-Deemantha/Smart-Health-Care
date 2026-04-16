@@ -3,6 +3,16 @@ import { getRabbitChannel } from "../../config/rabbitmq.js";
 import { APPOINTMENT_STATUS } from "../../utils/constants.js";
 import logger from "../../utils/logger.js";
 import { createAuditLog } from "../../services/audit.service.js";
+import { publishEvent } from "../publishers/eventPublisher.js";
+import { getDoctorProfile } from "../../integrations/doctorService.client.js";
+import { getPatientProfile } from "../../integrations/patientService.client.js";
+
+const buildRecipientSummary = (profile, id, fallbackName) => ({
+  userId: profile?.userId || profile?._id || profile?.id || id || null,
+  fullName: profile?.fullName || profile?.name || fallbackName,
+  email: profile?.email || null,
+  phone: profile?.contactNumber || profile?.phone || null
+});
 
 const exchange = process.env.RABBITMQ_EXCHANGE || "smart_health.events";
 const queueName = process.env.APPOINTMENT_PAYMENT_EVENTS_QUEUE || "appointment.payment.events";
@@ -52,7 +62,9 @@ const handlePaymentCaptured = async (payload) => {
     }
   };
 
-  if (appointment.status !== APPOINTMENT_STATUS.CONFIRMED) {
+  const transitionedToConfirmed = appointment.status !== APPOINTMENT_STATUS.CONFIRMED;
+
+  if (transitionedToConfirmed) {
     appointment.status = APPOINTMENT_STATUS.CONFIRMED;
     appointment.statusTimestamps.confirmedAt = new Date();
   }
@@ -74,6 +86,27 @@ const handlePaymentCaptured = async (payload) => {
       currency: payload.currency
     }
   });
+
+  if (transitionedToConfirmed) {
+    const [doctorProfile, patientProfile] = await Promise.all([
+      getDoctorProfile(appointment.doctorId),
+      getPatientProfile(appointment.patientId)
+    ]);
+
+    await publishEvent("notification.appointment.confirmed", {
+      eventId: payload?.eventId || `payment-captured-${payload.paymentId || appointment._id.toString()}`,
+      occurredAt: new Date().toISOString(),
+      appointmentId: appointment._id.toString(),
+      doctorId: appointment.doctorId,
+      patientId: appointment.patientId,
+      appointmentDate: appointment.appointmentDate,
+      mode: appointment.mode,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      patient: buildRecipientSummary(patientProfile, appointment.patientId, "Patient"),
+      doctor: buildRecipientSummary(doctorProfile, appointment.doctorId, "Doctor")
+    });
+  }
 };
 
 const handlePaymentFailed = async (payload) => {

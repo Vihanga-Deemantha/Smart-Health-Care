@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarPlus, Languages, MapPin, Monitor, Stethoscope } from "lucide-react";
+import { CalendarPlus, Languages, MapPin, Monitor, Stethoscope, Star } from "lucide-react";
 import api from "../services/axios.js";
 import { getApiErrorMessage } from "../utils/getApiErrorMessage.js";
 
@@ -38,10 +38,22 @@ const languageOptions = [
 ];
 
 const DoctorSearch = () => {
+  const statusBadgeClass =
+    "inline-flex h-10 w-[84px] items-center justify-center rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide leading-none text-slate-300";
+
   const [filters, setFilters] = useState({ specialization: "", hospital: "", language: "", mode: "TELEMEDICINE" });
   const [loading, setLoading] = useState(false);
   const [doctors, setDoctors] = useState([]);
   const [error, setError] = useState("");
+  const [reviewsModal, setReviewsModal] = useState({
+    open: false,
+    doctorId: "",
+    doctorName: "",
+    reviews: [],
+    summary: { avgRating: 0, totalReviews: 0 },
+    loading: false,
+    error: ""
+  });
 
   const onChange = (event) => {
     setFilters((prev) => ({ ...prev, [event.target.name]: event.target.value }));
@@ -59,6 +71,46 @@ const DoctorSearch = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openReviewsModal = async ({ doctorId, doctorName }) => {
+    if (!doctorId) {
+      return;
+    }
+
+    setReviewsModal({
+      open: true,
+      doctorId,
+      doctorName,
+      reviews: [],
+      summary: { avgRating: 0, totalReviews: 0 },
+      loading: true,
+      error: ""
+    });
+
+    try {
+      const response = await api.get(`/feedback/doctors/${doctorId}/reviews`, {
+        params: { page: 1, limit: 20 }
+      });
+
+      const payload = response.data?.data || {};
+      setReviewsModal((prev) => ({
+        ...prev,
+        loading: false,
+        reviews: payload.reviews || [],
+        summary: payload.summary || { avgRating: 0, totalReviews: 0 }
+      }));
+    } catch (err) {
+      setReviewsModal((prev) => ({
+        ...prev,
+        loading: false,
+        error: getApiErrorMessage(err, "Unable to load reviews for this doctor.")
+      }));
+    }
+  };
+
+  const closeReviewsModal = () => {
+    setReviewsModal((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -177,8 +229,17 @@ const DoctorSearch = () => {
                     {specialization}
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
-                  {filters.mode === "TELEMEDICINE" ? "Online" : "In Person"}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openReviewsModal({ doctorId, doctorName: fullName })}
+                    className={`${statusBadgeClass} appearance-none transition hover:border-cyan-300/40 hover:text-cyan-200`}
+                  >
+                    Reviews
+                  </button>
+                  <div className={statusBadgeClass}>
+                    {filters.mode === "TELEMEDICINE" ? "Online" : "In Person"}
+                  </div>
                 </div>
               </div>
 
@@ -208,6 +269,71 @@ const DoctorSearch = () => {
           );
         })}
       </ul>
+
+      {reviewsModal.open ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeReviewsModal();
+            }
+          }}
+        >
+          <div className="w-full max-w-2xl rounded-2xl border border-white/15 bg-slate-900 p-5 text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-lg font-bold">Reviews</h3>
+                <p className="text-sm text-slate-300">{reviewsModal.doctorName || "Doctor"}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeReviewsModal}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:bg-white/10"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4">
+              {reviewsModal.loading ? (
+                <p className="text-sm text-slate-300">Loading reviews...</p>
+              ) : reviewsModal.error ? (
+                <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                  {reviewsModal.error}
+                </p>
+              ) : (
+                <>
+                  <div className="mb-3 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">
+                    <span className="inline-flex items-center gap-1 text-amber-200">
+                      <Star size={14} />
+                      Avg {Number(reviewsModal.summary?.avgRating || 0).toFixed(1)}
+                    </span>
+                    <span className="text-slate-300">{reviewsModal.summary?.totalReviews || 0} reviews</span>
+                  </div>
+
+                  {reviewsModal.reviews.length === 0 ? (
+                    <p className="text-sm text-slate-300">No reviews yet for this doctor.</p>
+                  ) : (
+                    <div className="max-h-[50vh] space-y-3 overflow-auto pr-1">
+                      {reviewsModal.reviews.map((review) => (
+                        <div key={review._id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold text-amber-200">{review.rating}/5</p>
+                            <p className="text-xs text-slate-400">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-200">{review.review || "No written review."}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

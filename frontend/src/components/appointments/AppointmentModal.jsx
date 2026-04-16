@@ -30,9 +30,25 @@ const formatAppointmentId = (id) => {
   return `APT-${String(id).slice(-4).toUpperCase()}`;
 };
 
-const AppointmentModal = ({ appointment, onClose, onJoinCall }) => {
+const AppointmentModal = ({
+  appointment,
+  onClose,
+  onJoinCall,
+  primaryActionLabel,
+  onPrimaryAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+  primaryActionDisabled,
+  secondaryActionDisabled,
+  hideDefaultActions = false,
+  showReasonInput = false,
+  reasonValue = "",
+  onReasonChange,
+  reasonPlaceholder = "Reason (optional)"
+}) => {
   const navigate = useNavigate();
   const modalRef = useRef(null);
+  const onCloseRef = useRef(onClose);
   const patient = appointment?.patient || {};
   const mode = appointment?.mode || "IN_PERSON";
   const appointmentDate = appointment?.startTime || appointment?.appointmentDate;
@@ -42,6 +58,10 @@ const AppointmentModal = ({ appointment, onClose, onJoinCall }) => {
     [appointment?.createdAt]
   );
   const appointmentId = appointment?._id || appointment?.id || "";
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const modal = modalRef.current;
@@ -57,7 +77,7 @@ const AppointmentModal = ({ appointment, onClose, onJoinCall }) => {
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
 
@@ -80,7 +100,7 @@ const AppointmentModal = ({ appointment, onClose, onJoinCall }) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, []);
 
   const handleViewReports = () => {
     if (!appointment?.patientId) {
@@ -100,7 +120,7 @@ const AppointmentModal = ({ appointment, onClose, onJoinCall }) => {
 
   const handleOverlayMouseDown = (event) => {
     if (event.target === event.currentTarget) {
-      onClose?.();
+      onCloseRef.current?.();
     }
   };
 
@@ -128,7 +148,7 @@ const AppointmentModal = ({ appointment, onClose, onJoinCall }) => {
           <button
             type="button"
             aria-label="Close appointment details"
-            onClick={onClose}
+            onClick={() => onCloseRef.current?.()}
             className="text-sm"
             style={{ color: "#8b949e" }}
           >
@@ -179,36 +199,93 @@ const AppointmentModal = ({ appointment, onClose, onJoinCall }) => {
             <h4 className="text-sm font-semibold" style={{ color: "#8b949e" }}>
               Actions
             </h4>
+            {showReasonInput ? (
+              <div className="mt-3">
+                <label className="text-xs font-semibold" style={{ color: "#8b949e" }}>
+                  Rejection reason (optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={reasonValue}
+                  onChange={(event) => onReasonChange?.(event.target.value)}
+                  placeholder={reasonPlaceholder}
+                  aria-label="Rejection reason"
+                  className="mt-2 w-full rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    borderColor: "#30363d",
+                    background: "#0d1117",
+                    color: "#e6edf3",
+                    resize: "none"
+                  }}
+                />
+              </div>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-3">
-              {mode === "TELEMEDICINE" && appointment?.videoUrl ? (
+              {primaryActionLabel ? (
                 <button
                   type="button"
-                  aria-label="Join video call"
-                  onClick={() => onJoinCall?.(appointment)}
+                  aria-label={primaryActionLabel}
+                  onClick={() => onPrimaryAction?.(appointment)}
+                  disabled={primaryActionDisabled}
                   className="rounded-lg px-4 py-2 text-sm font-semibold"
-                  style={{ background: "#00b4c8", color: "#0d1117" }}
+                  style={{
+                    background: "#238636",
+                    color: "#ffffff",
+                    opacity: primaryActionDisabled ? 0.7 : 1
+                  }}
                 >
-                  Join Video Call
+                  {primaryActionLabel}
                 </button>
               ) : null}
-              <button
-                type="button"
-                aria-label="Write prescription"
-                onClick={handleWritePrescription}
-                className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                style={{ borderColor: "#30363d", color: "#e6edf3" }}
-              >
-                Write Prescription
-              </button>
-              <button
-                type="button"
-                aria-label="View medical reports"
-                onClick={handleViewReports}
-                className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                style={{ borderColor: "#30363d", color: "#e6edf3" }}
-              >
-                View Medical Reports
-              </button>
+              {secondaryActionLabel ? (
+                <button
+                  type="button"
+                  aria-label={secondaryActionLabel}
+                  onClick={() => onSecondaryAction?.(appointment, reasonValue)}
+                  disabled={secondaryActionDisabled}
+                  className="rounded-lg border px-4 py-2 text-sm font-semibold"
+                  style={{
+                    borderColor: "#f85149",
+                    color: "#f85149",
+                    opacity: secondaryActionDisabled ? 0.7 : 1
+                  }}
+                >
+                  {secondaryActionLabel}
+                </button>
+              ) : null}
+              {!hideDefaultActions ? (
+                <>
+                  {mode === "TELEMEDICINE" && appointment?.videoUrl ? (
+                    <button
+                      type="button"
+                      aria-label="Join video call"
+                      onClick={() => onJoinCall?.(appointment)}
+                      className="rounded-lg px-4 py-2 text-sm font-semibold"
+                      style={{ background: "#00b4c8", color: "#0d1117" }}
+                    >
+                      Join Video Call
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    aria-label="Write prescription"
+                    onClick={handleWritePrescription}
+                    className="rounded-lg border px-4 py-2 text-sm font-semibold"
+                    style={{ borderColor: "#30363d", color: "#e6edf3" }}
+                  >
+                    Write Prescription
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="View medical reports"
+                    onClick={handleViewReports}
+                    className="rounded-lg border px-4 py-2 text-sm font-semibold"
+                    style={{ borderColor: "#30363d", color: "#e6edf3" }}
+                  >
+                    View Medical Reports
+                  </button>
+                </>
+              ) : null}
             </div>
           </section>
         </div>

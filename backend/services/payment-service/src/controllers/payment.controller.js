@@ -18,7 +18,8 @@ export const handleCreateCheckout = asyncHandler(async (req, res) => {
 
   const payment = await createCheckoutSession({
     ...req.body,
-    patientId
+    patientId,
+    actor: req.user
   });
 
   return sendResponse(res, 201, "Checkout created", payment);

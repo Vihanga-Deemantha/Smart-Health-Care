@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import PortalLayout from "../../components/common/PortalLayout.jsx";
 import PatientPortalNav from "../../components/patient/PatientPortalNav.jsx";
 import {
+  downloadPatientReport,
   deletePatientReport,
   fetchPatientReports,
   uploadPatientReport
@@ -21,11 +22,22 @@ const formatDate = (value) => {
   });
 };
 
+const getSafeFilename = (filename) => {
+  if (typeof filename !== "string") {
+    return "report";
+  }
+
+  const trimmed = filename.trim();
+
+  return trimmed || "report";
+};
+
 const PatientReportsPage = () => {
   const [reports, setReports] = useState([]);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [downloadingIdentifier, setDownloadingIdentifier] = useState(null);
   const [deletingIdentifier, setDeletingIdentifier] = useState(null);
 
   const loadReports = async () => {
@@ -64,6 +76,38 @@ const PatientReportsPage = () => {
       toast.error(getApiErrorMessage(error, "Report upload failed."));
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDownload = async (report) => {
+    if (!report?.url) {
+      toast.error("This report does not have a downloadable file.");
+      return;
+    }
+
+    const reportIdentifier = report.publicId || report.url;
+    setDownloadingIdentifier(reportIdentifier);
+
+    try {
+      const response = await downloadPatientReport({
+        publicId: report.publicId,
+        url: report.url
+      });
+
+      const blob = response.data;
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = getSafeFilename(report.filename);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      toast.success("Download started");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to download report."));
+    } finally {
+      setDownloadingIdentifier(null);
     }
   };
 
@@ -160,14 +204,17 @@ const PatientReportsPage = () => {
                   <p className="mt-1 text-xs text-slate-300">Uploaded: {formatDate(report.uploadDate)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a
-                    href={report.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-slate-700"
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(report)}
+                    disabled={!report.url || downloadingIdentifier === (report.publicId || report.url)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-200 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <Download size={13} /> Download
-                  </a>
+                    <Download size={13} />
+                    {downloadingIdentifier === (report.publicId || report.url)
+                      ? "Downloading..."
+                      : "Download"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(report)}

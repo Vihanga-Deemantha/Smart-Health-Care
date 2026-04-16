@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doctor-service
+  namespace: smart-health
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: doctor-service
+  template:
+    metadata:
+      labels:
+        app: doctor-service
+    spec:
+      containers:
+        - name: doctor-service
+          image: smart-health-care-doctor-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5029
+          env:
+            - name: PORT
+              value: "5029"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: NODE_ENV
+            - name: CLIENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLIENT_URL
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: DOCTOR_MONGODB_URI
+            - name: PATIENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: PATIENT_SERVICE_URL
+            - name: APPOINTMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: APPOINTMENT_SERVICE_URL
+            - name: CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLOUDINARY_DOCTOR_DOCUMENTS_FOLDER
+            - name: CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER
+            - name: DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB
+            - name: DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB
+            - name: JWT_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: JWT_ACCESS_SECRET
+            - name: INTERNAL_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: INTERNAL_SERVICE_SECRET
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_API_KEY
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: CLOUDINARY_API_SECRET
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5029
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5029
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: doctor-service
+  namespace: smart-health
+spec:
+  selector:
+    app: doctor-service
+  ports:
+    - port: 5029
+      targetPort: 5029

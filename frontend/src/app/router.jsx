@@ -22,6 +22,8 @@ import DoctorDashboard from "../pages/doctor/DoctorDashboard.jsx";
 import DoctorProfile from "../pages/doctor/DoctorProfile.jsx";
 import PrescriptionForm from "../pages/doctor/PrescriptionForm.jsx";
 import VideoConsultation from "../pages/doctor/VideoConsultation.jsx";
+import PendingAppointments from "../pages/PendingAppointments.jsx";
+import ConfirmedSchedule from "../pages/ConfirmedSchedule.jsx";
 import PatientAppointmentsPage from "../pages/patient/PatientAppointmentsPage.jsx";
 import PatientFindDoctorPage from "../pages/patient/PatientFindDoctorPage.jsx";
 import PatientBookingsPage from "../pages/patient/PatientBookingsPage.jsx";
@@ -34,8 +36,10 @@ import UnauthorizedPage from "../pages/shared/UnauthorizedPage.jsx";
 import NotFoundPage from "../pages/shared/NotFoundPage.jsx";
 import ProtectedRoute from "../components/common/ProtectedRoute.jsx";
 import RoleProtectedRoute from "../components/common/RoleProtectedRoute.jsx";
+import DoctorVerificationAccess from "../components/common/DoctorVerificationAccess.jsx";
 import AdminLayout from "../components/admin/AdminLayout.jsx";
 import DoctorLayout from "../layouts/DoctorLayout.jsx";
+import DoctorVerificationResubmitPage from "../pages/doctor/DoctorVerificationResubmitPage.jsx";
 
 export const router = createBrowserRouter([
   { path: "/", element: <LandingPage /> },
@@ -221,15 +225,20 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <RoleProtectedRoute allowedRoles={["DOCTOR"]}>
-          <DoctorLayout />
+          <DoctorVerificationAccess>
+            <DoctorLayout />
+          </DoctorVerificationAccess>
         </RoleProtectedRoute>
       </ProtectedRoute>
     ),
     children: [
       { index: true, element: <Navigate to="/doctor/dashboard" replace /> },
       { path: "dashboard", element: <DoctorDashboard /> },
+      { path: "pending", element: <PendingAppointments /> },
+      { path: "schedule", element: <ConfirmedSchedule /> },
       { path: "availability", element: <DoctorAvailability /> },
       { path: "profile", element: <DoctorProfile /> },
+      { path: "verification/resubmit", element: <DoctorVerificationResubmitPage /> },
       { path: "consultation/:appointmentId", element: <VideoConsultation /> },
       { path: "prescription/:appointmentId", element: <PrescriptionForm /> }
     ]

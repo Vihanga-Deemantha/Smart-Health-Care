@@ -42,6 +42,14 @@ const templates = {
     const doctor = payload?.doctor || {};
     return `Smart Health: Dr ${firstName(doctor.fullName)}, your profile was not approved.`;
   },
+  "notification.account.suspended": (payload) => {
+    const recipient = payload?.recipient || {};
+    return `Smart Health: ${firstName(recipient.fullName)}, your account has been suspended. Contact support for details.`;
+  },
+  "notification.account.reactivated": (payload) => {
+    const recipient = payload?.recipient || {};
+    return `Smart Health: ${firstName(recipient.fullName)}, your account has been reactivated.`;
+  },
   "notification.appointment.booked": (payload) => {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment booked on ${date}. ID ${shortId(payload?.appointmentId)}.`;

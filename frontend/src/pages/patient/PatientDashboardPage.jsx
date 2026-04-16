@@ -1,13 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, CalendarClock, FileText, MessageSquareHeart, Stethoscope } from "lucide-react";
+import {
+  Activity,
+  CalendarClock,
+  ChevronRight,
+  FileText,
+  MessageSquareHeart,
+  PlusCircle,
+  Search,
+  Stethoscope,
+  TicketCheck,
+  TimerReset
+} from "lucide-react";
 import toast from "react-hot-toast";
 import PortalLayout from "../../components/common/PortalLayout.jsx";
 import PatientPortalNav from "../../components/patient/PatientPortalNav.jsx";
 import {
+  fetchPatientAppointments,
   fetchPatientPrescriptions,
-  fetchPatientReports,
-  fetchUpcomingAppointments
+  fetchPatientReports
 } from "../../api/patientApi.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 
@@ -34,7 +45,7 @@ const PatientDashboardPage = () => {
 
       try {
         const [appointmentsResponse, prescriptionsResponse, reportsResponse] = await Promise.all([
-          fetchUpcomingAppointments({ limit: 5 }),
+          fetchPatientAppointments({ from: new Date().toISOString(), limit: 5 }),
           fetchPatientPrescriptions({ limit: 5 }),
           fetchPatientReports()
         ]);
@@ -76,6 +87,40 @@ const PatientDashboardPage = () => {
     [upcomingAppointments.length, prescriptions.length, reportsCount]
   );
 
+  const quickActions = useMemo(
+    () => [
+      {
+        icon: Search,
+        label: "Book Appointment",
+        desc: "Find doctors and reserve a slot",
+        to: "/patient/find-doctor",
+        accent: "#56CCF2"
+      },
+      {
+        icon: CalendarClock,
+        label: "My Appointments",
+        desc: "View and manage active visits",
+        to: "/patient/appointments",
+        accent: "#2F80ED"
+      },
+      {
+        icon: TicketCheck,
+        label: "Completed Bookings",
+        desc: "Review finished consultations",
+        to: "/patient/bookings",
+        accent: "#27AE60"
+      },
+      {
+        icon: TimerReset,
+        label: "Service Tools",
+        desc: "Waitlist, feedback, and alerts",
+        to: "/patient/tools",
+        accent: "#F2994A"
+      }
+    ],
+    []
+  );
+
   return (
     <PortalLayout
       eyebrow="Patient Workspace"
@@ -85,6 +130,76 @@ const PatientDashboardPage = () => {
     >
       <PatientPortalNav />
 
+      <div className="mb-6 rounded-2xl border border-cyan-400/15 bg-cyan-400/5 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-200">
+              Appointment Services
+            </p>
+            <p className="mt-2 text-sm text-slate-300">
+              Book a visit, review active appointments, or open the appointment service directly.
+            </p>
+          </div>
+          <Link
+            to="/patient/find-doctor"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01]"
+          >
+            <PlusCircle size={16} />
+            Open Appointment Service
+          </Link>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            Quick Access
+          </p>
+          <Link to="/patient/find-doctor" className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-300 hover:text-cyan-200">
+            Browse doctors <ChevronRight size={14} />
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {quickActions.map(({ icon, label, desc, to, accent }, index) => {
+            const IconComponent = icon;
+
+            return (
+              <Link
+                key={label}
+                to={to}
+                className="group flex min-h-[132px] flex-col justify-between rounded-2xl p-4 text-left transition-all duration-200 hover:-translate-y-0.5"
+                style={{
+                  background: `linear-gradient(180deg, ${accent}14, rgba(2, 6, 23, 0.55))`,
+                  border: `1px solid ${accent}26`,
+                  boxShadow: index === 1 ? `0 16px 32px ${accent}16` : "none"
+                }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-300">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-sm leading-snug text-slate-200">
+                      {desc}
+                    </p>
+                  </div>
+                  <div
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}
+                  >
+                    <IconComponent size={18} style={{ color: accent }} />
+                  </div>
+                </div>
+
+                <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-slate-400 transition group-hover:text-slate-200">
+                  Open <ChevronRight size={14} />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-3">
         {stats.map(({ label, value, icon, color }) => {
           const IconComponent = icon;
@@ -92,19 +207,19 @@ const PatientDashboardPage = () => {
           return (
             <div
               key={label}
-              className="rounded-2xl p-4"
+              className="flex min-h-[108px] flex-col justify-between rounded-2xl p-4"
               style={{
                 background: "rgba(15, 23, 42, 0.35)",
                 border: "1px solid rgba(148, 163, 184, 0.2)"
               }}
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-300">
                   {label}
                 </span>
                 <IconComponent size={16} style={{ color }} />
               </div>
-              <p className="text-2xl font-black text-white">{value}</p>
+              <p className="text-3xl font-black leading-none text-white">{value}</p>
             </div>
           );
         })}
@@ -118,10 +233,13 @@ const PatientDashboardPage = () => {
             border: "1px solid rgba(148, 163, 184, 0.2)"
           }}
         >
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="text-sm font-bold text-white">Upcoming Appointments</h3>
-            <Link to="/history" className="text-xs font-semibold text-cyan-300 hover:text-cyan-200">
-              View history
+            <Link
+              to="/history"
+              className="inline-flex items-center gap-1 rounded-full border border-cyan-400/20 bg-cyan-400/5 px-3 py-1.5 text-xs font-semibold text-cyan-300 transition hover:border-cyan-300/35 hover:bg-cyan-400/10 hover:text-cyan-200"
+            >
+              View history <ChevronRight size={13} />
             </Link>
           </div>
 
@@ -186,7 +304,7 @@ const PatientDashboardPage = () => {
 
           <Link
             to="/ai-chat"
-            className="group flex items-center justify-between rounded-2xl p-5 text-left transition-all duration-200"
+            className="group flex items-center justify-between gap-4 rounded-2xl p-5 text-left transition-all duration-200"
             style={{
               background: "linear-gradient(135deg, rgba(14,165,233,0.2), rgba(34,211,238,0.2))",
               border: "1px solid rgba(34,211,238,0.45)"

@@ -159,20 +159,25 @@ export const bookAppointment = async ({ holdId, patientId, doctorId, mode, hospi
     }
 
     if (mode === CONSULTATION_MODE.IN_PERSON) {
-      const room = await assignRoom({
-        hospitalId,
-        startTime: hold.startTime,
-        endTime: hold.endTime,
-        doctorId
-      });
+      try {
+        const room = await assignRoom({
+          hospitalId,
+          startTime: hold.startTime,
+          endTime: hold.endTime,
+          doctorId
+        });
 
-      appointmentPayload.inPerson = room
-        ? {
-            roomId: room.roomId,
-            roomName: room.roomName,
-            floor: room.floor
-          }
-        : {};
+        appointmentPayload.inPerson = room
+          ? {
+              roomId: room.roomId,
+              roomName: room.roomName,
+              floor: room.floor
+            }
+          : {};
+      } catch (roomError) {
+        // Room assignment is best-effort; appointment booking should still succeed.
+        appointmentPayload.inPerson = {};
+      }
     }
 
     const appointment = await Appointment.create([appointmentPayload], { session });

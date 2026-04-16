@@ -54,6 +54,10 @@ const templates = {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment booked on ${date}. ID ${shortId(payload?.appointmentId)}.`;
   },
+  "notification.appointment.created": (payload) => {
+    const date = formatDate(payload?.appointmentDate || payload?.startTime);
+    return `Smart Health: Appointment booked on ${date}. ID ${shortId(payload?.appointmentId)}.`;
+  },
   "notification.appointment.confirmed": (payload) => {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment confirmed for ${date}. ID ${shortId(payload?.appointmentId)}.`;
@@ -67,7 +71,20 @@ const templates = {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment cancelled for ${date}. ID ${shortId(payload?.appointmentId)}.`;
   },
+  "notification.appointment.reminder": (payload) => {
+    const date = formatDate(payload?.appointmentDate || payload?.startTime);
+    const type = payload?.type ? ` (${payload.type})` : "";
+    return `Smart Health: Reminder${type} for appointment on ${date}. ID ${shortId(payload?.appointmentId)}.`;
+  },
+  "notification.waitlist.promoted": (payload) => {
+    const date = formatDate(payload?.startTime);
+    return `Smart Health: You are promoted from waitlist. Slot ${date}. Ref ${shortId(payload?.waitlistId)}.`;
+  },
   "notification.payment.success": (payload) => {
+    const amount = payload?.amount ? `${payload.amount} ${payload.currency || ""}`.trim() : "payment";
+    return `Smart Health: ${amount} received. Appt ${shortId(payload?.appointmentId)}.`;
+  },
+  "notification.payment.captured": (payload) => {
     const amount = payload?.amount ? `${payload.amount} ${payload.currency || ""}`.trim() : "payment";
     return `Smart Health: ${amount} received. Appt ${shortId(payload?.appointmentId)}.`;
   },

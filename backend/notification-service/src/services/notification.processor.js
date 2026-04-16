@@ -6,6 +6,25 @@ import { sendEmail } from "./email.service.js";
 import { sendSms } from "./sms.service.js";
 import { sendWhatsApp } from "./whatsapp.service.js";
 
+const isRetryableChannelError = (error) => {
+  const message = String(error?.message || "").toLowerCase();
+
+  if (!message) {
+    return true;
+  }
+
+  const nonRetryableFragments = [
+    "recipient email missing",
+    "recipient phone missing",
+    "email template missing",
+    "sms template missing",
+    "whatsapp template missing",
+    "unknown channel"
+  ];
+
+  return !nonRetryableFragments.some((fragment) => message.includes(fragment));
+};
+
 const resolveRecipient = (recipientType, payload) => {
   if (!recipientType || !payload) {
     return null;
@@ -69,10 +88,19 @@ const attemptWhatsApp = async (event, recipient, payload) => {
 
 export const processNotification = async (event, payload) => {
   const config = NOTIFICATION_CONFIG[event];
+  const eventId = payload?.eventId || null;
 
   if (!config) {
     console.log(`No notification config for ${event}. Skipping.`);
-    return;
+    return { skipped: true };
+  }
+
+  if (eventId) {
+    const alreadySent = await NotificationLog.exists({ eventId, deliveryStatus: "SENT" });
+    if (alreadySent) {
+      console.log(`Duplicate notification ignored for eventId=${eventId}`);
+      return { skipped: true, duplicate: true };
+    }
   }
 
   const recipient = resolveRecipient(config.recipient, payload);
@@ -94,18 +122,36 @@ export const processNotification = async (event, payload) => {
       }
 
       console.log(`Channel ${channel} succeeded for ${event}`);
-      channelResults.push({ channel, status: "SENT" });
+      channelResults.push({ channel, status: "SENT", error: null, retryable: false });
     } catch (err) {
       console.error(`Channel ${channel} failed for ${event}:`, err.message);
-      channelResults.push({ channel, status: "FAILED", error: err.message });
+      channelResults.push({
+        channel,
+        status: "FAILED",
+        error: err.message,
+        retryable: isRetryableChannelError(err)
+      });
     }
   }
 
+  const anySent = channelResults.some((entry) => entry.status === "SENT");
+  const shouldRetry = channelResults.some((entry) => entry.retryable);
+
   await NotificationLog.create({
+    eventId,
     event,
     routingKey: event,
     recipientId: recipient?.id || null,
-    channels: channelResults,
+    deliveryStatus: anySent ? "SENT" : "FAILED",
+    channels: channelResults.map(({ channel, status, error }) => ({ channel, status, error })),
     payload
   });
+
+  if (!anySent) {
+    const failure = new Error(`All notification channels failed for ${event}`);
+    failure.retryable = shouldRetry;
+    throw failure;
+  }
+
+  return { success: true };
 };

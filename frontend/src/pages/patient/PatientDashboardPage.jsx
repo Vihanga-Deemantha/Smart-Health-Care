@@ -286,8 +286,12 @@ const PatientDashboardPage = () => {
                         border: "1px solid rgba(148, 163, 184, 0.18)"
                       }}
                     >
-                      <p className="font-semibold text-white">{item.prescription?.title || "Prescription"}</p>
-                      <p className="mt-1 text-slate-300">Doctor ID: {item.doctorId || "N/A"}</p>
+                      <p className="font-semibold text-white">
+                        {item.diagnosis || item.prescription?.title || "Prescription"}
+                      </p>
+                      <p className="mt-1 text-slate-300">
+                        Doctor: {item.doctorName || item.doctorId || "N/A"}
+                      </p>
                       <p className="mt-1 text-slate-400">{formatDate(item.issuedAt)}</p>
                     </div>
                   ))}

@@ -4,6 +4,7 @@ import {
   bookAppointment,
   cancelAppointment,
   confirmAttendance,
+  completeAppointment,
   createSlotHold,
   getAppointmentById,
   getTelemedicineSession,
@@ -77,6 +78,18 @@ export const handleConfirmAttendance = asyncHandler(async (req, res) => {
   });
 
   return sendResponse(res, 200, "Attendance updated", result);
+});
+
+export const handleCompleteAppointment = asyncHandler(async (req, res) => {
+  const appointment = await completeAppointment({
+    appointmentId: req.params.id,
+    actor: {
+      id: req.user.userId,
+      role: req.user.role
+    }
+  });
+
+  return sendResponse(res, 200, "Appointment completed", { appointment });
 });
 
 export const handleNoShow = asyncHandler(async (req, res) => {

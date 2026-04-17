@@ -20,7 +20,7 @@ data:
   RABBITMQ_BINDING_KEY: notification.#
   RABBITMQ_RETRY_MS: "5000"
   REDIS_URL: redis://redis:6379
-  CLIENT_URL: http://smart-health.local
+  CLIENT_URL: http://localhost:8081,http://localhost:8080,http://smart-health.local
   NODE_ENV: production
   COOKIE_SECURE: "false"
   REPORT_MAX_FILE_SIZE_MB: "10"

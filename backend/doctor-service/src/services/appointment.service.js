@@ -475,6 +475,17 @@ export const confirmDoctorAttendance = async ({ appointmentId, authorization, ac
   });
 };
 
+export const completeDoctorAppointment = async ({ appointmentId, authorization, actor }) => {
+  const baseUrl = getAppointmentServiceBaseUrl();
+  const resolvedAuthorization = await resolveAppointmentAuthorization({ authorization, actor });
+
+  return requestUpstream({
+    url: `${baseUrl}/api/appointments/${appointmentId}/complete`,
+    method: "PATCH",
+    authorization: resolvedAuthorization
+  });
+};
+
 export const markDoctorNoShow = async ({ appointmentId, authorization, target = "PATIENT", actor }) => {
   const baseUrl = getAppointmentServiceBaseUrl();
   const resolvedAuthorization = await resolveAppointmentAuthorization({ authorization, actor });

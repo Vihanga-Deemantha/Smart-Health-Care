@@ -5,13 +5,19 @@ import verifyInternalService from "../middlewares/internal.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
 import {
   handleCreatePrescription,
+  handleGetPrescriptionByAppointment,
+  handleListPrescriptionsForDoctor,
   handleListPrescriptionsForCurrentPatient,
-  handleListPrescriptionsForPatient
+  handleListPrescriptionsForPatient,
+  handleUpdatePrescriptionByAppointment
 } from "../controllers/doctor.controller.js";
 import {
   createPrescriptionValidation,
+  listDoctorPrescriptionsValidation,
+  prescriptionAppointmentValidation,
   listPrescriptionsForPatientValidation,
-  listPrescriptionsValidation
+  listPrescriptionsValidation,
+  updatePrescriptionValidation
 } from "../validations/prescription.validation.js";
 
 const router = express.Router();
@@ -23,6 +29,33 @@ router.post(
   createPrescriptionValidation,
   validateRequest,
   handleCreatePrescription
+);
+
+router.get(
+  "/appointment/:appointmentId",
+  protect,
+  allowRoles("DOCTOR"),
+  prescriptionAppointmentValidation,
+  validateRequest,
+  handleGetPrescriptionByAppointment
+);
+
+router.patch(
+  "/appointment/:appointmentId",
+  protect,
+  allowRoles("DOCTOR"),
+  updatePrescriptionValidation,
+  validateRequest,
+  handleUpdatePrescriptionByAppointment
+);
+
+router.get(
+  "/doctor",
+  protect,
+  allowRoles("DOCTOR"),
+  listDoctorPrescriptionsValidation,
+  validateRequest,
+  handleListPrescriptionsForDoctor
 );
 
 router.get(

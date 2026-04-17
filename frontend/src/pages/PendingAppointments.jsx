@@ -59,23 +59,7 @@ const PendingAppointments = () => {
 
   const fetchPatient = useCallback(
     async (patientId, fallback) => {
-      if (!patientId) {
-        return buildFallbackPatient("", fallback);
-      }
-
-      try {
-        const response = await api.get(`/patients/${patientId}`);
-        const payload = response.data?.data?.patient || response.data?.patient || response.data;
-        return {
-          id: payload?._id || payload?.id || patientId,
-          fullName: payload?.fullName || payload?.name || fallback?.fullName || "Patient",
-          email: payload?.email || fallback?.email || "Not available",
-          phone: payload?.phone || payload?.contactNumber || fallback?.phone || "Not available",
-          profilePhoto: payload?.profilePhoto || fallback?.profilePhoto || ""
-        };
-      } catch {
-        return buildFallbackPatient(patientId, fallback);
-      }
+      return buildFallbackPatient(patientId || "", fallback);
     },
     []
   );

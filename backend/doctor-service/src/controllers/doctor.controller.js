@@ -14,6 +14,7 @@ import {
 } from "../services/doctor.service.js";
 import {
   cancelDoctorAppointment,
+  completeDoctorAppointment,
   confirmDoctorAttendance,
   getDoctorAvailability,
   getDoctorAppointmentById,
@@ -25,7 +26,10 @@ import {
 import { getPatientReportsForDoctor } from "../services/patientReport.service.js";
 import {
   createPrescription,
-  listPrescriptionsForPatient
+  getPrescriptionByAppointment,
+  listPrescriptionsForDoctor,
+  listPrescriptionsForPatient,
+  updatePrescriptionByAppointment
 } from "../services/prescription.service.js";
 
 export const handleListDoctors = asyncHandler(async (req, res) => {
@@ -182,6 +186,16 @@ export const handleConfirmDoctorAttendance = asyncHandler(async (req, res) => {
   sendResponse(res, 200, "Doctor attendance confirmed", result?.data || result);
 });
 
+export const handleCompleteDoctorAppointment = asyncHandler(async (req, res) => {
+  const result = await completeDoctorAppointment({
+    appointmentId: req.params.appointmentId,
+    authorization: req.headers.authorization,
+    actor: req.user
+  });
+
+  sendResponse(res, 200, "Appointment completed", result?.data || result);
+});
+
 export const handleMarkDoctorNoShow = asyncHandler(async (req, res) => {
   const result = await markDoctorNoShow({
     appointmentId: req.params.appointmentId,
@@ -217,10 +231,39 @@ export const handleCreatePrescription = asyncHandler(async (req, res) => {
     doctorId: req.user.userId,
     patientId: req.body.patientId,
     appointmentId: req.body.appointmentId,
-    medicines: req.body.medicines
+    diagnosis: req.body.diagnosis,
+    instructions: req.body.instructions,
+    medicines: req.body.medicines,
+    doctor: {
+      userId: req.user.userId,
+      fullName: req.user.fullName || req.user.name || null,
+      email: req.user.email || null,
+      phone: req.user.phone || req.user.contactNumber || null
+    }
   });
 
   sendResponse(res, 201, "Prescription issued", { prescription });
+});
+
+export const handleGetPrescriptionByAppointment = asyncHandler(async (req, res) => {
+  const prescription = await getPrescriptionByAppointment({
+    appointmentId: req.params.appointmentId,
+    doctorId: req.user.userId
+  });
+
+  sendResponse(res, 200, "Prescription fetched", { prescription });
+});
+
+export const handleUpdatePrescriptionByAppointment = asyncHandler(async (req, res) => {
+  const prescription = await updatePrescriptionByAppointment({
+    appointmentId: req.params.appointmentId,
+    doctorId: req.user.userId,
+    diagnosis: req.body.diagnosis,
+    instructions: req.body.instructions,
+    medicines: req.body.medicines
+  });
+
+  sendResponse(res, 200, "Prescription updated", { prescription });
 });
 
 export const handleListPrescriptionsForPatient = asyncHandler(async (req, res) => {
@@ -235,6 +278,15 @@ export const handleListPrescriptionsForPatient = asyncHandler(async (req, res) =
 export const handleListPrescriptionsForCurrentPatient = asyncHandler(async (req, res) => {
   const prescriptions = await listPrescriptionsForPatient({
     patientId: req.user.userId,
+    limit: req.query.limit
+  });
+
+  sendResponse(res, 200, "Prescriptions fetched", { prescriptions });
+});
+
+export const handleListPrescriptionsForDoctor = asyncHandler(async (req, res) => {
+  const prescriptions = await listPrescriptionsForDoctor({
+    doctorId: req.user.userId,
     limit: req.query.limit
   });
 

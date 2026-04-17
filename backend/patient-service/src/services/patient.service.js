@@ -2,8 +2,14 @@ import Patient from "../models/Patient.js";
 import AppError from "../utils/AppError.js";
 import { deleteReportByPublicId, uploadReportBuffer } from "./storage.service.js";
 import {
+  cancelAppointmentInAppointmentService,
+  confirmAppointmentAttendanceInAppointmentService,
   fetchHistoryFromAppointmentService,
+  fetchAppointmentByIdFromAppointmentService,
+  fetchAppointmentsFromAppointmentService,
   fetchPrescriptionsFromUpstream
+  ,
+  rescheduleAppointmentInAppointmentService
 } from "./upstream.service.js";
 
 const profileProjection = {
@@ -37,6 +43,93 @@ const defaultProfile = (user) => ({
   contactNumber: normalizeClaimValue(user.phone || user.contactNumber) || null,
   allergies: []
 });
+
+const isPdfReport = (report) => {
+  const mimeType = (report?.mimeType || "").toLowerCase();
+  const filename = (report?.filename || "").toLowerCase();
+  const url = (report?.url || "").toLowerCase();
+
+  return (
+    mimeType === "application/pdf" ||
+    filename.endsWith(".pdf") ||
+    url.endsWith(".pdf")
+  );
+};
+
+const getDownloadCandidates = (report) => {
+  const primaryUrl = typeof report?.url === "string" ? report.url.trim() : "";
+
+  if (!primaryUrl) {
+    return [];
+  }
+
+  const candidates = [primaryUrl];
+  const isCloudinaryUrl = primaryUrl.includes("res.cloudinary.com") && primaryUrl.includes("/upload/");
+
+  if (isCloudinaryUrl && isPdfReport(report)) {
+    if (primaryUrl.includes("/image/upload/")) {
+      candidates.push(primaryUrl.replace("/image/upload/", "/raw/upload/"));
+      candidates.push(primaryUrl.replace("/image/upload/", "/image/upload/fl_attachment/"));
+      candidates.push(primaryUrl.replace("/image/upload/", "/raw/upload/fl_attachment/"));
+    } else if (primaryUrl.includes("/raw/upload/")) {
+      candidates.push(primaryUrl.replace("/raw/upload/", "/raw/upload/fl_attachment/"));
+    }
+  }
+
+  return Array.from(new Set(candidates));
+};
+
+const fetchReportFromCandidates = async (candidates) => {
+  let lastStatus = null;
+  let lastStatusText = null;
+  let lastUrl = null;
+  let lastCloudinaryError = null;
+
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(candidate);
+
+      if (response.ok && response.body) {
+        return { upstreamResponse: response, sourceUrl: candidate };
+      }
+
+      lastStatus = response.status;
+      lastStatusText = response.statusText;
+      lastUrl = candidate;
+      lastCloudinaryError = response.headers.get("x-cld-error");
+    } catch (error) {
+      lastStatus = null;
+      lastStatusText = error?.message || "Network error";
+      lastUrl = candidate;
+      lastCloudinaryError = null;
+    }
+  }
+
+  if (
+    lastStatus === 401 &&
+    typeof lastCloudinaryError === "string" &&
+    lastCloudinaryError.toLowerCase().includes("deny")
+  ) {
+    throw new AppError(
+      "PDF delivery is blocked by Cloudinary security settings. Enable PDF/ZIP delivery in Cloudinary and re-upload the file.",
+      502,
+      "PDF_DELIVERY_BLOCKED",
+      {
+        lastUrl,
+        lastStatus,
+        lastStatusText,
+        cloudinaryError: lastCloudinaryError
+      }
+    );
+  }
+
+  throw new AppError("Failed to load report file", 502, "REPORT_DOWNLOAD_FAILED", {
+    lastUrl,
+    lastStatus,
+    lastStatusText,
+    cloudinaryError: lastCloudinaryError
+  });
+};
 
 const getOrCreatePatientByUser = async (user) => {
   let patient = await Patient.findOne({ userId: user.userId });
@@ -112,7 +205,8 @@ export const addPatientReport = async (user, file) => {
   const patient = await getOrCreatePatientByUser(user);
   const uploaded = await uploadReportBuffer({
     buffer: file.buffer,
-    filename: file.originalname
+    filename: file.originalname,
+    mimeType: file.mimetype
   });
 
   const report = {
@@ -137,6 +231,37 @@ export const getPatientReports = async (user) => {
   return patient.reports
     .slice()
     .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+};
+
+export const getPatientReportDownload = async (user, identifier = {}) => {
+  const normalizedPublicId =
+    typeof identifier?.publicId === "string" ? identifier.publicId.trim() : "";
+  const normalizedUrl = typeof identifier?.url === "string" ? identifier.url.trim() : "";
+
+  if (!normalizedPublicId && !normalizedUrl) {
+    throw new AppError("Report identifier is required", 400, "REPORT_ID_REQUIRED");
+  }
+
+  const patient = await getOrCreatePatientByUser(user);
+
+  const report = patient.reports.find(
+    (item) =>
+      (normalizedPublicId && item.publicId === normalizedPublicId) ||
+      (normalizedUrl && item.url === normalizedUrl)
+  );
+
+  if (!report) {
+    throw new AppError("Report not found", 404, "REPORT_NOT_FOUND");
+  }
+
+  if (!report.url) {
+    throw new AppError("Report file URL is missing", 404, "REPORT_URL_MISSING");
+  }
+
+  const candidates = getDownloadCandidates(report);
+  const { upstreamResponse } = await fetchReportFromCandidates(candidates);
+
+  return { report, upstreamResponse };
 };
 
 export const deletePatientReport = async (user, identifier = {}) => {
@@ -199,6 +324,49 @@ export const getPatientPrescriptions = async ({ user, authorization, query }) =>
     patientId: user.userId,
     authorization,
     limit: query.limit
+  });
+};
+
+export const getPatientAppointments = async ({ authorization, query }) => {
+  return await fetchAppointmentsFromAppointmentService({
+    authorization,
+    page: query.page,
+    limit: query.limit,
+    status: query.status,
+    from: query.from,
+    to: query.to
+  });
+};
+
+export const getPatientAppointmentById = async ({ appointmentId, authorization }) => {
+  return await fetchAppointmentByIdFromAppointmentService({
+    appointmentId,
+    authorization
+  });
+};
+
+export const cancelPatientAppointment = async ({ appointmentId, authorization, reason, overridePolicy }) => {
+  return await cancelAppointmentInAppointmentService({
+    appointmentId,
+    authorization,
+    reason,
+    overridePolicy
+  });
+};
+
+export const reschedulePatientAppointment = async ({ appointmentId, authorization, newStartTime, newEndTime }) => {
+  return await rescheduleAppointmentInAppointmentService({
+    appointmentId,
+    authorization,
+    newStartTime,
+    newEndTime
+  });
+};
+
+export const confirmPatientAppointmentAttendance = async ({ appointmentId, authorization }) => {
+  return await confirmAppointmentAttendanceInAppointmentService({
+    appointmentId,
+    authorization
   });
 };
 

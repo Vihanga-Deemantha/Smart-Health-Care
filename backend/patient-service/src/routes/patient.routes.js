@@ -5,16 +5,27 @@ import allowRoles from "../middlewares/role.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
 import AppError from "../utils/AppError.js";
 import {
+  handleCancelAppointment,
+  handleConfirmAppointmentAttendance,
   handleDeleteReport,
+  handleDownloadReport,
+  handleGetAppointment,
+  handleGetAppointments,
   handleGetHistory,
   handleGetPrescriptions,
   handleGetProfile,
   handleGetReports,
   handleUpdateProfile,
-  handleUploadReport
+  handleUploadReport,
+  handleRescheduleAppointment
 } from "../controllers/patient.controller.js";
 import {
   historyValidation,
+  patientAppointmentCancelValidation,
+  patientAppointmentConfirmValidation,
+  patientAppointmentIdValidation,
+  patientAppointmentListValidation,
+  patientAppointmentRescheduleValidation,
   prescriptionsValidation,
   updateProfileValidation
 } from "../validations/patient.validation.js";
@@ -51,8 +62,34 @@ router.get("/profile", handleGetProfile);
 router.put("/profile", updateProfileValidation, validateRequest, handleUpdateProfile);
 router.post("/reports", upload.single("file"), handleUploadReport);
 router.get("/reports", handleGetReports);
+router.get("/reports/download", handleDownloadReport);
 router.delete("/reports", handleDeleteReport);
 router.get("/history", historyValidation, validateRequest, handleGetHistory);
 router.get("/prescriptions", prescriptionsValidation, validateRequest, handleGetPrescriptions);
+router.get("/appointments", patientAppointmentListValidation, validateRequest, handleGetAppointments);
+router.get(
+  "/appointments/:appointmentId",
+  patientAppointmentIdValidation,
+  validateRequest,
+  handleGetAppointment
+);
+router.patch(
+  "/appointments/:appointmentId/cancel",
+  patientAppointmentCancelValidation,
+  validateRequest,
+  handleCancelAppointment
+);
+router.patch(
+  "/appointments/:appointmentId/reschedule",
+  patientAppointmentRescheduleValidation,
+  validateRequest,
+  handleRescheduleAppointment
+);
+router.patch(
+  "/appointments/:appointmentId/confirm-attendance",
+  patientAppointmentConfirmValidation,
+  validateRequest,
+  handleConfirmAppointmentAttendance
+);
 
 export default router;

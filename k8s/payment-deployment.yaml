@@ -34,14 +34,19 @@ spec:
                   key: CLIENT_URL
             - name: MONGODB_URI
               valueFrom:
-                configMapKeyRef:
-                  name: smart-health-config
+                secretKeyRef:
+                  name: smart-health-secrets
                   key: PAYMENT_MONGODB_URI
             - name: RABBITMQ_URL
               valueFrom:
                 configMapKeyRef:
                   name: smart-health-config
                   key: RABBITMQ_URL
+            - name: RABBITMQ_EXCHANGE
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_EXCHANGE
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:

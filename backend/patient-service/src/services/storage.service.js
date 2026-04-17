@@ -36,16 +36,28 @@ const ensureCloudinaryConfig = () => {
   cloudinaryConfigured = true;
 };
 
-export const uploadReportBuffer = async ({ buffer, filename }) => {
+export const uploadReportBuffer = async ({ buffer, filename, mimeType = "" }) => {
   ensureCloudinaryConfig();
 
   const publicId = `${Date.now()}-${sanitizeName(filename || "report")}`;
+  const extension = (filename || "").toLowerCase().split(".").pop() || "";
+  const nonImageExtensions = new Set(["pdf", "doc", "docx", "txt"]);
+  const nonImageMimeTypes = new Set([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain"
+  ]);
+  const resourceType =
+    nonImageExtensions.has(extension) || nonImageMimeTypes.has(String(mimeType).toLowerCase())
+      ? "raw"
+      : "auto";
 
   return await new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: process.env.CLOUDINARY_REPORTS_FOLDER || "smart-health/patient-reports",
-        resource_type: "auto",
+        resource_type: resourceType,
         public_id: publicId
       },
       (error, result) => {

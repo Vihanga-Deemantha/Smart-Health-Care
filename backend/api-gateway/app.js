@@ -15,9 +15,14 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use(helmet());
+const allowedOrigins = (process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: allowedOrigins.length ? allowedOrigins : false,
     credentials: true
   })
 );
@@ -52,6 +57,7 @@ app.use("/api/doctors", createServiceProxy(process.env.DOCTOR_SERVICE_URL));
 app.use("/api/feedback/doctors", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
 app.use("/api/emergency-resources", createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
 app.use("/api/appointments", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
+app.use("/api/sessions", protect, createServiceProxy(process.env.TELEMEDICINE_SERVICE_URL));
 app.use("/api/prescriptions", protect, createServiceProxy(process.env.DOCTOR_SERVICE_URL));
 app.use("/api/feedback", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));
 app.use("/api/waitlist", protect, createServiceProxy(process.env.APPOINTMENT_SERVICE_URL));

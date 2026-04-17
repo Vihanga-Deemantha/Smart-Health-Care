@@ -71,7 +71,7 @@ const PatientAiChatPage = () => {
   };
 
   const handleBookSpecialty = (specialty) => {
-    navigate(`/patient/book?specialty=${encodeURIComponent(specialty)}`);
+    navigate(`/patient/find-doctor?specialty=${encodeURIComponent(specialty)}`);
   };
 
   return (

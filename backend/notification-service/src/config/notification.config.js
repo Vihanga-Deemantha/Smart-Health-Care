@@ -1,0 +1,87 @@
+export const NOTIFICATION_CONFIG = {
+  "notification.user.registered": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Welcome to Smart Health" }
+  },
+  "notification.doctor.approved": {
+    recipient: "doctor",
+    channels: ["email", "sms"],
+    email: { subject: "Doctor profile approved" }
+  },
+  "notification.doctor.rejected": {
+    recipient: "doctor",
+    channels: ["email", "sms"],
+    email: { subject: "Doctor profile not approved" }
+  },
+  "notification.account.suspended": {
+    recipient: "recipient",
+    channels: ["email", "sms"],
+    email: { subject: "Account suspended" }
+  },
+  "notification.account.reactivated": {
+    recipient: "recipient",
+    channels: ["email", "sms"],
+    email: { subject: "Account reactivated" }
+  },
+  "notification.appointment.booked": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment booked" }
+  },
+  "notification.appointment.created": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment booked" }
+  },
+  "notification.appointment.confirmed": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment confirmed" }
+  },
+  "notification.telemedicine.session.started": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Telemedicine session started" }
+  },
+  "notification.telemedicine.session.started.doctor": {
+    recipient: "doctor",
+    channels: ["sms"],
+    email: { subject: "Telemedicine session started" }
+  },
+  "notification.appointment.rejected": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment rejected" }
+  },
+  "notification.appointment.cancelled": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment cancelled" }
+  },
+  "notification.appointment.reminder": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment reminder" }
+  },
+  "notification.waitlist.promoted": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Waitlist promoted" }
+  },
+  "notification.payment.success": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Payment successful" }
+  },
+  "notification.payment.captured": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Payment successful" }
+  },
+  "notification.prescription.issued": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Prescription issued" }
+  }
+};

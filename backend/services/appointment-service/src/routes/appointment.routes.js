@@ -6,6 +6,7 @@ import {
   bookAppointmentValidation,
   cancelAppointmentValidation,
   confirmAttendanceValidation,
+  completeAppointmentValidation,
   holdSlotValidation,
   listAppointmentsValidation,
   appointmentIdValidation,
@@ -16,6 +17,7 @@ import {
 import {
   handleCancelAppointment,
   handleConfirmAttendance,
+  handleCompleteAppointment,
   handleCreateAppointment,
   handleCreateHold,
   handleGetAppointment,
@@ -99,6 +101,13 @@ router.patch(
   confirmAttendanceValidation,
   validateRequest,
   handleConfirmAttendance
+);
+router.patch(
+  "/:id/complete",
+  allowRoles(USER_ROLES.DOCTOR, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF),
+  completeAppointmentValidation,
+  validateRequest,
+  handleCompleteAppointment
 );
 router.patch(
   "/:id/no-show",

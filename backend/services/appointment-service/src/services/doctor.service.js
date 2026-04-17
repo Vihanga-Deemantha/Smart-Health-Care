@@ -2,9 +2,24 @@ import Appointment from "../models/Appointment.js";
 import AvailabilityRule from "../models/AvailabilityRule.js";
 import SlotHold from "../models/SlotHold.js";
 import TimeOff from "../models/TimeOff.js";
-import { buildSlots, overlaps } from "../utils/dateTime.js";
+import { buildSlots, buildSlotsFromTimeRange, overlaps } from "../utils/dateTime.js";
 import { APPOINTMENT_STATUS } from "../utils/constants.js";
-import { searchDoctorsFromDoctorService } from "../integrations/doctorService.client.js";
+import {
+  getDoctorAvailabilitySchedule,
+  searchDoctorsFromDoctorService
+} from "../integrations/doctorService.client.js";
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+const toDateKey = (value) => {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toISOString().slice(0, 10);
+};
 
 export const searchDoctors = async (filters) => {
   return searchDoctorsFromDoctorService(filters);
@@ -16,7 +31,59 @@ export const getDoctorAvailability = async ({ doctorId, date, mode }) => {
 
   const rules = await AvailabilityRule.find({ doctorId, weekday, mode, active: true }).lean();
 
-  if (rules.length === 0) {
+  const weekdayName = WEEKDAYS[weekday];
+  let generated = [];
+
+  if (rules.length > 0) {
+    generated = rules.flatMap((rule) =>
+      buildSlots({
+        date: targetDate,
+        startHour: rule.startHour,
+        endHour: rule.endHour,
+        durationMinutes: rule.slotDurationMinutes,
+        bufferMinutes: rule.bufferMinutes
+      })
+    );
+  } else {
+    const schedule = await getDoctorAvailabilitySchedule(doctorId);
+
+    if (!schedule || !Array.isArray(schedule.weeklySchedule)) {
+      return [];
+    }
+
+    if (Array.isArray(schedule.offDays) && schedule.offDays.includes(weekdayName)) {
+      return [];
+    }
+
+    const targetKey = toDateKey(targetDate);
+    const isBlocked = Array.isArray(schedule.blockedDates)
+      ? schedule.blockedDates.some((entry) => toDateKey(entry.date) === targetKey)
+      : false;
+
+    if (isBlocked) {
+      return [];
+    }
+
+    generated = schedule.weeklySchedule
+      .filter(
+        (slot) =>
+          slot &&
+          slot.weekday === weekdayName &&
+          (slot.mode ? slot.mode === mode : true) &&
+          slot.isActive !== false
+      )
+      .flatMap((slot) =>
+        buildSlotsFromTimeRange({
+          date: targetDate,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          durationMinutes: Number(slot.duration || 30),
+          bufferMinutes: 0
+        })
+      );
+  }
+
+  if (generated.length === 0) {
     return [];
   }
 
@@ -44,16 +111,6 @@ export const getDoctorAvailability = async ({ doctorId, date, mode }) => {
       endTime: { $gte: startDay }
     }).lean()
   ]);
-
-  const generated = rules.flatMap((rule) =>
-    buildSlots({
-      date: targetDate,
-      startHour: rule.startHour,
-      endHour: rule.endHour,
-      durationMinutes: rule.slotDurationMinutes,
-      bufferMinutes: rule.bufferMinutes
-    })
-  );
 
   return generated
     .filter((slot) => {

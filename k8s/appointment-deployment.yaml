@@ -34,8 +34,8 @@ spec:
                   key: CLIENT_URL
             - name: MONGODB_URI
               valueFrom:
-                configMapKeyRef:
-                  name: smart-health-config
+                secretKeyRef:
+                  name: smart-health-secrets
                   key: APPOINTMENT_MONGODB_URI
             - name: AUTH_SERVICE_URL
               valueFrom:
@@ -57,6 +57,11 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: TELEMEDICINE_SERVICE_URL
+            - name: ROOM_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: ROOM_SERVICE_URL
             - name: NOTIFICATION_SERVICE_URL
               valueFrom:
                 configMapKeyRef:
@@ -72,11 +77,56 @@ spec:
                 configMapKeyRef:
                   name: smart-health-config
                   key: RABBITMQ_URL
+            - name: RABBITMQ_EXCHANGE
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: RABBITMQ_EXCHANGE
             - name: REDIS_URL
               valueFrom:
                 configMapKeyRef:
                   name: smart-health-config
                   key: REDIS_URL
+            - name: SLOT_HOLD_TTL_MINUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: SLOT_HOLD_TTL_MINUTES
+            - name: MAX_ACTIVE_HOLDS_PER_PATIENT
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: MAX_ACTIVE_HOLDS_PER_PATIENT
+            - name: CANCELLATION_CUTOFF_HOURS
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: CANCELLATION_CUTOFF_HOURS
+            - name: REMINDER_24H_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: REMINDER_24H_ENABLED
+            - name: REMINDER_1H_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: REMINDER_1H_ENABLED
+            - name: GOOGLE_REDIRECT_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: GOOGLE_REDIRECT_URI
+            - name: GOOGLE_CALENDAR_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: GOOGLE_CALENDAR_ID
+            - name: SWAGGER_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-health-config
+                  key: SWAGGER_SERVER_URL
             - name: JWT_ACCESS_SECRET
               valueFrom:
                 secretKeyRef:
@@ -87,6 +137,41 @@ spec:
                 secretKeyRef:
                   name: smart-health-secrets
                   key: INTERNAL_SERVICE_SECRET
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: GOOGLE_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: GOOGLE_ENCRYPTION_KEY
+            - name: TWILIO_ACCOUNT_SID
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: TWILIO_ACCOUNT_SID
+            - name: TWILIO_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: TWILIO_AUTH_TOKEN
+            - name: TWILIO_SMS_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: TWILIO_SMS_FROM
+            - name: TWILIO_WHATSAPP_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: smart-health-secrets
+                  key: TWILIO_WHATSAPP_FROM
           readinessProbe:
             httpGet:
               path: /health

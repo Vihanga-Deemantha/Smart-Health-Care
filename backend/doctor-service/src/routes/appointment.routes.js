@@ -4,14 +4,27 @@ import allowRoles from "../middlewares/role.middleware.js";
 import validateRequest from "../middlewares/validate.middleware.js";
 import {
   handleRespondToAppointment,
-  handleGetTelemedicineSession
+  handleGetTelemedicineSession,
+  handleListDoctorAppointments,
+  handleCompleteDoctorAppointment
 } from "../controllers/doctor.controller.js";
 import {
+  listDoctorAppointmentsValidation,
   respondAppointmentValidation,
-  appointmentIdValidation
+  appointmentIdValidation,
+  doctorAppointmentIdValidation
 } from "../validations/appointment.validation.js";
 
 const router = express.Router();
+
+router.get(
+  "/doctor/:doctorId",
+  protect,
+  allowRoles("DOCTOR"),
+  listDoctorAppointmentsValidation,
+  validateRequest,
+  handleListDoctorAppointments
+);
 
 router.patch(
   "/:id/respond",
@@ -29,6 +42,15 @@ router.get(
   appointmentIdValidation,
   validateRequest,
   handleGetTelemedicineSession
+);
+
+router.patch(
+  "/:appointmentId/complete",
+  protect,
+  allowRoles("DOCTOR"),
+  doctorAppointmentIdValidation,
+  validateRequest,
+  handleCompleteDoctorAppointment
 );
 
 export default router;

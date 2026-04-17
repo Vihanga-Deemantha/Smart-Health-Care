@@ -190,12 +190,18 @@ export const joinSession = async (req, res) => {
         : "Session schedule is not set";
 
     const role = String(req.user?.role || "").toLowerCase();
+    const wasPatientJoined = session.patientJoined;
+    const wasDoctorJoined = session.doctorJoined;
+
     if (role === "patient") {
       session.patientJoined = true;
     }
     if (role === "doctor") {
       session.doctorJoined = true;
     }
+
+    const patientJustJoined = role === "patient" && !wasPatientJoined;
+    const doctorJustJoined = role === "doctor" && !wasDoctorJoined;
 
     if (session.status === "scheduled") {
       session.status = "waiting";
@@ -205,16 +211,14 @@ export const joinSession = async (req, res) => {
       }
     }
 
-    let becameActive = false;
     if (session.patientJoined && session.doctorJoined && session.status === "waiting") {
       session.status = "active";
       session.sessionStartedAt = new Date();
-      becameActive = true;
     }
 
     await session.save();
 
-    if (becameActive) {
+    if (doctorJustJoined || patientJustJoined) {
       const [patientProfile, doctorProfile] = await Promise.all([
         fetchPatientProfile(session.patientId),
         fetchDoctorProfile(session.doctorId)
@@ -244,21 +248,21 @@ export const joinSession = async (req, res) => {
         doctor: doctorRecipient
       };
 
-      if (canNotifyRecipient(patientRecipient)) {
+      if (doctorJustJoined && canNotifyRecipient(patientRecipient)) {
         await publishEvent("notification.telemedicine.session.started", {
           ...notificationPayload,
           recipientRole: "patient"
         });
-      } else {
+      } else if (doctorJustJoined) {
         logger.warn("Skipping patient session-start notification; missing contact info.");
       }
 
-      if (canNotifyRecipient(doctorRecipient)) {
+      if (patientJustJoined && canNotifyRecipient(doctorRecipient)) {
         await publishEvent("notification.telemedicine.session.started.doctor", {
           ...notificationPayload,
           recipientRole: "doctor"
         });
-      } else {
+      } else if (patientJustJoined) {
         logger.warn("Skipping doctor session-start notification; missing contact info.");
       }
     }

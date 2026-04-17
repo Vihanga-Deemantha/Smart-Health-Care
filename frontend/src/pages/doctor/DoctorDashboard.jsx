@@ -1,39 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
-
-const DOCTOR_SERVICE_URL =
-	import.meta.env.VITE_DOCTOR_SERVICE_URL || "http://localhost:5029";
-
-const getToken = () =>
-	localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
-
-const decodeTokenPayload = (token) => {
-	const payload = token?.split(".")?.[1];
-	if (!payload) {
-		return null;
-	}
-
-	try {
-		const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-		const json = atob(base64);
-		return JSON.parse(json);
-	} catch {
-		return null;
-	}
-};
-
-const resolveDoctorId = () => {
-	const storedDoctorId = localStorage.getItem("doctorId");
-	if (storedDoctorId) {
-		return storedDoctorId;
-	}
-
-	const token = getToken();
-	const payload = decodeTokenPayload(token);
-	return payload?.doctorId || payload?.id || payload?.userId || null;
-};
+import api from "../../services/axios.js";
 
 const getErrorMessage = (error) =>
 	error?.response?.data?.message || error?.message || "Something went wrong.";
@@ -50,20 +18,11 @@ const DoctorDashboard = () => {
 		setError("");
 
 		try {
-			const doctorId = resolveDoctorId();
-			const token = getToken();
-			if (!doctorId || !token) {
-				throw new Error("Doctor ID not found.");
-			}
-
-			const headers = { Authorization: `Bearer ${token}` };
 			const [pendingResponse, scheduleResponse] = await Promise.all([
-				axios.get(`${DOCTOR_SERVICE_URL}/api/appointments/doctor/${doctorId}`, {
-					headers,
+				api.get("/doctors/appointments", {
 					params: { status: "BOOKED" }
 				}),
-				axios.get(`${DOCTOR_SERVICE_URL}/api/appointments/doctor/${doctorId}`, {
-					headers,
+				api.get("/doctors/appointments", {
 					params: { status: "CONFIRMED" }
 				})
 			]);

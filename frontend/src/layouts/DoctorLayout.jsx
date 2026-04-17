@@ -1,6 +1,7 @@
 import {
   CalendarCheck2,
   CalendarClock,
+  CheckCircle,
   ClipboardList,
   FileUp,
   LayoutDashboard,
@@ -10,31 +11,9 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
-import axios from "axios";
 import PageContainer from "../components/common/PageContainer.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import api from "../services/axios.js";
-
-const DOCTOR_SERVICE_URL =
-  import.meta.env.VITE_DOCTOR_SERVICE_URL || "http://localhost:5029";
-
-const getToken = () =>
-  localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
-
-const decodeTokenPayload = (token) => {
-  const payload = token?.split(".")?.[1];
-  if (!payload) {
-    return null;
-  }
-
-  try {
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(base64);
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-};
 
 const storeDoctorId = (id) => {
   if (id) {
@@ -60,17 +39,6 @@ const buildDoctorCreatePayload = (user, userId) => {
   }
 
   return payload;
-};
-
-const resolveDoctorId = () => {
-  const storedDoctorId = localStorage.getItem("doctorId");
-  if (storedDoctorId) {
-    return storedDoctorId;
-  }
-
-  const token = getToken();
-  const payload = decodeTokenPayload(token);
-  return payload?.doctorId || payload?.id || payload?.userId || null;
 };
 
 const restrictedNavItems = [
@@ -100,6 +68,7 @@ const DoctorLayout = () => {
       badge: pendingCount
     },
     { label: "My Schedule", to: "/doctor/schedule", icon: CalendarClock },
+    { label: "Completed History", to: "/doctor/completed", icon: CheckCircle },
     { label: "Video Sessions", to: "/doctor/sessions", icon: Video },
     { label: "Availability", to: "/doctor/availability", icon: CalendarCheck2 },
     { label: "Profile", to: "/doctor/profile", icon: UserRound }
@@ -152,20 +121,9 @@ const DoctorLayout = () => {
 
   const fetchPendingCount = useCallback(async () => {
     try {
-      const doctorId = resolveDoctorId();
-      const token = getToken();
-      if (!doctorId || !token) {
-        setPendingCount(0);
-        return;
-      }
-
-      const response = await axios.get(
-        `${DOCTOR_SERVICE_URL}/api/appointments/doctor/${doctorId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { status: "BOOKED" }
-        }
-      );
+      const response = await api.get("/doctors/appointments", {
+        params: { status: "BOOKED" }
+      });
 
       const payload =
         response.data?.data?.appointments ||

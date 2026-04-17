@@ -19,10 +19,14 @@ const PrescriptionForm = () => {
   const { appointmentId } = useParams();
   const [medicines, setMedicines] = useState([emptyMedicine]);
   const [patientId, setPatientId] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingPrescription, setLoadingPrescription] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [hasExisting, setHasExisting] = useState(false);
 
   useEffect(() => {
     const loadAppointment = async () => {
@@ -49,6 +53,41 @@ const PrescriptionForm = () => {
     };
 
     loadAppointment();
+  }, [appointmentId]);
+
+  useEffect(() => {
+    const loadPrescription = async () => {
+      if (!appointmentId) {
+        setLoadingPrescription(false);
+        return;
+      }
+
+      setLoadingPrescription(true);
+
+      try {
+        const response = await api.get(`/api/prescriptions/appointment/${appointmentId}`);
+        const payload = response.data?.data?.prescription || response.data?.prescription || response.data?.data;
+
+        if (payload) {
+          setDiagnosis(payload.diagnosis || "");
+          setInstructions(payload.instructions || "");
+          setMedicines(
+            Array.isArray(payload.medicines) && payload.medicines.length
+              ? payload.medicines
+              : [emptyMedicine]
+          );
+          setHasExisting(true);
+        }
+      } catch (err) {
+        if (err?.response?.status !== 404) {
+          setError(getErrorMessage(err));
+        }
+      } finally {
+        setLoadingPrescription(false);
+      }
+    };
+
+    loadPrescription();
   }, [appointmentId]);
 
   const updateMedicine = (index, key, value) => {
@@ -83,6 +122,21 @@ const PrescriptionForm = () => {
       }))
       .filter((medicine) => medicine.name);
 
+    const trimmedDiagnosis = diagnosis.trim();
+    const trimmedInstructions = instructions.trim();
+
+    if (!trimmedDiagnosis) {
+      setError("Diagnosis is required before submitting.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (!trimmedInstructions) {
+      setError("Instructions are required before submitting.");
+      setSubmitting(false);
+      return;
+    }
+
     if (!cleaned.length) {
       setError("Add at least one medicine before submitting.");
       setSubmitting(false);
@@ -90,14 +144,26 @@ const PrescriptionForm = () => {
     }
 
     try {
-      await api.post("/api/prescriptions", {
-        appointmentId,
-        patientId,
-        medicines: cleaned
-      });
+      if (hasExisting) {
+        await api.patch(`/api/prescriptions/appointment/${appointmentId}`, {
+          diagnosis: trimmedDiagnosis,
+          instructions: trimmedInstructions,
+          medicines: cleaned
+        });
 
-      setSuccess("Prescription submitted successfully.");
-      setMedicines([emptyMedicine]);
+        setSuccess("Prescription updated successfully.");
+      } else {
+        await api.post("/api/prescriptions", {
+          appointmentId,
+          patientId,
+          diagnosis: trimmedDiagnosis,
+          instructions: trimmedInstructions,
+          medicines: cleaned
+        });
+
+        setHasExisting(true);
+        setSuccess("Prescription submitted successfully.");
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -108,14 +174,16 @@ const PrescriptionForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="rounded-2xl border border-slate-800/70 bg-slate-900/70 p-6">
-        <h2 className="text-xl font-semibold text-white">Prescription</h2>
+        <h2 className="text-xl font-semibold text-white">
+          {hasExisting ? "Edit Prescription" : "Prescription"}
+        </h2>
         <p className="text-sm text-slate-400">Appointment ID: {appointmentId}</p>
         {patientId ? (
           <p className="text-xs text-slate-500">Patient ID: {patientId}</p>
         ) : null}
       </div>
 
-      {loading ? (
+      {loading || loadingPrescription ? (
         <div className="rounded-2xl border border-slate-800/70 bg-slate-900/70 p-6">
           <LoadingSpinner label="Loading appointment..." />
         </div>
@@ -132,6 +200,33 @@ const PrescriptionForm = () => {
           {success}
         </div>
       ) : null}
+
+      <div className="rounded-2xl border border-slate-800/70 bg-slate-900/70 p-6">
+        <h3 className="text-sm font-semibold text-white">Clinical Summary</h3>
+        <p className="text-xs text-slate-400">Provide the diagnosis and care instructions for the patient.</p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Diagnosis
+            <textarea
+              rows={4}
+              value={diagnosis}
+              onChange={(event) => setDiagnosis(event.target.value)}
+              className="rounded-xl border border-slate-800/80 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              placeholder="Primary diagnosis or assessment"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Instructions
+            <textarea
+              rows={4}
+              value={instructions}
+              onChange={(event) => setInstructions(event.target.value)}
+              className="rounded-xl border border-slate-800/80 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              placeholder="Care instructions, follow-up, lifestyle guidance"
+            />
+          </label>
+        </div>
+      </div>
 
       <div className="space-y-4">
         {medicines.map((medicine, index) => (
@@ -219,7 +314,13 @@ const PrescriptionForm = () => {
           disabled={submitting}
           className="rounded-xl bg-[#01696f] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#028a93] disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {submitting ? <LoadingSpinner label="Submitting..." /> : "Submit prescription"}
+          {submitting ? (
+            <LoadingSpinner label="Submitting..." />
+          ) : hasExisting ? (
+            "Update prescription"
+          ) : (
+            "Submit prescription"
+          )}
         </button>
       </div>
     </form>

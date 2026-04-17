@@ -1,55 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import ScheduleCard from "../components/appointments/ScheduleCard.jsx";
 import AppointmentModal from "../components/appointments/AppointmentModal.jsx";
 import Toast from "../components/common/Toast.jsx";
 import { groupAppointmentsByDate } from "../utils/groupByDate.js";
-
-const DOCTOR_SERVICE_URL =
-  import.meta.env.VITE_DOCTOR_SERVICE_URL || "http://localhost:5029";
-const PATIENT_SERVICE_URL =
-  import.meta.env.VITE_PATIENT_SERVICE_URL || "http://localhost:5028";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5026/api";
-
-const getToken = () =>
-  localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
-
-const getAuthHeaders = () => {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
-const decodeTokenPayload = (token) => {
-  const payload = token?.split(".")?.[1];
-  if (!payload) {
-    return null;
-  }
-
-  try {
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(base64);
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-};
-
-const resolveDoctorId = () => {
-  const storedDoctorId = localStorage.getItem("doctorId");
-  if (storedDoctorId) {
-    return storedDoctorId;
-  }
-
-  const token = getToken();
-  const payload = decodeTokenPayload(token);
-  return payload?.doctorId || payload?.id || payload?.userId || null;
-};
+import api from "../services/axios.js";
 
 const getErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Something went wrong.";
-
-const unwrapSessionPayload = (payload) =>
-  payload?.data?.session || payload?.session || payload?.data || payload;
 
 const buildFallbackPatient = (patientId, fallback = {}) => ({
   id: fallback?.id || patientId || "",
@@ -76,24 +34,13 @@ const LoadingSkeleton = () => (
 );
 
 const ConfirmedSchedule = () => {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [toasts, setToasts] = useState([]);
-
-  const doctorApi = useMemo(
-    () => axios.create({ baseURL: DOCTOR_SERVICE_URL }),
-    []
-  );
-  const patientApi = useMemo(
-    () => axios.create({ baseURL: PATIENT_SERVICE_URL }),
-    []
-  );
-  const telemedicineApi = useMemo(
-    () => axios.create({ baseURL: API_BASE_URL }),
-    []
-  );
+  const [completingId, setCompletingId] = useState("");
 
   const addToast = useCallback((message, type = "success") => {
     setToasts((current) => [
@@ -106,97 +53,70 @@ const ConfirmedSchedule = () => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
-  const fetchPatient = useCallback(
-    async (patientId, fallback) => {
-      if (!patientId) {
-        return buildFallbackPatient("", fallback);
-      }
+  const extractAppointments = (response) => {
+    const payload =
+      response?.data?.data?.appointments ||
+      response?.data?.appointments ||
+      response?.data?.data?.items ||
+      response?.data?.items ||
+      response?.data?.data ||
+      response?.data ||
+      [];
+    return Array.isArray(payload) ? payload : payload?.items || [];
+  };
 
-      try {
-        const response = await patientApi.get(`/api/patients/${patientId}`, {
-          headers: getAuthHeaders()
-        });
-        const payload = response.data?.data?.patient || response.data?.patient || response.data;
-        return {
-          id: payload?._id || payload?.id || patientId,
-          fullName: payload?.fullName || payload?.name || fallback?.fullName || "Patient",
-          email: payload?.email || fallback?.email || "Not available",
-          phone: payload?.phone || payload?.contactNumber || fallback?.phone || "Not available",
-          profilePhoto: payload?.profilePhoto || fallback?.profilePhoto || ""
-        };
-      } catch {
-        return buildFallbackPatient(patientId, fallback);
-      }
-    },
-    [patientApi]
-  );
+  const enrichAppointments = useCallback((items) => {
+    return items.map((appointment) => {
+      const rawPatient = appointment.patient;
+      const patientRecord = rawPatient && typeof rawPatient === "object" ? rawPatient : {};
+      const patientId =
+        appointment.patientId ||
+        patientRecord?._id ||
+        patientRecord?.id ||
+        (typeof rawPatient === "string" ? rawPatient : "");
+      const fallbackPatient = {
+        id: patientId,
+        fullName:
+          patientRecord?.fullName ||
+          patientRecord?.name ||
+          appointment.patientName ||
+          appointment.patientFullName ||
+          "Patient",
+        email: patientRecord?.email,
+        phone: patientRecord?.phone || patientRecord?.contactNumber,
+        profilePhoto: patientRecord?.profilePhoto
+      };
+      const patient = buildFallbackPatient(patientId, fallbackPatient);
+      const videoUrl = appointment.telemedicine?.meetingLink || appointment.telemedicine?.roomUrl || "";
+
+      return {
+        ...appointment,
+        patient,
+        mode: String(appointment.mode || "IN_PERSON").toUpperCase(),
+        videoUrl
+      };
+    });
+  }, []);
 
   const loadAppointments = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const doctorId = resolveDoctorId();
-      if (!doctorId) {
-        throw new Error("Doctor ID not found.");
-      }
-
-      const response = await doctorApi.get(`/api/appointments/doctor/${doctorId}`, {
-        headers: getAuthHeaders(),
+      const response = await api.get("/doctors/appointments", {
         params: { status: "CONFIRMED" }
       });
 
-      const payload =
-        response.data?.data?.appointments ||
-        response.data?.appointments ||
-        response.data?.data?.items ||
-        response.data?.items ||
-        response.data?.data ||
-        response.data ||
-        [];
-      const items = Array.isArray(payload) ? payload : payload?.items || [];
+      const confirmedItems = extractAppointments(response);
+      const enrichedConfirmed = enrichAppointments(confirmedItems);
 
-      const enriched = await Promise.all(
-        items.map(async (appointment) => {
-          const rawPatient = appointment.patient;
-          const patientRecord = rawPatient && typeof rawPatient === "object" ? rawPatient : {};
-          const patientId =
-            appointment.patientId ||
-            patientRecord?._id ||
-            patientRecord?.id ||
-            (typeof rawPatient === "string" ? rawPatient : "");
-          const fallbackPatient = {
-            id: patientId,
-            fullName:
-              patientRecord?.fullName ||
-              patientRecord?.name ||
-              appointment.patientName ||
-              appointment.patientFullName ||
-              "Patient",
-            email: patientRecord?.email,
-            phone: patientRecord?.phone || patientRecord?.contactNumber,
-            profilePhoto: patientRecord?.profilePhoto
-          };
-          const patient = await fetchPatient(patientId, fallbackPatient);
-          const videoUrl =
-            appointment.telemedicine?.meetingLink || appointment.telemedicine?.roomUrl || "";
-
-          return {
-            ...appointment,
-            patient,
-            mode: String(appointment.mode || "IN_PERSON").toUpperCase(),
-            videoUrl
-          };
-        })
-      );
-
-      setAppointments(enriched);
+      setAppointments(enrichedConfirmed);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [doctorApi, fetchPatient]);
+  }, [enrichAppointments]);
 
   useEffect(() => {
     loadAppointments();
@@ -211,48 +131,30 @@ const ConfirmedSchedule = () => {
       return;
     }
 
+    navigate(`/doctor/consultation/${appointmentId}`);
+  };
+
+  const handleCompleteAppointment = async (appointment) => {
+    const appointmentId = appointment?._id || appointment?.id;
+    if (!appointmentId) {
+      addToast("Missing appointment id.", "error");
+      return;
+    }
+
+    setCompletingId(appointmentId);
+
     try {
-      const sessionResponse = await telemedicineApi.get(
-        `/sessions/appointment/${appointmentId}`,
-        { headers: getAuthHeaders() }
+      await api.patch(`/appointments/${appointmentId}/complete`, {});
+
+      setAppointments((current) =>
+        current.filter((item) => (item._id || item.id) !== appointmentId)
       );
-      const session = unwrapSessionPayload(sessionResponse.data);
-      const sessionId = session?._id || session?.id || session?.sessionId;
-
-      if (!sessionId) {
-        throw new Error("Telemedicine session is not available.");
-      }
-
-      const joinResponse = await telemedicineApi.post(
-        `/sessions/${sessionId}/join`,
-        {},
-        { headers: getAuthHeaders() }
-      );
-      const joinPayload = joinResponse.data?.data || joinResponse.data;
-      if (joinPayload?.warning) {
-        addToast(joinPayload.warning, "error");
-      }
-      const roomUrl =
-        joinPayload?.jitsiRoomUrl ||
-        joinPayload?.roomUrl ||
-        joinPayload?.meetingLink ||
-        session?.jitsiRoomUrl ||
-        session?.roomUrl ||
-        appointment?.videoUrl ||
-        "";
-
-      if (!roomUrl) {
-        throw new Error("Video session is not available.");
-      }
-
-      window.open(roomUrl, "_blank", "noopener,noreferrer");
+      setSelectedAppointment(null);
+      addToast("Appointment marked as completed.", "success");
     } catch (err) {
-      if (appointment?.videoUrl) {
-        window.open(appointment.videoUrl, "_blank", "noopener,noreferrer");
-        return;
-      }
-
       addToast(getErrorMessage(err), "error");
+    } finally {
+      setCompletingId("");
     }
   };
 
@@ -383,6 +285,17 @@ const ConfirmedSchedule = () => {
           appointment={selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
           onJoinCall={handleJoinCall}
+          primaryActionLabel={
+            ["COMPLETED", "CANCELLED", "NO_SHOW"].includes(
+              String(selectedAppointment?.status || "").toUpperCase()
+            )
+              ? null
+              : "Mark Completed"
+          }
+          primaryActionDisabled={
+            completingId === (selectedAppointment?._id || selectedAppointment?.id)
+          }
+          onPrimaryAction={handleCompleteAppointment}
         />
       ) : null}
 

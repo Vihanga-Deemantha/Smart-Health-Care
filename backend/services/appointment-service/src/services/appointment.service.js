@@ -557,6 +557,63 @@ export const confirmAttendance = async ({ appointmentId, actor }) => {
   return { appointment, attendance };
 };
 
+export const completeAppointment = async ({ appointmentId, actor }) => {
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) {
+    throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
+  }
+
+  const isAdmin = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.STAFF].includes(
+    actor.role
+  );
+
+  if (!isAdmin && actor.role !== USER_ROLES.DOCTOR) {
+    throw new AppError("Forbidden", 403, "FORBIDDEN");
+  }
+
+  if (actor.role === USER_ROLES.DOCTOR && String(appointment.doctorId) !== String(actor.id)) {
+    throw new AppError("Forbidden", 403, "FORBIDDEN");
+  }
+
+  if (
+    [
+      APPOINTMENT_STATUS.CANCELLED,
+      APPOINTMENT_STATUS.COMPLETED,
+      APPOINTMENT_STATUS.NO_SHOW
+    ].includes(appointment.status)
+  ) {
+    throw new AppError("Appointment cannot be updated", 409, "APPOINTMENT_FINALIZED");
+  }
+
+  const oldStatus = appointment.status;
+
+  appointment.status = APPOINTMENT_STATUS.COMPLETED;
+  appointment.statusTimestamps.completedAt = new Date();
+  await appointment.save();
+
+  await createAuditLog({
+    appointmentId: appointment._id,
+    entityType: "APPOINTMENT",
+    entityId: appointment._id.toString(),
+    action: "APPOINTMENT_COMPLETED",
+    actorId: actor.id,
+    actorRole: actor.role,
+    oldValue: { status: oldStatus },
+    newValue: { status: appointment.status }
+  });
+
+  await publishEvent("appointment.completed", {
+    appointmentId: appointment._id.toString(),
+    doctorId: appointment.doctorId,
+    patientId: appointment.patientId,
+    startTime: appointment.startTime,
+    endTime: appointment.endTime,
+    mode: appointment.mode
+  });
+
+  return appointment;
+};
+
 export const markNoShow = async ({ appointmentId, actor, target }) => {
   const appointment = await Appointment.findById(appointmentId);
   if (!appointment) {

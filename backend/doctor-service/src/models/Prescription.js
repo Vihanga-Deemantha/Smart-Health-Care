@@ -14,8 +14,12 @@ const medicineSchema = new mongoose.Schema(
 const prescriptionSchema = new mongoose.Schema(
   {
     doctorId: { type: String, required: true, index: true },
+    doctorName: { type: String, default: null },
     patientId: { type: String, required: true, index: true },
+    patientName: { type: String, default: null },
     appointmentId: { type: String, required: true, index: true },
+    diagnosis: { type: String, default: null },
+    instructions: { type: String, default: null },
     medicines: { type: [medicineSchema], default: [] },
     issuedAt: { type: Date, default: Date.now }
   },

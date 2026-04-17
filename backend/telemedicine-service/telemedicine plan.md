@@ -145,6 +145,18 @@ Your notification-service listens for `notification.#` binding key. So your tele
 | **PUBLISHES** | `notification.telemedicine.session.started` | Both joined — notify |
 | **PUBLISHES** | `notification.telemedicine.session.completed` | Session ended |
 
+***
+
+## Prescription Flow (Doctor to Patient)
+
+After the telemedicine consult, the doctor issues a prescription with diagnosis, instructions, and medicines. The doctor-service:
+
+- Stores the prescription and clinical notes in MongoDB.
+- Publishes `notification.prescription.issued` with patient + doctor contact payloads.
+- Patient-service `/patients/prescriptions` proxies doctor-service for patient dashboards.
+
+Notification-service delivers the prescription via SMS/email, and the patient portal shows the latest prescriptions list.
+
 > ⚠️ **Important:** Your notification-service already listens for `notification.appointment.confirmed`  — so when telemedicine publishes this, the patient and doctor automatically get their "Your video consultation is ready" SMS/email **without any new code in notification-service**.[^1]
 
 ***

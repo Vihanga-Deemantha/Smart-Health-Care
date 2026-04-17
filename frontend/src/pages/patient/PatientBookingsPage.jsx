@@ -2,24 +2,15 @@ import { useState, useEffect } from "react";
 import { CheckCircle, Star, AlertCircle } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout.jsx";
 import api from "../../services/axios.js";
-import { fetchPatientHistory } from "../../api/patientApi.js";
+import { fetchPatientAppointments } from "../../api/patientApi.js";
 import { getApiErrorMessage } from "../../utils/getApiErrorMessage.js";
 
-const isPastAppointment = (appointment) => {
-  const startTime = new Date(appointment?.startTime || appointment?.appointmentDate || 0).getTime();
-  return Number.isFinite(startTime) && startTime < Date.now();
-};
-
-const hasConfirmedAttendance = (appointment) => {
-  const status = String(appointment?.status || "").toUpperCase();
-  const confirmedAt = appointment?.statusTimestamps?.confirmedAt;
-
-  if (status === "COMPLETED") {
-    return true;
-  }
-
-  return status === "CONFIRMED" && Boolean(confirmedAt);
-};
+const resolveCompletedAt = (appointment) =>
+  appointment?.statusTimestamps?.completedAt ||
+  appointment?.statusTimestamps?.confirmedAt ||
+  appointment?.updatedAt ||
+  appointment?.createdAt ||
+  null;
 
 const PatientBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
@@ -41,16 +32,12 @@ const PatientBookingsPage = () => {
   const fetchCompletedAppointments = async () => {
     try {
       setLoading(true);
-      const response = await fetchPatientHistory({ page: 1, limit: 100 });
+      const response = await fetchPatientAppointments({ status: "COMPLETED", limit: 100 });
       const items = response.data?.data?.items || [];
 
-      const completedBookings = items
-        .filter((appointment) => isPastAppointment(appointment) && hasConfirmedAttendance(appointment))
-        .sort(
-          (a, b) =>
-            new Date(b.startTime || b.createdAt || 0).getTime() -
-            new Date(a.startTime || a.createdAt || 0).getTime()
-        );
+      const completedBookings = items.sort(
+        (a, b) => new Date(resolveCompletedAt(b) || 0).getTime() - new Date(resolveCompletedAt(a) || 0).getTime()
+      );
 
       const uniqueDoctorIds = [...new Set(completedBookings.map((item) => item?.doctorId).filter(Boolean))];
       const doctorNameEntries = await Promise.all(
@@ -186,7 +173,11 @@ const PatientBookingsPage = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-white">{booking.doctorName || "Doctor"}</h3>
                   <p className="mt-1 text-sm text-slate-400">
-                    Completed on {new Date(booking.statusTimestamps?.confirmedAt || booking.updatedAt || booking.createdAt).toLocaleDateString()}
+                    Completed on {
+                      resolveCompletedAt(booking)
+                        ? new Date(resolveCompletedAt(booking)).toLocaleDateString()
+                        : "N/A"
+                    }
                   </p>
                 </div>
                 <div className="flex items-center gap-1 rounded-full bg-green-400/10 px-3 py-1 text-green-300">

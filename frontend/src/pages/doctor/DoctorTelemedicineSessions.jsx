@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/axios.js";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 import Toast from "../../components/common/Toast.jsx";
@@ -25,12 +26,35 @@ const formatDateTime = (value) => {
 };
 
 const normalizeStatus = (value) => String(value || "").toLowerCase();
+const upcomingStatuses = new Set(["scheduled", "waiting", "active"]);
+
+const resolveSessionDate = (session) =>
+  session?.scheduledAt || session?.sessionStartedAt || session?.createdAt || session?.updatedAt || null;
+
+const isSameDay = (value, targetDate) => {
+  if (!value || !targetDate) {
+    return false;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  return (
+    date.getFullYear() === targetDate.getFullYear() &&
+    date.getMonth() === targetDate.getMonth() &&
+    date.getDate() === targetDate.getDate()
+  );
+};
 
 const DoctorTelemedicineSessions = () => {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("upcoming");
+  const [dateFilter, setDateFilter] = useState("today");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [toasts, setToasts] = useState([]);
@@ -51,8 +75,9 @@ const DoctorTelemedicineSessions = () => {
     setError("");
 
     try {
-      const params = { page, limit: 10 };
-      if (statusFilter !== "all") {
+      const pageSize = dateFilter === "today" ? 100 : 10;
+      const params = { page: dateFilter === "today" ? 1 : page, limit: pageSize };
+      if (statusFilter !== "all" && statusFilter !== "upcoming") {
         params.status = statusFilter;
       }
 
@@ -60,25 +85,52 @@ const DoctorTelemedicineSessions = () => {
       const payload = response.data?.data || response.data;
       const items = payload?.sessions || payload?.items || payload || [];
 
-      setSessions(Array.isArray(items) ? items : []);
-      setPages(Number(payload?.pages || 1));
+      let nextSessions = Array.isArray(items) ? items : [];
+      if (statusFilter === "upcoming") {
+        nextSessions = nextSessions.filter((session) =>
+          upcomingStatuses.has(normalizeStatus(session?.status))
+        );
+      } else if (statusFilter !== "all") {
+        nextSessions = nextSessions.filter(
+          (session) => normalizeStatus(session?.status) === statusFilter
+        );
+      }
+
+      if (dateFilter === "today") {
+        const today = new Date();
+        nextSessions = nextSessions.filter((session) =>
+          isSameDay(resolveSessionDate(session), today)
+        );
+      }
+
+      setSessions(nextSessions);
+      setPages(dateFilter === "today" ? 1 : Number(payload?.pages || 1));
+      if (dateFilter === "today") {
+        setPage(1);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to load sessions.");
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter]);
+  }, [page, statusFilter, dateFilter]);
 
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
 
   const statusOptions = useMemo(
-    () => ["all", "scheduled", "waiting", "active", "completed", "cancelled"],
+    () => ["upcoming", "all", "scheduled", "waiting", "active", "completed", "cancelled"],
     []
   );
 
   const handleJoin = async (session) => {
+    const appointmentId = session?.appointmentId;
+    if (appointmentId) {
+      navigate(`/doctor/consultation/${appointmentId}`);
+      return;
+    }
+
     try {
       const sessionId = session?._id || session?.id || session?.sessionId;
       if (!sessionId) {
@@ -114,6 +166,8 @@ const DoctorTelemedicineSessions = () => {
         !["completed", "cancelled"].includes(normalizeStatus(session?.status))
     );
 
+  const paginationDisabled = dateFilter === "today";
+
   return (
     <div className="space-y-6" style={{ color: "#e6edf3" }}>
       <div
@@ -126,8 +180,24 @@ const DoctorTelemedicineSessions = () => {
             <p className="text-sm" style={{ color: "#8b949e" }}>
               Live and upcoming video consultations
             </p>
+            <p className="text-xs text-slate-500">
+              This page lists video-call session records across dates. Use My Schedule for the daily
+              appointment list.
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={dateFilter}
+              onChange={(event) => {
+                setDateFilter(event.target.value);
+                setPage(1);
+              }}
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "#30363d", background: "#0d1117", color: "#e6edf3" }}
+            >
+              <option value="today">Today</option>
+              <option value="all">All dates</option>
+            </select>
             <select
               value={statusFilter}
               onChange={(event) => {
@@ -139,7 +209,11 @@ const DoctorTelemedicineSessions = () => {
             >
               {statusOptions.map((option) => (
                 <option key={option} value={option}>
-                  {option === "all" ? "All statuses" : option}
+                  {option === "upcoming"
+                    ? "Upcoming (scheduled/waiting/active)"
+                    : option === "all"
+                      ? "All statuses"
+                      : option}
                 </option>
               ))}
             </select>
@@ -227,7 +301,7 @@ const DoctorTelemedicineSessions = () => {
                       cursor: canJoin(session) ? "pointer" : "not-allowed"
                     }}
                   >
-                    Join Session
+                    Open Consultation
                   </button>
                 </div>
               </div>
@@ -240,21 +314,27 @@ const DoctorTelemedicineSessions = () => {
         <button
           type="button"
           onClick={() => setPage((current) => Math.max(1, current - 1))}
-          disabled={page <= 1}
+          disabled={paginationDisabled || page <= 1}
           className="rounded-lg border px-3 py-2 text-sm font-semibold"
-          style={{ borderColor: "#30363d", color: page <= 1 ? "#6b7280" : "#e6edf3" }}
+          style={{
+            borderColor: "#30363d",
+            color: paginationDisabled || page <= 1 ? "#6b7280" : "#e6edf3"
+          }}
         >
           Previous
         </button>
         <p className="text-sm text-slate-400">
-          Page {page} of {pages}
+          {paginationDisabled ? "Today view" : `Page ${page} of ${pages}`}
         </p>
         <button
           type="button"
           onClick={() => setPage((current) => Math.min(pages, current + 1))}
-          disabled={page >= pages}
+          disabled={paginationDisabled || page >= pages}
           className="rounded-lg border px-3 py-2 text-sm font-semibold"
-          style={{ borderColor: "#30363d", color: page >= pages ? "#6b7280" : "#e6edf3" }}
+          style={{
+            borderColor: "#30363d",
+            color: paginationDisabled || page >= pages ? "#6b7280" : "#e6edf3"
+          }}
         >
           Next
         </button>

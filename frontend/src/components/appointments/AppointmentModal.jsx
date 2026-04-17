@@ -255,7 +255,7 @@ const AppointmentModal = ({
               ) : null}
               {!hideDefaultActions ? (
                 <>
-                  {mode === "TELEMEDICINE" ? (
+                  {mode === "TELEMEDICINE" && onJoinCall ? (
                     <button
                       type="button"
                       aria-label="Join video call"
@@ -268,12 +268,12 @@ const AppointmentModal = ({
                   ) : null}
                   <button
                     type="button"
-                    aria-label="Write prescription"
+                    aria-label="View or edit prescription"
                     onClick={handleWritePrescription}
                     className="rounded-lg border px-4 py-2 text-sm font-semibold"
                     style={{ borderColor: "#30363d", color: "#e6edf3" }}
                   >
-                    Write Prescription
+                    View / Edit Prescription
                   </button>
                   <button
                     type="button"

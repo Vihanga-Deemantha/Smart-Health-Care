@@ -53,3 +53,4 @@ data:
   EMAIL_PORT: "587"
   NOTIFY_LK_API_URL: https://app.notify.lk/api/v1/send
   NOTIFY_LK_SENDER_ID: BrightEdu
+  JITSI_BASE_URL: https://meet.jit.si

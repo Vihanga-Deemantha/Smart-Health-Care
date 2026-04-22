@@ -26,13 +26,28 @@ export const NOTIFICATION_CONFIG = {
   },
   "notification.appointment.booked": {
     recipient: "patient",
-    channels: ["email", "sms", "whatsapp"],
+    channels: ["email", "sms"],
+    email: { subject: "Appointment booked" }
+  },
+  "notification.appointment.created": {
+    recipient: "patient",
+    channels: ["email", "sms"],
     email: { subject: "Appointment booked" }
   },
   "notification.appointment.confirmed": {
     recipient: "patient",
     channels: ["email", "sms"],
     email: { subject: "Appointment confirmed" }
+  },
+  "notification.telemedicine.session.started": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Telemedicine session started" }
+  },
+  "notification.telemedicine.session.started.doctor": {
+    recipient: "doctor",
+    channels: ["sms"],
+    email: { subject: "Telemedicine session started" }
   },
   "notification.appointment.rejected": {
     recipient: "patient",
@@ -44,7 +59,22 @@ export const NOTIFICATION_CONFIG = {
     channels: ["email", "sms"],
     email: { subject: "Appointment cancelled" }
   },
+  "notification.appointment.reminder": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Appointment reminder" }
+  },
+  "notification.waitlist.promoted": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Waitlist promoted" }
+  },
   "notification.payment.success": {
+    recipient: "patient",
+    channels: ["email", "sms"],
+    email: { subject: "Payment successful" }
+  },
+  "notification.payment.captured": {
     recipient: "patient",
     channels: ["email", "sms"],
     email: { subject: "Payment successful" }

@@ -11,9 +11,16 @@ const channelSchema = new mongoose.Schema(
 
 const notificationLogSchema = new mongoose.Schema(
   {
+    eventId: { type: String, default: null, index: true },
     event: { type: String, required: true, index: true },
     routingKey: { type: String, default: null },
     recipientId: { type: String, default: null, index: true },
+    deliveryStatus: {
+      type: String,
+      enum: ["SENT", "FAILED", "SKIPPED"],
+      default: "SENT",
+      index: true
+    },
     channels: { type: [channelSchema], default: [] },
     payload: { type: mongoose.Schema.Types.Mixed, default: {} }
   },

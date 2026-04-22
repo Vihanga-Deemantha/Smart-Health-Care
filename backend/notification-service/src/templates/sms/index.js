@@ -54,9 +54,45 @@ const templates = {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment booked on ${date}. ID ${shortId(payload?.appointmentId)}.`;
   },
+  "notification.appointment.created": (payload) => {
+    const date = formatDate(payload?.appointmentDate || payload?.startTime);
+    return `Smart Health: Appointment booked on ${date}. ID ${shortId(payload?.appointmentId)}.`;
+  },
   "notification.appointment.confirmed": (payload) => {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment confirmed for ${date}. ID ${shortId(payload?.appointmentId)}.`;
+  },
+  "notification.telemedicine.session.started": (payload) => {
+    const recipientRole = String(payload?.recipientRole || "").toLowerCase();
+    const recipientName =
+      recipientRole === "doctor"
+        ? firstName(payload?.doctor?.fullName)
+        : firstName(payload?.patient?.fullName);
+    const startedAt =
+      payload?.sessionStartedAt ||
+      payload?.scheduledAt ||
+      payload?.appointmentDate ||
+      payload?.startTime;
+    const date = formatDate(startedAt);
+    const link = payload?.jitsiRoomUrl || payload?.roomUrl || payload?.meetingLink || "";
+    const when = date ? ` on ${date}` : "";
+    return `Smart Health: ${recipientName}, your video session is live${when}. Join: ${link}`;
+  },
+  "notification.telemedicine.session.started.doctor": (payload) => {
+    const recipientRole = String(payload?.recipientRole || "").toLowerCase();
+    const recipientName =
+      recipientRole === "doctor"
+        ? firstName(payload?.doctor?.fullName)
+        : firstName(payload?.patient?.fullName);
+    const startedAt =
+      payload?.sessionStartedAt ||
+      payload?.scheduledAt ||
+      payload?.appointmentDate ||
+      payload?.startTime;
+    const date = formatDate(startedAt);
+    const link = payload?.jitsiRoomUrl || payload?.roomUrl || payload?.meetingLink || "";
+    const when = date ? ` on ${date}` : "";
+    return `Smart Health: ${recipientName}, your video session is live${when}. Join: ${link}`;
   },
   "notification.appointment.rejected": (payload) => {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
@@ -67,7 +103,20 @@ const templates = {
     const date = formatDate(payload?.appointmentDate || payload?.startTime);
     return `Smart Health: Appointment cancelled for ${date}. ID ${shortId(payload?.appointmentId)}.`;
   },
+  "notification.appointment.reminder": (payload) => {
+    const date = formatDate(payload?.appointmentDate || payload?.startTime);
+    const type = payload?.type ? ` (${payload.type})` : "";
+    return `Smart Health: Reminder${type} for appointment on ${date}. ID ${shortId(payload?.appointmentId)}.`;
+  },
+  "notification.waitlist.promoted": (payload) => {
+    const date = formatDate(payload?.startTime);
+    return `Smart Health: You are promoted from waitlist. Slot ${date}. Ref ${shortId(payload?.waitlistId)}.`;
+  },
   "notification.payment.success": (payload) => {
+    const amount = payload?.amount ? `${payload.amount} ${payload.currency || ""}`.trim() : "payment";
+    return `Smart Health: ${amount} received. Appt ${shortId(payload?.appointmentId)}.`;
+  },
+  "notification.payment.captured": (payload) => {
     const amount = payload?.amount ? `${payload.amount} ${payload.currency || ""}`.trim() : "payment";
     return `Smart Health: ${amount} received. Appt ${shortId(payload?.appointmentId)}.`;
   },

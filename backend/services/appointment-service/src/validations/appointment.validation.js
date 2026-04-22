@@ -31,6 +31,10 @@ export const rescheduleAppointmentValidation = [
 
 export const confirmAttendanceValidation = [param("id").isMongoId().withMessage("Invalid appointment id")];
 
+export const completeAppointmentValidation = [
+  param("id").isMongoId().withMessage("Invalid appointment id")
+];
+
 export const markNoShowValidation = [
   param("id").isMongoId().withMessage("Invalid appointment id"),
   body("target").isIn(["PATIENT", "DOCTOR"]).withMessage("target must be PATIENT or DOCTOR")

@@ -50,6 +50,9 @@ const buildFallbackPatient = (patientId) => ({
   profilePhoto: ""
 });
 
+const unwrapSessionPayload = (payload) =>
+  payload?.data?.session || payload?.session || payload?.data || payload;
+
 const EmptyState = ({ title, description, icon }) => (
   <div
     className="rounded-2xl border p-6 text-center"
@@ -304,13 +307,49 @@ const Dashboard = () => {
     }
   };
 
-  const handleJoinCall = (appointment) => {
-    if (!appointment?.videoUrl) {
-      addToast("Video session is not available.", "error");
+  const handleJoinCall = async (appointment) => {
+    const appointmentId = appointment?._id || appointment?.id;
+    if (!appointmentId) {
+      addToast("Missing appointment id.", "error");
       return;
     }
 
-    window.open(appointment.videoUrl, "_blank", "noopener,noreferrer");
+    try {
+      const sessionResponse = await api.get(`/api/sessions/appointment/${appointmentId}`);
+      const session = unwrapSessionPayload(sessionResponse.data);
+      const sessionId = session?._id || session?.id || session?.sessionId;
+
+      if (!sessionId) {
+        throw new Error("Telemedicine session is not available.");
+      }
+
+      const joinResponse = await api.post(`/api/sessions/${sessionId}/join`, {});
+      const joinPayload = joinResponse.data?.data || joinResponse.data;
+      if (joinPayload?.warning) {
+        addToast(joinPayload.warning, "error");
+      }
+      const roomUrl =
+        joinPayload?.jitsiRoomUrl ||
+        joinPayload?.roomUrl ||
+        joinPayload?.meetingLink ||
+        session?.jitsiRoomUrl ||
+        session?.roomUrl ||
+        appointment?.videoUrl ||
+        "";
+
+      if (!roomUrl) {
+        throw new Error("Video session is not available.");
+      }
+
+      window.open(roomUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      if (appointment?.videoUrl) {
+        window.open(appointment.videoUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      addToast(getErrorMessage(err), "error");
+    }
   };
 
   const isJoinable = (appointment) => {
@@ -456,8 +495,7 @@ const Dashboard = () => {
                   appointment={appointment}
                   canJoin={
                     normalizeStatus(appointment.mode) === "TELEMEDICINE" &&
-                    isJoinable(appointment) &&
-                    Boolean(appointment.videoUrl)
+                    isJoinable(appointment)
                   }
                   onJoinCall={handleJoinCall}
                   onViewDetails={() => setSelectedAppointment(appointment)}

@@ -15,11 +15,14 @@ import PatientHomePage from "../pages/patient/PatientHomePage.jsx";
 import PatientDashboardPage from "../pages/patient/PatientDashboardPage.jsx";
 import PatientProfilePage from "../pages/patient/PatientProfilePage.jsx";
 import PatientReportsPage from "../pages/patient/PatientReportsPage.jsx";
+import PatientPrescriptionsPage from "../pages/patient/PatientPrescriptionsPage.jsx";
 import PatientHistoryPage from "../pages/patient/PatientHistoryPage.jsx";
 import PatientAiChatPage from "../pages/patient/PatientAiChatPage.jsx";
 import DoctorAvailability from "../pages/doctor/DoctorAvailability.jsx";
 import DoctorDashboard from "../pages/doctor/DoctorDashboard.jsx";
+import DoctorCompletedAppointments from "../pages/doctor/DoctorCompletedAppointments.jsx";
 import DoctorProfile from "../pages/doctor/DoctorProfile.jsx";
+import DoctorTelemedicineSessions from "../pages/doctor/DoctorTelemedicineSessions.jsx";
 import PrescriptionForm from "../pages/doctor/PrescriptionForm.jsx";
 import VideoConsultation from "../pages/doctor/VideoConsultation.jsx";
 import PendingAppointments from "../pages/PendingAppointments.jsx";
@@ -161,6 +164,16 @@ export const router = createBrowserRouter([
     )
   },
   {
+    path: "/prescriptions",
+    element: (
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["PATIENT"]}>
+          <PatientPrescriptionsPage />
+        </RoleProtectedRoute>
+      </ProtectedRoute>
+    )
+  },
+  {
     path: "/history",
     element: (
       <ProtectedRoute>
@@ -236,6 +249,8 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <DoctorDashboard /> },
       { path: "pending", element: <PendingAppointments /> },
       { path: "schedule", element: <ConfirmedSchedule /> },
+      { path: "completed", element: <DoctorCompletedAppointments /> },
+      { path: "sessions", element: <DoctorTelemedicineSessions /> },
       { path: "availability", element: <DoctorAvailability /> },
       { path: "profile", element: <DoctorProfile /> },
       { path: "verification/resubmit", element: <DoctorVerificationResubmitPage /> },

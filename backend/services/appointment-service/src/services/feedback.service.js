@@ -4,6 +4,7 @@ import AppError from "../utils/AppError.js";
 import { APPOINTMENT_STATUS } from "../utils/constants.js";
 import { createAuditLog } from "./audit.service.js";
 import { publishEvent } from "../events/publishers/eventPublisher.js";
+import { getDoctorProfile } from "../integrations/doctorService.client.js";
 
 export const submitFeedback = async ({ appointmentId, patientId, rating, review, isAnonymous }) => {
   const appointment = await Appointment.findById(appointmentId);
@@ -12,7 +13,7 @@ export const submitFeedback = async ({ appointmentId, patientId, rating, review,
     throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
   }
 
-  if (appointment.patientId !== patientId) {
+  if (String(appointment.patientId) !== String(patientId)) {
     throw new AppError("Feedback can only be submitted by appointment patient", 403, "FORBIDDEN");
   }
 
@@ -25,9 +26,13 @@ export const submitFeedback = async ({ appointmentId, patientId, rating, review,
     throw new AppError("Feedback already exists for this appointment", 409, "DUPLICATE_FEEDBACK");
   }
 
+  const doctorProfile = await getDoctorProfile(appointment.doctorId);
+  const resolvedDoctorName = doctorProfile?.fullName || doctorProfile?.name || null;
+
   const feedback = await Feedback.create({
     appointmentId,
     doctorId: appointment.doctorId,
+    doctorName: resolvedDoctorName,
     patientId,
     rating,
     review,

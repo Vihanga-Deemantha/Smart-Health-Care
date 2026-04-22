@@ -90,6 +90,7 @@ services:
       - auth-service
       - rabbitmq
       - redis
+      - telemedicine-service
     ports:
       - "5027:5027"
     environment:
@@ -148,6 +149,28 @@ services:
       CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER: ${CLOUDINARY_DOCTOR_PROFILE_PHOTOS_FOLDER:-smart-health/doctor-profile-photos}
       DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB: ${DOCTOR_DOCUMENT_MAX_FILE_SIZE_MB:-10}
       DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB: ${DOCTOR_PROFILE_PHOTO_MAX_FILE_SIZE_MB:-5}
+
+  telemedicine-service:
+    build:
+      context: ./backend/telemedicine-service
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
+    env_file:
+      - ./backend/telemedicine-service/.env
+    ports:
+      - "5033:5033"
+    environment:
+      PORT: 5033
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:${FRONTEND_PORT:-8080}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-sasuke}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-super_internal_secret}
+      PATIENT_SERVICE_URL: ${PATIENT_SERVICE_URL:-http://patient-service:5028}
+      DOCTOR_SERVICE_URL: ${DOCTOR_SERVICE_URL:-http://doctor-service:5029}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE:-smart_health.events}
+      JITSI_BASE_URL: ${JITSI_BASE_URL:-https://meet.jit.si}
 
   payment-service:
     build:
@@ -248,6 +271,7 @@ services:
       AI_CHATBOT_SERVICE_URL: http://ai-chatbot-service:5031
       APPOINTMENT_SERVICE_URL: http://appointment-service:5027
       DOCTOR_SERVICE_URL: http://doctor-service:5029
+      TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5033
       PAYMENT_SERVICE_URL: http://payment-service:5034
 
   rabbitmq:

@@ -1,48 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import PendingCard from "../components/appointments/PendingCard.jsx";
 import AppointmentModal from "../components/appointments/AppointmentModal.jsx";
 import Toast from "../components/common/Toast.jsx";
 import { groupAppointmentsByDate } from "../utils/groupByDate.js";
-
-const DOCTOR_SERVICE_URL =
-  import.meta.env.VITE_DOCTOR_SERVICE_URL || "http://localhost:5029";
-const PATIENT_SERVICE_URL =
-  import.meta.env.VITE_PATIENT_SERVICE_URL || "http://localhost:5028";
-
-const getToken = () =>
-  localStorage.getItem("token") || localStorage.getItem("accessToken") || "";
-
-const getAuthHeaders = () => {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
-const decodeTokenPayload = (token) => {
-  const payload = token?.split(".")?.[1];
-  if (!payload) {
-    return null;
-  }
-
-  try {
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(base64);
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-};
-
-const resolveDoctorId = () => {
-  const storedDoctorId = localStorage.getItem("doctorId");
-  if (storedDoctorId) {
-    return storedDoctorId;
-  }
-
-  const token = getToken();
-  const payload = decodeTokenPayload(token);
-  return payload?.doctorId || payload?.id || payload?.userId || null;
-};
+import api from "../services/axios.js";
 
 const getErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Something went wrong.";
@@ -85,15 +46,6 @@ const PendingAppointments = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  const doctorApi = useMemo(
-    () => axios.create({ baseURL: DOCTOR_SERVICE_URL }),
-    []
-  );
-  const patientApi = useMemo(
-    () => axios.create({ baseURL: PATIENT_SERVICE_URL }),
-    []
-  );
-
   const addToast = useCallback((message, type = "success") => {
     setToasts((current) => [
       ...current,
@@ -107,27 +59,9 @@ const PendingAppointments = () => {
 
   const fetchPatient = useCallback(
     async (patientId, fallback) => {
-      if (!patientId) {
-        return buildFallbackPatient("", fallback);
-      }
-
-      try {
-        const response = await patientApi.get(`/api/patients/${patientId}`, {
-          headers: getAuthHeaders()
-        });
-        const payload = response.data?.data?.patient || response.data?.patient || response.data;
-        return {
-          id: payload?._id || payload?.id || patientId,
-          fullName: payload?.fullName || payload?.name || fallback?.fullName || "Patient",
-          email: payload?.email || fallback?.email || "Not available",
-          phone: payload?.phone || payload?.contactNumber || fallback?.phone || "Not available",
-          profilePhoto: payload?.profilePhoto || fallback?.profilePhoto || ""
-        };
-      } catch {
-        return buildFallbackPatient(patientId, fallback);
-      }
+      return buildFallbackPatient(patientId || "", fallback);
     },
-    [patientApi]
+    []
   );
 
   const loadAppointments = useCallback(async () => {
@@ -135,13 +69,7 @@ const PendingAppointments = () => {
     setError("");
 
     try {
-      const doctorId = resolveDoctorId();
-      if (!doctorId) {
-        throw new Error("Doctor ID not found.");
-      }
-
-      const response = await doctorApi.get(`/api/appointments/doctor/${doctorId}`, {
-        headers: getAuthHeaders(),
+      const response = await api.get("/doctors/appointments", {
         params: { status: "BOOKED" }
       });
 
@@ -192,7 +120,7 @@ const PendingAppointments = () => {
     } finally {
       setLoading(false);
     }
-  }, [doctorApi, fetchPatient]);
+  }, [fetchPatient]);
 
   useEffect(() => {
     loadAppointments();
@@ -227,11 +155,10 @@ const PendingAppointments = () => {
     setBusyId(appointmentId);
 
     try {
-      await doctorApi.patch(
-        `/api/appointments/${appointmentId}/respond`,
-        { status: "CONFIRMED", action: "ACCEPT" },
-        { headers: getAuthHeaders() }
-      );
+      await api.patch(`/doctors/appointments/${appointmentId}/respond`, {
+        status: "CONFIRMED",
+        action: "ACCEPT"
+      });
 
       markExiting(appointmentId);
       setSelectedAppointment(null);
@@ -259,11 +186,11 @@ const PendingAppointments = () => {
     setBusyId(appointmentId);
 
     try {
-      await doctorApi.patch(
-        `/api/appointments/${appointmentId}/respond`,
-        { status: "REJECTED", action: "REJECT", reason: reason || "" },
-        { headers: getAuthHeaders() }
-      );
+      await api.patch(`/doctors/appointments/${appointmentId}/respond`, {
+        status: "REJECTED",
+        action: "REJECT",
+        reason: reason || ""
+      });
 
       markExiting(appointmentId);
       setSelectedAppointment(null);

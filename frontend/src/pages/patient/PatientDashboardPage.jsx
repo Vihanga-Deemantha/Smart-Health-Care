@@ -9,8 +9,7 @@ import {
   PlusCircle,
   Search,
   Stethoscope,
-  TicketCheck,
-  TimerReset
+  TicketCheck
 } from "lucide-react";
 import toast from "react-hot-toast";
 import PortalLayout from "../../components/common/PortalLayout.jsx";
@@ -109,13 +108,6 @@ const PatientDashboardPage = () => {
         desc: "Review finished consultations",
         to: "/patient/bookings",
         accent: "#27AE60"
-      },
-      {
-        icon: TimerReset,
-        label: "Service Tools",
-        desc: "Waitlist, feedback, and alerts",
-        to: "/patient/tools",
-        accent: "#F2994A"
       }
     ],
     []
@@ -294,8 +286,12 @@ const PatientDashboardPage = () => {
                         border: "1px solid rgba(148, 163, 184, 0.18)"
                       }}
                     >
-                      <p className="font-semibold text-white">{item.prescription?.title || "Prescription"}</p>
-                      <p className="mt-1 text-slate-300">Doctor ID: {item.doctorId || "N/A"}</p>
+                      <p className="font-semibold text-white">
+                        {item.diagnosis || item.prescription?.title || "Prescription"}
+                      </p>
+                      <p className="mt-1 text-slate-300">
+                        Doctor: {item.doctorName || item.doctorId || "N/A"}
+                      </p>
                       <p className="mt-1 text-slate-400">{formatDate(item.issuedAt)}</p>
                     </div>
                   ))}
